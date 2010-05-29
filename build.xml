@@ -72,7 +72,6 @@
         <include name="activation-1_0_2.jar"/>
         <include name="jtidy-8.0-20060801.131059-3.jar"/>
         <include name="tagsoup-1.2.jar"/>
-        <include name="junit.jar"/>
         <include name="saxon-9-1-0-8_orbeon_20100413.jar"/>
         <include name="batik-all-1_6.jar"/>
         <include name="avalon-framework-4_2_0.jar"/>
@@ -241,7 +240,6 @@
             <src path="${build.dir}/src"/>
             <src path="${java-src.dir}"/>
             <exclude name="org/orbeon/oxf/common/Version.java"/>
-            <exclude name="org/orbeon/oxf/xforms/analysis/PathMapUIDependencies.java"/>
         </javac>
     </target>
 
@@ -400,9 +398,6 @@
         <jar destfile="${form-runner.jar.file}" compress="false">
             <fileset dir="${resources.dir}">
                 <include name="apps/fr/**/*.*"/>
-                <exclude name="apps/fr/persistence/oracle/**/*.*"/>
-                <exclude name="apps/fr/alfresco/**/*.*"/>
-                <exclude name="apps/fr/print/print-pdf-template.xpl"/>
             </fileset>
         </jar>
 
@@ -482,11 +477,8 @@
         <zip zipfile="${build.distrib.dir}/${project.name}-src.zip">
             <zipfileset dir="${build.root}">
                 <exclude name="build/**"/>
-                <exclude name="src/examples/**"/>
-                <exclude name="tools/*.zip"/>
-                <exclude name="tools/*.sh"/>
-                <exclude name="tools/dom4j-1_4/**"/>
-                <exclude name="tools/commons-httpclient-3.2/**"/>
+                <exclude name="tools/**"/>
+                <exclude name="src/scala/**"/>
             </zipfileset>
         </zip>
     </target>
@@ -738,7 +730,7 @@
             <arg value="--bwlimit=50"/>
             <arg value="${artifact.name}.war"/>
             <arg value="${artifact.name}.zip"/>
-            <arg value="${artifact.name}-src.zip"/>
+            <!--<arg value="${artifact.name}-src.zip"/>-->
             <arg value="orbeonbld2@forge.objectweb.org:/var/lib/gforge/chroot/home/groups/ops/htdocs/unstable/ops"/>
         </exec>
 
