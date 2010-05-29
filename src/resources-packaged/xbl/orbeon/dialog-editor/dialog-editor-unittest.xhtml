@@ -1,16 +1,3 @@
-<!--
-  Copyright (C) 2010 Orbeon, Inc.
-
-  This program is free software; you can redistribute it and/or modify it under the terms of the
-  GNU Lesser General Public License as published by the Free Software Foundation; either version
-  2.1 of the License, or (at your option) any later version.
-
-  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-  See the GNU Lesser General Public License for more details.
-
-  The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
-  -->
 <xhtml:html xmlns:xforms="http://www.w3.org/2002/xforms"
     xmlns:f="http://orbeon.org/oxf/xml/formatting"
     xmlns:xhtml="http://www.w3.org/1999/xhtml"
@@ -18,15 +5,25 @@
     xmlns:widget="http://orbeon.org/oxf/xml/widget"
     xmlns:ev="http://www.w3.org/2001/xml-events"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    xmlns:fr="http://orbeon.org/oxf/xml/form-runner">
+    xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
+    xmlns:xbl="http://www.w3.org/ns/xbl"
+    xmlns:xxbl="http://orbeon.org/oxf/xml/xbl"
+    xmlns:exf="http://www.exforms.org/exf/1-0"
+    xmlns:howto="http://www.orbeon.com/howto">
 
     <xhtml:head>
-        <xhtml:title>Spell checker</xhtml:title>
-        <xforms:model>
-            <xforms:instance id="instance">
+        <xhtml:title>Dialog editor component</xhtml:title>
+        <xforms:model xxforms:xhtml-layout="span">
+
+            <xforms:instance>
                 <instance>
-                    <text>Ths is a tst.</text>
-                    <text>Ths is a tst with tst spelled incorrectly twice.</text>
+                    <text>
+                        This should never now (it is non-relevant).
+                    </text>
+                    <text>
+                        All the world's a stage, and all the men and women merely players: they have their exits and
+                        their entrances; and one man in his time plays many parts...
+                    </text>
                     <text>To be or not to be– that is the question: Whether 'tis nobler in the mind to suffer The slings
                         and arrows of outrageous fortune, Or to take arms against a sea of troubles And, by opposing,
                         end them. To die, to sleep No more – and by a sleep to say we end The heartache and the thousand
@@ -44,34 +41,46 @@
                         pitch and moment With this regard their currents turn awry, And lose the name of action.—Soft
                         you now! The fair Ophelia! Nymph, in thy orisons Be all my sins remembered.
                     </text>
-                    <text>helloo helloo worlrd</text>
-                    <text>helloo helloo worlrd</text>
                 </instance>
             </xforms:instance>
+
+            <xforms:bind nodeset="text[1]" relevant="false()"/>
+            <xforms:bind nodeset="text[3]" readonly="true()"/>
+
+            <xforms:action ev:event="xforms-model-construct-done" xxforms:iterate="text">
+                <xforms:setvalue ref="." value="normalize-space(.)"/>
+            </xforms:action>
         </xforms:model>
-        <xhtml:link type="text/cs   s" rel="stylesheet" href="/ops/yui/logger/assets/logger.css"/>
-        <xhtml:script type="text/javascript" src="/ops/yui/logger/logger.js"/>
-        <xhtml:script type="text/javascript" src="/ops/yui/yuitest/yuitest.js"/>
-        <!-- <xhtml:script type="text/javascript" src="/xbl/orbeon/spell-checker/spell-checker-unittest.js"/> -->
+
         <xhtml:style type="text/css">
-            .xforms-repeat-selected-item-1 { background-color: transparent }
-            .block { margin-bottom: 1em }
+            .xforms-repeat-selected-item-1 { background-color: transparent  }
+            .add { margin-top: 1em }
+
+            .xbl-fr-dialog-editor .xbl-fr-button .fr-dialog-editor-open-edit button,
+                    .xbl-fr-dialog-editor .xbl-fr-button .fr-dialog-editor-open-view button{
+                width: 27px;
+                text-indent: -9999px;
+                padding: 0;
+                *text-indent: 0;
+                *padding-left: 9999px;
+            }
+
         </xhtml:style>
     </xhtml:head>
     <xhtml:body>
-        <xforms:trigger>
-            <xforms:label>Add</xforms:label>
-            <xforms:insert nodeset="text" ev:event="DOMActivate"/>
-        </xforms:trigger>
+
         <xforms:repeat nodeset="text">
-            <xhtml:div class="block">
-                <xforms:textarea ref="."/>
-                <fr:spell-checker ref="."/>
-                <xforms:trigger appearance="minimal">
-                    <xforms:label>Remove line</xforms:label>
-                    <xforms:delete ev:event="DOMActivate" nodeset="."/>
-                </xforms:trigger>
-            </xhtml:div>
+            <fr:dialog-editor ref=".">
+                <xforms:label>Excerpt</xforms:label>
+            </fr:dialog-editor>
         </xforms:repeat>
+
+        <xhtml:div class="add">
+            <fr:button>
+                <xforms:label>Add</xforms:label>
+                <xforms:insert ev:event="DOMActivate" nodeset="text" origin="xxforms:element('text')"/>
+            </fr:button>
+        </xhtml:div>
+
     </xhtml:body>
 </xhtml:html>
