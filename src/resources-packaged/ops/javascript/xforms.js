@@ -5931,8 +5931,6 @@ ORBEON.xforms.Server = {
         // loaded (vs. a file being downloaded). At this point, we are not handling this situation.
 
         if (ORBEON.xforms.Globals.requestRetries > 0) {
-            // If the request fails, we are trying again up to 3 times
-            ORBEON.xforms.Globals.requestRetries--;
             ORBEON.xforms.Server.asyncRequest();
         } else {
             // We have tried this 3 times, give up.
