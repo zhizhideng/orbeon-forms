@@ -484,6 +484,10 @@
                 <exclude name="tools/**"/>
                 <exclude name="src/scala/"/>
                 <exclude name="src/scala/**"/>
+                <exclude name="src/resources/forms/orbeon/register"/>
+                <exclude name="src/resources/forms/orbeon/register/**"/>
+                <exclude name="src/resources/forms/orbeon/license"/>
+                <exclude name="src/resources/forms/orbeon/license/**"/>
             </zipfileset>
         </zip>
     </target>
@@ -762,6 +766,11 @@
                 <!-- Form Builder is packaged as a JAR -->
                 <exclude name="forms/orbeon/builder"/>
                 <exclude name="forms/orbeon/builder/**"/>
+                <!-- Other forms we don't package -->
+                <exclude name="forms/orbeon/register"/>
+                <exclude name="forms/orbeon/register/**"/>
+                <exclude name="forms/orbeon/license"/>
+                <exclude name="forms/orbeon/license/**"/>
             </zipfileset>
         </zip>
     </target>
