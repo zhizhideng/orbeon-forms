@@ -52,7 +52,7 @@
                         <xsl:variable name="path" as="xs:string" select="translate(substring-after($name-without-prefix, '.'), '.', '/')"/>
                         <!-- Get resource for selected language -->
                         <!-- NOTE: Support '*' to specify all languages -->
-                        <xsl:variable name="resource" as="element(resource)?" select="$resources[$language = '*' or @xml:lang = $language]"/>
+                        <xsl:variable name="resource" as="element(resource)*" select="$resources[$language = '*' or @xml:lang = $language]"/>
                         <xsl:for-each select="$resource">
                             <xsl:variable name="node" as="element()?" select="./saxon:evaluate($path)"/>
                             <xsl:choose>
