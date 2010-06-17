@@ -11,8 +11,11 @@
  *
  * The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
  */
-.xbl-fr-spell-checker { display: inline; }
-.xbl-fr-spell-checker .xbl-fr-spell-checker-icon { background-image: url('../../../apps/fr/style/images/silk/spellcheck.png'); display: inline-block; width: 16px; height: 16px }
+
+.xbl-fr-spell-checker { display: inline; vertical-align: top }
+.xbl-fr-spell-checker .xbl-fr-button .fr-spell-checker-start button {
+    background: url(../../../apps/fr/style/images/silk/spellcheck.png) no-repeat 5px; padding: 0 10px 0 25px;}
+
 .fr-spell-checker-dialog { width: 460px }
 .fr-spell-checker-dialog .xforms-label { width: 90px; display: inline-block }
 .fr-spell-checker-dialog .xforms-output-output { font-weight: bold }
