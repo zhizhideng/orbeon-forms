@@ -62,8 +62,9 @@ public class LocationData {
     public int getLine() { return line; }
     public int getCol() { return col; }
 
+    @Override
     public String toString() {
-        final FastStringBuffer sb = new FastStringBuffer("");
+        final StringBuilder sb = new StringBuilder();
         final boolean hasLine;
         if (getLine() > 0) {
             sb.append("line ");
