@@ -2320,6 +2320,12 @@ ORBEON.xforms.Controls = {
                 }
             }
 
+            if (ORBEON.util.Dom.hasClass(control, "xforms-textarea")
+                    && ORBEON.util.Dom.hasClass(control, "xforms-mediatype-text-html")
+                    && ORBEON.util.Utils.getProperty(HTML_EDITOR_PROPERTY) == "yui") {
+                ORBEON.widgets.RTE.setRelevant(control, isRelevant);
+            }
+
             // Add/remove the disabled attribute on form controls
             var formFieldDisabled = ! isRelevant || ORBEON.xforms.Controls.isReadonly(control);
             function handleFormElement(element) {
@@ -4503,6 +4509,11 @@ ORBEON.widgets.RTE = function() {
                 // Custom event was already created
                 renderedCustomEvents[control.id].subscribe(callback);
             }
+        },
+
+        setRelevant: function(control, isRelevant) {
+            var yuiRTE = rteEditors[control.id];
+            yuiRTE.set("disabled", ! isRelevant);
         }
     };
 
