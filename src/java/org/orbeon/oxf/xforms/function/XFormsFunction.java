@@ -13,8 +13,7 @@
  */
 package org.orbeon.oxf.xforms.function;
 
-import org.dom4j.Namespace;
-import org.dom4j.QName;
+import org.dom4j.*;
 import org.orbeon.oxf.common.OXFException;
 import org.orbeon.oxf.pipeline.StaticExternalContext;
 import org.orbeon.oxf.pipeline.api.PipelineContext;
@@ -70,6 +69,10 @@ abstract public class XFormsFunction extends SystemFunction {
         return functionContext.getXBLContainer();
     }
 
+    protected Element getSourceElement(XPathContext xpathContext) {
+        return getContext(xpathContext).getSourceElement();
+    }
+
     protected String getSourceEffectiveId(XPathContext xpathContext) {
         final Context functionContext = (XFormsFunction.Context) PooledXPathExpression.getFunctionContext(xpathContext);
         final String sourceEffectiveId = functionContext.getSourceEffectiveId();
@@ -112,6 +115,7 @@ abstract public class XFormsFunction extends SystemFunction {
         private final XFormsContextStack contextStack;
 
         private String sourceEffectiveId;
+        private Element sourceElement;
         private XFormsModel model;
 
         // Constructor for XBLContainer and XFormsActionInterpreter
@@ -156,6 +160,14 @@ abstract public class XFormsFunction extends SystemFunction {
 
         public void setSourceEffectiveId(String sourceEffectiveId) {
             this.sourceEffectiveId = sourceEffectiveId;
+        }
+
+        public Element getSourceElement() {
+            return sourceElement;
+        }
+
+        public void setSourceElement(Element sourceElement) {
+            this.sourceElement = sourceElement;
         }
     }
 
