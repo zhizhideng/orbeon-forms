@@ -101,8 +101,9 @@ public class XFormsExtractorContentHandler extends ForwardingContentHandler {
 
     private boolean inXFormsOrExtension;       // whether we are in a model
     private int xformsLevel;
-    private boolean inPreserve;     // whether we are in a label, etc., schema or instance
-    private int preserveLevel;
+    private boolean inPreserve;     // whether we are in a schema, instance, or xbl:xbl
+    private boolean inLHHA;         // whether we are in an LHHA element
+    private int preserveOrLHHALevel;
 
     /**
      * Constructor for top-level document.
@@ -324,23 +325,28 @@ public class XFormsExtractorContentHandler extends ForwardingContentHandler {
                 }
 
                 // Preserve as is the content of labels, etc., instances, and schemas
-                if ((XFormsConstants.LABEL_HINT_HELP_ALERT_ELEMENT.contains(localname) // labels, etc. may contain XHTML
-                        || "instance".equals(localname)) && isXForms // XForms instances
-                        || "schema".equals(localname) && XMLConstants.XSD_URI.equals(uri) // XML schemas
-                        || "xbl".equals(localname) && isXBL // preserve everything under xbl:xbl so that templates may be processed by static state
-                        || isExtension) {
-                    inPreserve = true;
-                    preserveLevel = level;
+                if (!inLHHA) {
+                    if (XFormsConstants.LABEL_HINT_HELP_ALERT_ELEMENT.contains(localname) && isXForms) {// labels, etc. may contain XHTML)
+                        inLHHA = true;
+                        preserveOrLHHALevel = level;
+                    } else if ("instance".equals(localname) && isXForms                         // XForms instance
+                            || "schema".equals(localname) && XMLConstants.XSD_URI.equals(uri)   // XML schema
+                            || "xbl".equals(localname) && isXBL // preserve everything under xbl:xbl so that templates may be processed by static state
+                            || isExtension) {
+                        inPreserve = true;
+                        preserveOrLHHALevel = level;
+                    }
                 }
 
-                // Callback for XForms elements
-                if (isXFormsOrExtension) {
+                // Callback for elements of interest
+                if (isXFormsOrExtension || inLHHA) {
+                    // NOTE: We call this also for HTML elements within LHHA so we can gather scope information for AVTs
                     startXFormsOrExtension(uri, localname, qName, attributes);
                 }
             }
 
             // We are within preserved content or we output regular XForms content
-            if (inXFormsOrExtension && (inPreserve || isXFormsOrExtension)) {
+            if (inXFormsOrExtension && (inPreserve || inLHHA || isXFormsOrExtension)) {
                 super.startElement(uri, localname, qName, attributes);
             }
         } else {
@@ -391,18 +397,21 @@ public class XFormsExtractorContentHandler extends ForwardingContentHandler {
 
         if (level > 0 || !ignoreRootElement) {
             // We are within preserved content or we output regular XForms content
-            if (inXFormsOrExtension && (inPreserve || isXFormsOrExtension)) {
+            if (inXFormsOrExtension && (inPreserve || inLHHA || isXFormsOrExtension)) {
                 super.endElement(uri, localname, qName);
             }
 
-            if (inPreserve && level == preserveLevel) {
-                // Leaving preserved content
-                inPreserve = false;
+            if (inXFormsOrExtension && !inPreserve) {
+                // Callback for elements of interest
+                if (isXFormsOrExtension || inLHHA) {
+                    endXFormsOrExtension(uri, localname, qName);
+                }
             }
 
-            // Callback for XForms elements
-            if (isXFormsOrExtension && !inPreserve) {
-                endXFormsOrExtension(uri, localname, qName);
+            if ((inPreserve || inLHHA) && level == preserveOrLHHALevel) {
+                // Leaving preserved content
+                inPreserve = false;
+                inLHHA = false;
             }
 
             if (inXFormsOrExtension && level == xformsLevel) {
