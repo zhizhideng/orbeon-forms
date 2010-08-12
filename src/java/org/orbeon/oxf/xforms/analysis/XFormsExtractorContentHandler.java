@@ -191,7 +191,7 @@ public class XFormsExtractorContentHandler extends ForwardingXMLReceiver {
 
             if (externalContext != null) {// null in case of nested document (XBL templates)
                 // Add xml:base attribute
-                attributesImpl.addAttribute(XMLConstants.XML_URI, "base", "xml:base", ContentHandlerHelper.CDATA, externalContext.getResponse().rewriteRenderURL((xmlBaseLangStack.get(0)).toString()));
+                attributesImpl.addAttribute(XMLConstants.XML_URI, "base", "xml:base", ContentHandlerHelper.CDATA, externalContext.getResponse().rewriteRenderURL((xmlBaseLangStack.get(0).xmlBase).toString()));
                 // Add deployment attribute
                 attributesImpl.addAttribute(XMLConstants.XML_URI, "deployment", "deployment", ContentHandlerHelper.CDATA, deploymentType.name());
                 // Add context path attribute
