@@ -1162,7 +1162,7 @@
             </xxf:event-response>
         </output>
     </test>
-    
+
     <test description="Instance replacement: replace text" name="oxf:pipeline">
         <input name="config">
             <p:config xmlns:oxf="http://www.orbeon.com/oxf/processors" xmlns:xxforms="http://orbeon.org/oxf/xml/xforms">
