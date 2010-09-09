@@ -12,11 +12,11 @@
 
   The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
   -->
-<group description="XForms Variables" xmlns:p="http://www.orbeon.com/oxf/pipeline"
+<group description="XForms XPath Analysis" xmlns:p="http://www.orbeon.com/oxf/pipeline"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
-    xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xh="http://www.w3.org/1999/xhtml"
     xmlns:xu="http://www.xmldb.org/xupdate"
     xmlns:oxf="http://www.orbeon.com/oxf/processors"
     xmlns:xi="http://www.w3.org/2001/XInclude"
@@ -27,95 +27,1022 @@
     xmlns:xbl="http://www.w3.org/ns/xbl"
     xmlns:fr="http://orbeon.org/oxf/xml/form-runner">
 
-    <test description="Model switching and model variables" name="oxf:java">
+    <test description="xforms:bind dependencies" name="oxf:java">
         <input name="config">
             <config sourcepath="oxf:/" class="org.orbeon.oxf.xforms.analysis.XPathAnalysisProcessor"/>
         </input>
         <input name="form">
-            <xhtml:html xmlns:xxforms="http://orbeon.org/oxf/xml/xforms">
-                <xhtml:head>
-                    <xforms:model id="model" xxforms:xpath-analysis="true">
-                        <xforms:instance id="instance">
+            <xh:html xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+                <xh:head>
+                    <xf:model id="model" xxf:xpath-analysis="true">
+                        <xf:instance id="i1">
                             <instance/>
-                        </xforms:instance>
+                        </xf:instance>
+                        <xf:instance id="i2">
+                            <instance/>
+                        </xf:instance>
+                        <xf:instance id="i3">
+                            <instance/>
+                        </xf:instance>
+                        <xf:instance id="i4">
+                            <instance/>
+                        </xf:instance>
+                        <xf:instance id="i5">
+                            <instance/>
+                        </xf:instance>
+                        <xf:instance id="i6">
+                            <instance/>
+                        </xf:instance>
 
-                    </xforms:model>
-                </xhtml:head>
-                <xhtml:body>
-                    <!-- parent:: -->
-                    <xforms:output id="p1" value="instance('instance')/a/b"/>
-                    <xforms:output id="p2" value="instance('instance')/a/.."/>
-                    <xforms:output id="p3" value="instance('instance')/a/../b"/>
+                        <xf:bind ref="instance('i1')" id="bv1" type="xs:integer"/>
+                        <xf:bind ref="instance('i2')" id="bv2" constraint="true()"/>
+                        <xf:bind ref="instance('i3')" id="bv3" required="true()"/>
 
-                    <!-- ancestor:: -->
-                    <xforms:output id="a1" value="instance('instance')/a/b/ancestor::a"/>
-                    <xforms:output id="a2" value="instance('instance')/a/b/ancestor::a/c"/>
-                </xhtml:body>
-            </xhtml:html>
+                        <xf:bind ref="instance('i4')" id="bc1" relevant="false()"/>
+                        <xf:bind ref="instance('i5')" id="bc2" calculate="42"/>
+                        <xf:bind ref="instance('i6')" id="bc3" readonly="true()"/>
+                        <xf:bind ref="instance('i7')" id="bc4" xxf:default="42"/>
+
+                    </xf:model>
+                </xh:head>
+                <xh:body/>
+            </xh:html>
         </input>
-        <!-- TODO: FIXME: For now, we have extra <dependent> paths below because XPathAnalysis.removeOrphanNodes() function
-             is broken and so we don't run it. However, the <returnable> paths should be ok. So we have some false
-             positive but we shouldn't have false negatives. -->
         <output name="analysis">
             <request request-uri="/orbeon/doc/home-welcome" query-string="id=12&amp;print=false" method="GET">
-                <control scope="" prefixed-id="p1" model-prefixed-id="model" binding="false" value="true">
+                <model scope="" prefixed-id="model" default-instance-prefixed-id="i1" analyzed-binds="true">
+                    <bind-instances>
+                        <instance>i7</instance>
+                        <instance>i6</instance>
+                        <instance>i5</instance>
+                        <instance>i4</instance>
+                        <instance>i3</instance>
+                        <instance>i2</instance>
+                        <instance>i1</instance>
+                    </bind-instances>
+                    <computed-binds-instances>
+                        <instance>i7</instance>
+                        <instance>i6</instance>
+                        <instance>i5</instance>
+                        <instance>i4</instance>
+                    </computed-binds-instances>
+                    <validation-binds-instances>
+                        <instance>i3</instance>
+                        <instance>i2</instance>
+                        <instance>i1</instance>
+                    </validation-binds-instances>
+                </model>
+            </request>
+        </output>
+    </test>
+
+    <test description="Rejection of unsupported attributes" name="oxf:java">
+        <input name="config">
+            <config sourcepath="oxf:/" class="org.orbeon.oxf.xforms.analysis.XPathAnalysisProcessor"/>
+        </input>
+        <input name="form">
+            <xh:html xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+                <xh:head>
+                    <xf:model id="model" xxf:xpath-analysis="true">
+                        <xf:instance id="instance">
+                            <instance/>
+                        </xf:instance>
+                        <xf:bind ref="." id="my-bind"/>
+                    </xf:model>
+                </xh:head>
+                <xh:body>
+                    <xf:input id="u1" bind="my-bind"/>
+                    <xf:input id="u2" context="." ref="b"/>
+                </xh:body>
+            </xh:html>
+        </input>
+        <output name="analysis">
+            <request request-uri="/orbeon/doc/home-welcome" query-string="id=12&amp;print=false" method="GET">
+                <control scope="" prefixed-id="u1" model-prefixed-id="model" binding="true" value="true">
+                    <binding>
+                        <analysis analyzed="false"/>
+                    </binding>
                     <value>
+                        <analysis expression="xs:string(.[1])" analyzed="false"/>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="u2" model-prefixed-id="model" binding="true" value="true">
+                    <binding>
+                        <analysis analyzed="false"/>
+                    </binding>
+                    <value>
+                        <analysis expression="xs:string(.[1])" analyzed="false"/>
+                    </value>
+                </control>
+                <model scope="" prefixed-id="model" default-instance-prefixed-id="instance" analyzed-binds="true">
+                    <bind-instances>
+                        <instance>instance</instance>
+                    </bind-instances>
+                </model>
+            </request>
+        </output>
+    </test>
+
+    <test description="Rejection of unsupported expressions" name="oxf:java">
+        <input name="config">
+            <config sourcepath="oxf:/" class="org.orbeon.oxf.xforms.analysis.XPathAnalysisProcessor"/>
+        </input>
+        <input name="form">
+            <xh:html xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+                <xh:head>
+                    <xf:model id="model" xxf:xpath-analysis="true">
+                        <xf:instance id="instance">
+                            <instance/>
+                        </xf:instance>
+                    </xf:model>
+                </xh:head>
+                <xh:body>
+                    <xf:input id="u1" ref="instance('instance')/a/*"/>
+                    <xf:input id="u2" ref="instance('instance')/*/b"/>
+                    <!-- TODO: This could be reliably analyzed w/o schema -->
+                    <xf:input id="u3" ref="instance('instance')/a/*/parent::a"/>
+                    <!-- TODO: This could be reliably analyzed w/o schema -->
+                    <xf:input id="u4" ref="instance('instance')/a/*/ancestor::a"/>
+                    <xf:input id="u5" ref="instance('instance')/a//parent::a"/>
+                    <!-- Can't analyze w/o schema: instance('instance')/a/b/a/c/ancestor::a -->
+                    <xf:input id="u6" ref="instance('instance')/a//ancestor::a"/>
+
+                    <xf:input id="u7" ref="/a/b"/>
+                    <xf:input id="u8" ref="../a/b"/>
+                    <!-- TODO: This should be supported -->
+                    <xf:input id="u9" ref="root()/a/b"/>
+
+                </xh:body>
+            </xh:html>
+        </input>
+        <output name="analysis">
+            <request request-uri="/orbeon/doc/home-welcome" query-string="id=12&amp;print=false" method="GET">
+                <control scope="" prefixed-id="u1" model-prefixed-id="model" binding="true" value="true">
+                    <binding>
+                        <analysis expression="instance('instance')/a/*" analyzed="false"/>
+                    </binding>
+                    <value>
+                        <analysis expression="xs:string(.[1])" analyzed="false"/>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="u2" model-prefixed-id="model" binding="true" value="true">
+                    <binding>
+                        <analysis expression="instance('instance')/*/b" analyzed="false"/>
+                    </binding>
+                    <value>
+                        <analysis expression="xs:string(.[1])" analyzed="false"/>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="u3" model-prefixed-id="model" binding="true" value="true">
+                    <binding>
+                        <analysis expression="instance('instance')/a/*/parent::a" analyzed="false"/>
+                    </binding>
+                    <value>
+                        <analysis expression="xs:string(.[1])" analyzed="false"/>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="u4" model-prefixed-id="model" binding="true" value="true">
+                    <binding>
+                        <analysis expression="instance('instance')/a/*/ancestor::a" analyzed="false"/>
+                    </binding>
+                    <value>
+                        <analysis expression="xs:string(.[1])" analyzed="false"/>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="u5" model-prefixed-id="model" binding="true" value="true">
+                    <binding>
+                        <analysis expression="instance('instance')/a//parent::a" analyzed="false"/>
+                    </binding>
+                    <value>
+                        <analysis expression="xs:string(.[1])" analyzed="false"/>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="u6" model-prefixed-id="model" binding="true" value="true">
+                    <binding>
+                        <analysis expression="instance('instance')/a//ancestor::a" analyzed="false"/>
+                    </binding>
+                    <value>
+                        <analysis expression="xs:string(.[1])" analyzed="false"/>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="u7" model-prefixed-id="model" binding="true" value="true">
+                    <binding>
+                        <analysis expression="/a/b" analyzed="false"/>
+                    </binding>
+                    <value>
+                        <analysis expression="xs:string(.[1])" analyzed="false"/>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="u8" model-prefixed-id="model" binding="true" value="true">
+                    <binding>
+                        <analysis expression="../a/b" analyzed="false"/>
+                    </binding>
+                    <value>
+                        <analysis expression="xs:string(.[1])" analyzed="false"/>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="u9" model-prefixed-id="model" binding="true" value="true">
+                    <binding>
+                        <analysis expression="root()/a/b" analyzed="false"/>
+                    </binding>
+                    <value>
+                        <analysis expression="xs:string(.[1])" analyzed="false"/>
+                    </value>
+                </control>
+                <model scope="" prefixed-id="model" default-instance-prefixed-id="instance" analyzed-binds="true"/>
+            </request>
+        </output>
+    </test>
+
+    <test description="Handling of parent:: and ancestor:: axes" name="oxf:java">
+        <input name="config">
+            <config sourcepath="oxf:/" class="org.orbeon.oxf.xforms.analysis.XPathAnalysisProcessor"/>
+        </input>
+        <input name="form">
+            <xh:html xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+                <xh:head>
+                    <xf:model id="model" xxf:xpath-analysis="true">
+                        <xf:instance id="instance">
+                            <instance/>
+                        </xf:instance>
+
+                    </xf:model>
+                </xh:head>
+                <xh:body>
+                    <!-- parent:: -->
+                    <xf:input id="p1" ref="instance('instance')/a/b"/>
+                    <xf:input id="p2" ref="instance('instance')/a/.."/>
+                    <xf:input id="p3" ref="instance('instance')/a/../b"/>
+
+                    <!-- ancestor:: -->
+                    <xf:input id="a1" ref="instance('instance')/a/b/ancestor::a"/>
+                    <xf:input id="a2" ref="instance('instance')/a/b/ancestor::a/c"/>
+                    <xf:input id="a3" ref="instance('instance')/a/b/a/c/ancestor::a"/>
+                    <xf:input id="a4" ref="instance('instance')/a/b/a/(c/ancestor::a | d)"/>
+
+                </xh:body>
+            </xh:html>
+        </input>
+        <output name="analysis">
+            <request request-uri="/orbeon/doc/home-welcome" query-string="id=12&amp;print=false" method="GET">
+                <control scope="" prefixed-id="p1" model-prefixed-id="model" binding="true" value="true">
+                    <binding>
                         <analysis expression="instance('instance')/a/b" analyzed="true">
                             <returnable>
                                 <path>instance('instance')/a/b</path>
                             </returnable>
+                            <dependent-models>
+                                <model>model</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance</instances>
+                            </dependent-instances>
+                            <returnable-instances>
+                                <instances>instance</instances>
+                            </returnable-instances>
+                        </analysis>
+                    </binding>
+                    <value>
+                        <analysis expression="xs:string(.[1])" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance')/a/b</path>
+                            </value-dependent>
+                            <dependent-models>
+                                <model>model</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance</instances>
+                            </dependent-instances>
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="p2" model-prefixed-id="model" binding="false" value="true">
-                    <value>
+                <control scope="" prefixed-id="p2" model-prefixed-id="model" binding="true" value="true">
+                    <binding>
                         <analysis expression="instance('instance')/a/.." analyzed="true">
-                            <dependent>
-                                <path>instance('instance')/a</path>
-                            </dependent>
                             <returnable>
                                 <path>instance('instance')</path>
                             </returnable>
+                            <dependent-models>
+                                <model>model</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance</instances>
+                            </dependent-instances>
+                            <returnable-instances>
+                                <instances>instance</instances>
+                            </returnable-instances>
+                        </analysis>
+                    </binding>
+                    <value>
+                        <analysis expression="xs:string(.[1])" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance')</path>
+                            </value-dependent>
+                            <dependent-models>
+                                <model>model</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance</instances>
+                            </dependent-instances>
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="p3" model-prefixed-id="model" binding="false" value="true">
-                    <value>
+                <control scope="" prefixed-id="p3" model-prefixed-id="model" binding="true" value="true">
+                    <binding>
                         <analysis expression="instance('instance')/a/../b" analyzed="true">
-                            <dependent>
-                                <path>instance('instance')/a</path>
-                            </dependent>
                             <returnable>
                                 <path>instance('instance')/b</path>
                             </returnable>
+                            <dependent-models>
+                                <model>model</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance</instances>
+                            </dependent-instances>
+                            <returnable-instances>
+                                <instances>instance</instances>
+                            </returnable-instances>
+                        </analysis>
+                    </binding>
+                    <value>
+                        <analysis expression="xs:string(.[1])" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance')/b</path>
+                            </value-dependent>
+                            <dependent-models>
+                                <model>model</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance</instances>
+                            </dependent-instances>
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="a1" model-prefixed-id="model" binding="false" value="true">
-                    <value>
+                <control scope="" prefixed-id="a1" model-prefixed-id="model" binding="true" value="true">
+                    <binding>
                         <analysis expression="instance('instance')/a/b/ancestor::a" analyzed="true">
-                            <dependent>
-                                <path>instance('instance')/a/b</path>
-                            </dependent>
                             <returnable>
                                 <path>instance('instance')/a</path>
                             </returnable>
+                            <dependent-models>
+                                <model>model</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance</instances>
+                            </dependent-instances>
+                            <returnable-instances>
+                                <instances>instance</instances>
+                            </returnable-instances>
+                        </analysis>
+                    </binding>
+                    <value>
+                        <analysis expression="xs:string(.[1])" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance')/a</path>
+                            </value-dependent>
+                            <dependent-models>
+                                <model>model</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance</instances>
+                            </dependent-instances>
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="a2" model-prefixed-id="model" binding="false" value="true">
-                    <value>
+                <control scope="" prefixed-id="a2" model-prefixed-id="model" binding="true" value="true">
+                    <binding>
                         <analysis expression="instance('instance')/a/b/ancestor::a/c" analyzed="true">
-                            <dependent>
-                                <path>instance('instance')/a/b</path>
-                            </dependent>
                             <returnable>
                                 <path>instance('instance')/a/c</path>
                             </returnable>
+                            <dependent-models>
+                                <model>model</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance</instances>
+                            </dependent-instances>
+                            <returnable-instances>
+                                <instances>instance</instances>
+                            </returnable-instances>
+                        </analysis>
+                    </binding>
+                    <value>
+                        <analysis expression="xs:string(.[1])" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance')/a/c</path>
+                            </value-dependent>
+                            <dependent-models>
+                                <model>model</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance</instances>
+                            </dependent-instances>
+                        </analysis>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="a3" model-prefixed-id="model" binding="true" value="true">
+                    <binding>
+                        <analysis expression="instance('instance')/a/b/a/c/ancestor::a" analyzed="true">
+                            <returnable>
+                                <path>instance('instance')/a</path>
+                                <path>instance('instance')/a/b/a</path>
+                            </returnable>
+                            <dependent-models>
+                                <model>model</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance</instances>
+                            </dependent-instances>
+                            <returnable-instances>
+                                <instances>instance</instances>
+                            </returnable-instances>
+                        </analysis>
+                    </binding>
+                    <value>
+                        <analysis expression="xs:string(.[1])" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance')/a</path>
+                                <path>instance('instance')/a/b/a</path>
+                            </value-dependent>
+                            <dependent-models>
+                                <model>model</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance</instances>
+                            </dependent-instances>
+                        </analysis>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="a4" model-prefixed-id="model" binding="true" value="true">
+                    <binding>
+                        <analysis expression="instance('instance')/a/b/a/(c/ancestor::a | d)" analyzed="true">
+                            <returnable>
+                                <path>instance('instance')/a</path>
+                                <path>instance('instance')/a/b/a</path>
+                                <path>instance('instance')/a/b/a/d</path>
+                            </returnable>
+                            <dependent-models>
+                                <model>model</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance</instances>
+                            </dependent-instances>
+                            <returnable-instances>
+                                <instances>instance</instances>
+                            </returnable-instances>
+                        </analysis>
+                    </binding>
+                    <value>
+                        <analysis expression="xs:string(.[1])" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance')/a</path>
+                                <path>instance('instance')/a/b/a</path>
+                                <path>instance('instance')/a/b/a/d</path>
+                            </value-dependent>
+                            <dependent-models>
+                                <model>model</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance</instances>
+                            </dependent-instances>
                         </analysis>
                     </value>
                 </control>
                 <model scope="" prefixed-id="model" default-instance-prefixed-id="instance" analyzed-binds="true"/>
+            </request>
+        </output>
+    </test>
+
+    <test description="Dependencies on other nodes" name="oxf:java">
+        <input name="config">
+            <config sourcepath="oxf:/" class="org.orbeon.oxf.xforms.analysis.XPathAnalysisProcessor"/>
+        </input>
+        <input name="form">
+            <xh:html xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+                <xh:head>
+                    <xf:model id="model" xxf:xpath-analysis="true">
+                        <xf:instance id="instance">
+                            <instance/>
+                        </xf:instance>
+
+                    </xf:model>
+                </xh:head>
+                <xh:body>
+                    <xf:input id="d1" ref="instance('instance')/a[b]"/>
+                    <xf:input id="d2" ref="instance('instance')/a[b = 42]"/>
+                    <xf:input id="d3" ref="instance('instance')/a[../b = 42]"/>
+                </xh:body>
+            </xh:html>
+        </input>
+        <output name="analysis">
+            <request request-uri="/orbeon/doc/home-welcome" query-string="id=12&amp;print=false" method="GET">
+                <control scope="" prefixed-id="d1" model-prefixed-id="model" binding="true" value="true">
+                    <binding>
+                        <analysis expression="instance('instance')/a[b]" analyzed="true">
+                            <returnable>
+                                <path>instance('instance')/a</path>
+                            </returnable>
+                            <dependent-models>
+                                <model>model</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance</instances>
+                            </dependent-instances>
+                            <returnable-instances>
+                                <instances>instance</instances>
+                            </returnable-instances>
+                        </analysis>
+                    </binding>
+                    <value>
+                        <analysis expression="xs:string(.[1])" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance')/a</path>
+                            </value-dependent>
+                            <dependent-models>
+                                <model>model</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance</instances>
+                            </dependent-instances>
+                        </analysis>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="d2" model-prefixed-id="model" binding="true" value="true">
+                    <binding>
+                        <analysis expression="instance('instance')/a[b = 42]" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance')/a/b</path>
+                            </value-dependent>
+                            <returnable>
+                                <path>instance('instance')/a</path>
+                            </returnable>
+                            <dependent-models>
+                                <model>model</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance</instances>
+                            </dependent-instances>
+                            <returnable-instances>
+                                <instances>instance</instances>
+                            </returnable-instances>
+                        </analysis>
+                    </binding>
+                    <value>
+                        <analysis expression="xs:string(.[1])" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance')/a</path>
+                                <path>instance('instance')/a/b</path>
+                            </value-dependent>
+                            <dependent-models>
+                                <model>model</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance</instances>
+                            </dependent-instances>
+                        </analysis>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="d3" model-prefixed-id="model" binding="true" value="true">
+                    <binding>
+                        <analysis expression="instance('instance')/a[../b = 42]" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance')/b</path>
+                            </value-dependent>
+                            <returnable>
+                                <path>instance('instance')/a</path>
+                            </returnable>
+                            <dependent-models>
+                                <model>model</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance</instances>
+                            </dependent-instances>
+                            <returnable-instances>
+                                <instances>instance</instances>
+                            </returnable-instances>
+                        </analysis>
+                    </binding>
+                    <value>
+                        <analysis expression="xs:string(.[1])" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance')/a</path>
+                                <path>instance('instance')/b</path>
+                            </value-dependent>
+                            <dependent-models>
+                                <model>model</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance</instances>
+                            </dependent-instances>
+                        </analysis>
+                    </value>
+                </control>
+                <model scope="" prefixed-id="model" default-instance-prefixed-id="instance" analyzed-binds="true"/>
+            </request>
+        </output>
+    </test>
+    
+    <test description="Model variables" name="oxf:java">
+        <input name="config">
+            <config sourcepath="oxf:/" class="org.orbeon.oxf.xforms.analysis.XPathAnalysisProcessor"/>
+        </input>
+        <input name="form" href="oxf:/org/orbeon/oxf/xforms/analysis/model-variables.xml"/>
+        <output name="analysis">
+            <request request-uri="/orbeon/doc/home-welcome" query-string="id=12&amp;print=false" method="GET">
+                <control scope="" prefixed-id="output1" model-prefixed-id="model1" binding="false" value="true">
+                    <value>
+                        <analysis expression="xs:string(($mv)[1])" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance1')</path>
+                            </value-dependent>
+                            <dependent-models>
+                                <model>model1</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance1</instances>
+                            </dependent-instances>
+                        </analysis>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="group2" model-prefixed-id="model2" binding="false" value="false"/>
+                <control scope="" prefixed-id="output2a" model-prefixed-id="model2" binding="false" value="true">
+                    <value>
+                        <analysis expression="xs:string(($mv)[1])" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance2')</path>
+                            </value-dependent>
+                            <dependent-models>
+                                <model>model2</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance2</instances>
+                            </dependent-instances>
+                        </analysis>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="output2b" model-prefixed-id="model1" binding="false" value="true">
+                    <value>
+                        <analysis expression="xs:string(($mv)[1])" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance1')</path>
+                            </value-dependent>
+                            <dependent-models>
+                                <model>model1</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance1</instances>
+                            </dependent-instances>
+                        </analysis>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="group3" model-prefixed-id="model1" binding="true" value="false">
+                    <binding>
+                        <analysis expression="xxf:instance('instance2')" analyzed="true">
+                            <returnable>
+                                <path>instance('instance2')</path>
+                            </returnable>
+                            <dependent-models>
+                                <model>model2</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance2</instances>
+                            </dependent-instances>
+                            <returnable-instances>
+                                <instances>instance2</instances>
+                            </returnable-instances>
+                        </analysis>
+                    </binding>
+                </control>
+                <control scope="" prefixed-id="output3a" model-prefixed-id="model1" binding="false" value="true">
+                    <value>
+                        <analysis expression="xs:string(($mv)[1])" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance1')</path>
+                            </value-dependent>
+                            <dependent-models>
+                                <model>model1</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance1</instances>
+                            </dependent-instances>
+                        </analysis>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="output3b" model-prefixed-id="model1" binding="false" value="true">
+                    <value>
+                        <analysis expression="xs:string(($mv)[1])" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance1')</path>
+                            </value-dependent>
+                            <dependent-models>
+                                <model>model1</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance1</instances>
+                            </dependent-instances>
+                        </analysis>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="output3c" model-prefixed-id="model2" binding="false" value="true">
+                    <value>
+                        <analysis expression="xs:string(($mv)[1])" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance2')</path>
+                            </value-dependent>
+                            <dependent-models>
+                                <model>model2</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance2</instances>
+                            </dependent-instances>
+                        </analysis>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="group4" model-prefixed-id="model1" binding="false" value="false"/>
+                <control scope="" prefixed-id="output4a" model-prefixed-id="model1" binding="false" value="true">
+                    <value>
+                        <analysis expression="xs:string(($mv)[1])" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance1')</path>
+                            </value-dependent>
+                            <dependent-models>
+                                <model>model1</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance1</instances>
+                            </dependent-instances>
+                        </analysis>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="output4b" model-prefixed-id="model1" binding="false" value="true">
+                    <value>
+                        <analysis expression="xs:string(($mv)[1])" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance1')</path>
+                            </value-dependent>
+                            <dependent-models>
+                                <model>model1</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance1</instances>
+                            </dependent-instances>
+                        </analysis>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="output4c" model-prefixed-id="model2" binding="false" value="true">
+                    <value>
+                        <analysis expression="xs:string(($mv)[1])" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance2')</path>
+                            </value-dependent>
+                            <dependent-models>
+                                <model>model2</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance2</instances>
+                            </dependent-instances>
+                        </analysis>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="xf-3" model-prefixed-id="model1" binding="false" value="false">
+                    <value>
+                        <analysis expression="$mv" analyzed="true">
+                            <returnable>
+                                <path>instance('instance1')</path>
+                            </returnable>
+                            <dependent-models>
+                                <model>model1</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance1</instances>
+                            </dependent-instances>
+                            <returnable-instances>
+                                <instances>instance1</instances>
+                            </returnable-instances>
+                        </analysis>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="xf-4" model-prefixed-id="model2" binding="false" value="false">
+                    <value>
+                        <analysis expression="$mv" analyzed="true">
+                            <returnable>
+                                <path>instance('instance2')</path>
+                            </returnable>
+                            <dependent-models>
+                                <model>model2</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance2</instances>
+                            </dependent-instances>
+                            <returnable-instances>
+                                <instances>instance2</instances>
+                            </returnable-instances>
+                        </analysis>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="output5a" model-prefixed-id="model1" binding="false" value="true">
+                    <value>
+                        <analysis expression="xs:string(($mv1)[1])" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance1')</path>
+                            </value-dependent>
+                            <dependent-models>
+                                <model>model1</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance1</instances>
+                            </dependent-instances>
+                        </analysis>
+                    </value>
+                </control>
+                <control scope="" prefixed-id="output5b" model-prefixed-id="model1" binding="false" value="true">
+                    <value>
+                        <analysis expression="xs:string(($mv2)[1])" analyzed="true">
+                            <value-dependent>
+                                <path>instance('instance2')</path>
+                            </value-dependent>
+                            <dependent-models>
+                                <model>model2</model>
+                            </dependent-models>
+                            <dependent-instances>
+                                <instances>instance2</instances>
+                            </dependent-instances>
+                        </analysis>
+                    </value>
+                </control>
+                <model scope="" prefixed-id="model1" default-instance-prefixed-id="instance1" analyzed-binds="true">
+                    <variable scope="" prefixed-id="xf-1" model-prefixed-id="model1" binding="false" value="true" name="mv">
+                        <binding>
+                            <analysis expression="instance('instance1')" analyzed="true">
+                                <returnable>
+                                    <path>instance('instance1')</path>
+                                </returnable>
+                                <dependent-models>
+                                    <model>model1</model>
+                                </dependent-models>
+                                <dependent-instances>
+                                    <instances>instance1</instances>
+                                </dependent-instances>
+                                <returnable-instances>
+                                    <instances>instance1</instances>
+                                </returnable-instances>
+                            </analysis>
+                        </binding>
+                        <value>
+                            <analysis expression="instance()" analyzed="true">
+                                <returnable>
+                                    <path>instance('instance1')</path>
+                                </returnable>
+                                <dependent-models>
+                                    <model>model1</model>
+                                </dependent-models>
+                                <dependent-instances>
+                                    <instances>instance1</instances>
+                                </dependent-instances>
+                                <returnable-instances>
+                                    <instances>instance1</instances>
+                                </returnable-instances>
+                            </analysis>
+                        </value>
+                    </variable>
+                </model>
+                <model scope="" prefixed-id="model2" default-instance-prefixed-id="instance2" analyzed-binds="true">
+                    <variable scope="" prefixed-id="xf-2" model-prefixed-id="model2" binding="false" value="true" name="mv">
+                        <binding>
+                            <analysis expression="instance('instance2')" analyzed="true">
+                                <returnable>
+                                    <path>instance('instance2')</path>
+                                </returnable>
+                                <dependent-models>
+                                    <model>model2</model>
+                                </dependent-models>
+                                <dependent-instances>
+                                    <instances>instance2</instances>
+                                </dependent-instances>
+                                <returnable-instances>
+                                    <instances>instance2</instances>
+                                </returnable-instances>
+                            </analysis>
+                        </binding>
+                        <value>
+                            <analysis expression="instance()" analyzed="true">
+                                <returnable>
+                                    <path>instance('instance2')</path>
+                                </returnable>
+                                <dependent-models>
+                                    <model>model2</model>
+                                </dependent-models>
+                                <dependent-instances>
+                                    <instances>instance2</instances>
+                                </dependent-instances>
+                                <returnable-instances>
+                                    <instances>instance2</instances>
+                                </returnable-instances>
+                            </analysis>
+                        </value>
+                    </variable>
+                </model>
+            </request>
+        </output>
+    </test>
+
+    <test description="xxforms:instance function within models" name="oxf:java">
+        <input name="config">
+            <config sourcepath="oxf:/" class="org.orbeon.oxf.xforms.analysis.XPathAnalysisProcessor"/>
+        </input>
+        <input name="form">
+            <xh:html xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+                <xh:head>
+                    <xf:model id="model1" xxf:xpath-analysis="true">
+                        <xf:instance id="instance1">
+                            <instance>42</instance>
+                        </xf:instance>
+                        <xxf:variable name="mv" select="xxf:instance('instance2')"/>
+                    </xf:model>
+                    <xf:model id="model2">
+                        <xf:instance id="instance2">
+                            <instance>43</instance>
+                        </xf:instance>
+                        <xxf:variable name="mv" select="xxf:instance('instance1')"/>
+                    </xf:model>
+                </xh:head>
+                <xh:body/>
+            </xh:html>
+        </input>
+        <output name="analysis">
+            <request request-uri="/orbeon/doc/home-welcome" query-string="id=12&amp;print=false" method="GET">
+                <model scope="" prefixed-id="model1" default-instance-prefixed-id="instance1" analyzed-binds="true">
+                    <variable scope="" prefixed-id="xf-1" model-prefixed-id="model1" binding="false" value="true" name="mv">
+                        <binding>
+                            <analysis expression="instance('instance1')" analyzed="true">
+                                <returnable>
+                                    <path>instance('instance1')</path>
+                                </returnable>
+                                <dependent-models>
+                                    <model>model1</model>
+                                </dependent-models>
+                                <dependent-instances>
+                                    <instances>instance1</instances>
+                                </dependent-instances>
+                                <returnable-instances>
+                                    <instances>instance1</instances>
+                                </returnable-instances>
+                            </analysis>
+                        </binding>
+                        <value>
+                            <analysis expression="xxf:instance('instance2')" analyzed="true">
+                                <returnable>
+                                    <path>instance('instance2')</path>
+                                </returnable>
+                                <dependent-models>
+                                    <model>model2</model>
+                                </dependent-models>
+                                <dependent-instances>
+                                    <instances>instance2</instances>
+                                </dependent-instances>
+                                <returnable-instances>
+                                    <instances>instance2</instances>
+                                </returnable-instances>
+                            </analysis>
+                        </value>
+                    </variable>
+                </model>
+                <model scope="" prefixed-id="model2" default-instance-prefixed-id="instance2" analyzed-binds="true">
+                    <variable scope="" prefixed-id="xf-2" model-prefixed-id="model2" binding="false" value="true" name="mv">
+                        <binding>
+                            <analysis expression="instance('instance2')" analyzed="true">
+                                <returnable>
+                                    <path>instance('instance2')</path>
+                                </returnable>
+                                <dependent-models>
+                                    <model>model2</model>
+                                </dependent-models>
+                                <dependent-instances>
+                                    <instances>instance2</instances>
+                                </dependent-instances>
+                                <returnable-instances>
+                                    <instances>instance2</instances>
+                                </returnable-instances>
+                            </analysis>
+                        </binding>
+                        <value>
+                            <analysis expression="xxf:instance('instance1')" analyzed="true">
+                                <returnable>
+                                    <path>instance('instance1')</path>
+                                </returnable>
+                                <dependent-models>
+                                    <model>model1</model>
+                                </dependent-models>
+                                <dependent-instances>
+                                    <instances>instance1</instances>
+                                </dependent-instances>
+                                <returnable-instances>
+                                    <instances>instance1</instances>
+                                </returnable-instances>
+                            </analysis>
+                        </value>
+                    </variable>
+                </model>
             </request>
         </output>
     </test>
