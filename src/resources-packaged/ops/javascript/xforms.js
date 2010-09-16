@@ -3738,7 +3738,7 @@ ORBEON.xforms.action = {
         _messageQueue: [],
         _messageDialog: null,
 
-        init: function() {
+        clinit: function() {
             YAHOO.util.Event.onDOMReady(function() {
                 // Prevent SimpleDialog from registering itself on the form
                 YAHOO.widget.SimpleDialog.prototype.registerForm = function() {};
@@ -3790,7 +3790,7 @@ ORBEON.xforms.action = {
 };
 
 // TODO: Should have generic code to call init() on all static classes, if we determine this is a good practice
-ORBEON.xforms.action.Message.init();
+ORBEON.xforms.action.Message.clinit();
 
 ORBEON.xforms.XBL = {
 
@@ -5459,7 +5459,8 @@ ORBEON.xforms.Init = {
                 draggable: false,
                 fixedcenter: false,
                 constraintoviewport: true,
-                underlay: "none"
+                underlay: "none",
+                usearia: true
             });
             // Close the dialog when users click on document
             YAHOO.util.Event.addListener(document.body, "click", ORBEON.xforms.Events.dialogMinimalBodyClick, yuiDialog);
@@ -5472,7 +5473,8 @@ ORBEON.xforms.Init = {
                 draggable: isDraggable,
                 fixedcenter: false,
                 constraintoviewport: true,
-                underlay: "none"            // Similarly, setting the underlay to "shadow" conflicts with the CSS used to limit the width and height of the dialog on IE6
+                underlay: "none", // Similarly, setting the underlay to "shadow" conflicts with the CSS used to limit the width and height of the dialog on IE6
+                usearia: true
             });
 			yuiDialog.showEvent.subscribe(ORBEON.xforms.Events.dialogShow, dialog.id);
             // Register listener for when the dialog is closed by a click on the "x"
@@ -6062,7 +6064,7 @@ ORBEON.xforms.Server = {
         var uploadElements = YAHOO.util.Dom.getElementsByClassName("xforms-upload", "span");
         for (var uploadIndex = 0; uploadIndex < uploadElements.length; uploadIndex++) {
             var uploadElement = uploadElements[uploadIndex];
-            if (ORBEON.util.Dom.hasClass(uploadElement, "xforms-upload-state-empty"))// this also excludes templates
+            if (ORBEON.util.Dom.hasClass(uploadElement, "xforms-upload-state-empty")) // This also excludes templates
                 ORBEON.util.Dom.clearUploadControl(uploadElement);
         }
         ORBEON.xforms.Server.handleResponseAjax(o);
@@ -7298,7 +7300,7 @@ ORBEON.xforms.Server = {
                                 var delay = ORBEON.util.Dom.getAttribute(serverEventsElement, "delay");
                                 var showProgress = ORBEON.util.Dom.getAttribute(serverEventsElement, "show-progress");
                                 showProgress = YAHOO.lang.isNull(showProgress) || showProgress == "true";
-                                var discardable = ORBEON.util.Dom.getAttribute(serverEventsElement, "discardable")
+                                var discardable = ORBEON.util.Dom.getAttribute(serverEventsElement, "discardable");
                                 discardable = ! YAHOO.lang.isNull(discardable) & discardable == "true";
                                 var progressMessage = ORBEON.util.Dom.getAttribute(serverEventsElement, "progress-message");
                                 if (delay == null) {
