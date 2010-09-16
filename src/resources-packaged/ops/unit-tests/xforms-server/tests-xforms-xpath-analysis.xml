@@ -1937,17 +1937,7 @@
                 </control>
                 <control scope="my-foo" prefixed-id="my-foo$ro" model-prefixed-id="my-foo$model" binding="false" value="false">
                     <value>
-                        <analysis expression="exf:readonly($external)" analyzed="true">
-                            <value-dependent>
-                                <path>instance('instance')/foo</path>
-                            </value-dependent>
-                            <dependent-models>
-                                <model>model</model>
-                            </dependent-models>
-                            <dependent-instances>
-                                <instances>instance</instances>
-                            </dependent-instances>
-                        </analysis>
+                        <analysis expression="exf:readonly($external)" analyzed="false"/>
                     </value>
                 </control>
                 <control scope="my-foo" prefixed-id="my-foo$group-external" model-prefixed-id="my-foo$model" binding="true" value="false">
@@ -1985,17 +1975,7 @@
                 </control>
                 <control scope="my-foo" prefixed-id="my-foo$oro" model-prefixed-id="my-foo$model" binding="false" value="true">
                     <value>
-                        <analysis expression="xs:string(($readonly)[1])" analyzed="true">
-                            <value-dependent>
-                                <path>instance('instance')/foo</path>
-                            </value-dependent>
-                            <dependent-models>
-                                <model>model</model>
-                            </dependent-models>
-                            <dependent-instances>
-                                <instances>instance</instances>
-                            </dependent-instances>
-                        </analysis>
+                        <analysis expression="xs:string(($readonly)[1])" analyzed="false"/>
                     </value>
                 </control>
                 <control scope="" prefixed-id="my-foo" model-prefixed-id="model" binding="true" value="false">
