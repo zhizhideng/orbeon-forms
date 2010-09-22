@@ -1322,7 +1322,7 @@ ORBEON.util.Test = {
                 // Wait another 100 ms
                 setTimeout(checkAjaxReceived, 100);
             } else {
-                // We done with Ajax requets, continue with the test
+                // We done with Ajax requests, continue with the test
                 testCase.resume(function() {
                     afterAjaxResponseFunction.call(testCase);
                 });
@@ -1332,6 +1332,21 @@ ORBEON.util.Test = {
         causingAjaxRequestFunction.call(testCase);
         setTimeout(checkAjaxReceived, 100);
         testCase.wait(20000);
+    },
+
+    /**
+     * Similar to executeCausingAjaxRequest
+     */
+    executeSequenceCausingAjaxRequest: function(testCase, tests) {
+        if (tests.length > 0) {
+            var testTuple = tests.shift();
+            ORBEON.util.Test.executeCausingAjaxRequest(testCase, function() {
+                testTuple[0].call(testCase);
+            }, function() {
+                testTuple[1].call(testCase);
+                ORBEON.util.Test.executeSequenceCausingAjaxRequest(testCase, tests);
+            });
+        }
     },
 
     /**
@@ -1399,11 +1414,16 @@ ORBEON.xforms.Document = {
         var stringValue = "" + newValue;
         var control = ORBEON.util.Dom.getElementById(controlId);
         if (control == null) throw "ORBEON.xforms.Document.setValue: can't find control id '" + controlId + "'";
-        // Directly change the value of the control in the UI without waiting for a response from the server
-        ORBEON.xforms.Controls.setCurrentValue(control, stringValue);
-        // And also fire server event
-        var event = new ORBEON.xforms.Server.Event(null, control.id, null, stringValue, "xxforms-value-change-with-focus-change");
-        ORBEON.xforms.Server.fireEvents([event], false);
+
+        if (!ORBEON.util.Dom.hasClass(control, "xforms-output") && !ORBEON.util.Dom.hasClass(control, "xforms-upload")) {// ignore event on xforms:output and xforms:upload    
+            // Directly change the value of the control in the UI without waiting for a response from the server
+            ORBEON.xforms.Controls.setCurrentValue(control, stringValue);
+            // And also fire server event
+            var event = new ORBEON.xforms.Server.Event(null, control.id, null, stringValue, "xxforms-value-change-with-focus-change");
+            ORBEON.xforms.Server.fireEvents([event], false);
+        } else {
+            throw "ORBEON.xforms.Document.setValue: can't setvalue on output or upload control '" + controlId + "'";
+        }
     },
 
     /**
