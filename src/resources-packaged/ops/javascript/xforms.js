@@ -1418,6 +1418,9 @@ ORBEON.xforms.Document = {
         // User might pass non-string values, so make sure the result is a string
         var stringValue = "" + newValue;
         var control = ORBEON.util.Dom.getElementById(controlId);
+        // NOTE: Here we would like to check also ORBEON.xforms.Controls.isInRepeatTemplate(control), however this fails
+        // with certain versions of IE due to the infamous name/id mixup bug. So for now the caller better call with an
+        // id that is not that of a form control within a repeat template.
         if (control == null) throw "ORBEON.xforms.Document.setValue: can't find control id '" + controlId + "'";
 
         if (!ORBEON.util.Dom.hasClass(control, "xforms-output") && !ORBEON.util.Dom.hasClass(control, "xforms-upload")) {// ignore event on xforms:output and xforms:upload    
@@ -1797,6 +1800,12 @@ ORBEON.xforms.Controls = {
         } else if (ORBEON.util.Dom.hasClass(control, "xforms-range")) {
             return ORBEON.xforms.Globals.sliderYui[control.id].previousVal / 200;
         }
+    },
+
+    isInRepeatTemplate: function(element) {
+        return ORBEON.util.Dom.existsAncestorOrSelf(element, function(node) {
+            return ORBEON.util.Dom.hasClass(node, "xforms-repeat-template")
+        }, null, false);
     },
 
     /**
@@ -5602,7 +5611,7 @@ ORBEON.xforms.Server = {
      * When an exception happens while we communicate with the server, we catch it and show an error in the UI.
      * This is to prevent the UI from becoming totally unusable after an error.
      */
-    exceptionWhenTalkingToServer: function(e, formID) {
+    exceptionWhenTalkingToServer: function(e, formID) { 
         ORBEON.util.Utils.logMessage("JavaScript error");
         ORBEON.util.Utils.logMessage(e);
         var details = "Exception in client-side code.";
