@@ -5708,11 +5708,9 @@ ORBEON.xforms.Server = {
                 // After a delay (e.g. 500 ms), run executeNextRequest() and send queued events to server
                 // if there are no other executeNextRequest() that have been added to the queue after this
                 // request.
-                // XXX TODO: used to be: ORBEON.util.Utils.getProperty(DELAY_BEFORE_INCREMENTAL_REQUEST_PROPERTY), NOT:
-                //                       ORBEON.util.Utils.getProperty(DELAY_BEFORE_FORCE_INCREMENTAL_REQUEST_PROPERTY)
                 window.setTimeout(
                     function() { ORBEON.xforms.Server.executeNextRequest(false); },
-                    ORBEON.util.Properties.delayBeforeForceIncrementalRequest.get()
+                    ORBEON.util.Properties.delayBeforeIncrementalRequest.get()
                 );
             } else {
                 // After a very short delay (e.g. 20 ms), run executeNextRequest() and force queued events
@@ -5757,7 +5755,6 @@ ORBEON.xforms.Server = {
         bypassRequestQueue = typeof(bypassRequestQueue) == "boolean" && bypassRequestQueue == true;
 
         ORBEON.xforms.Globals.executeEventFunctionQueued--;
-        var executedRequest = false;
         if (!ORBEON.xforms.Globals.requestInProgress
                 && ORBEON.xforms.Globals.eventQueue.length > 0
                 && (bypassRequestQueue || ORBEON.xforms.Globals.executeEventFunctionQueued == 0)) {
@@ -6088,7 +6085,6 @@ ORBEON.xforms.Server = {
                     }
 
                     // Send request
-                    executedRequest = true;
                     ORBEON.xforms.Globals.requestTryCount = 0;
                     ORBEON.xforms.Globals.requestDocument = requestDocumentString.join("");
                     ORBEON.xforms.Server.asyncRequest();
@@ -6099,7 +6095,7 @@ ORBEON.xforms.Server = {
         // Hide loading indicator if we have not started a new request (nothing more to run)
         // and there are not events in the queue. However make sure not to hide the error message
         // if the last XHR query returned an error.
-        if (!executedRequest && ORBEON.xforms.Globals.eventQueue.length == 0) {
+        if (!ORBEON.xforms.Globals.requestInProgress && ORBEON.xforms.Globals.eventQueue.length == 0) {
             xformsDisplayIndicator("none");
         }
     },
