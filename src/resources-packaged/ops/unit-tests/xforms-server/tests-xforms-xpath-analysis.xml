@@ -118,7 +118,7 @@
         </input>
         <output name="analysis">
             <request request-uri="/orbeon/doc/home-welcome" query-string="id=12&amp;print=false" method="GET">
-                <control scope="" prefixed-id="u1" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="u1" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis analyzed="false"/>
                     </binding>
@@ -126,7 +126,7 @@
                         <analysis expression="xs:string(.[1])" analyzed="false"/>
                     </value>
                 </control>
-                <control scope="" prefixed-id="u2" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="u2" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis analyzed="false"/>
                     </binding>
@@ -178,7 +178,7 @@
         </input>
         <output name="analysis">
             <request request-uri="/orbeon/doc/home-welcome" query-string="id=12&amp;print=false" method="GET">
-                <control scope="" prefixed-id="u1" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="u1" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis expression="instance('instance')/a/*" analyzed="false"/>
                     </binding>
@@ -186,7 +186,7 @@
                         <analysis expression="xs:string(.[1])" analyzed="false"/>
                     </value>
                 </control>
-                <control scope="" prefixed-id="u2" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="u2" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis expression="instance('instance')/*/b" analyzed="false"/>
                     </binding>
@@ -194,7 +194,7 @@
                         <analysis expression="xs:string(.[1])" analyzed="false"/>
                     </value>
                 </control>
-                <control scope="" prefixed-id="u3" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="u3" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis expression="instance('instance')/a/*/parent::a" analyzed="false"/>
                     </binding>
@@ -202,7 +202,7 @@
                         <analysis expression="xs:string(.[1])" analyzed="false"/>
                     </value>
                 </control>
-                <control scope="" prefixed-id="u4" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="u4" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis expression="instance('instance')/a/*/ancestor::a" analyzed="false"/>
                     </binding>
@@ -210,7 +210,7 @@
                         <analysis expression="xs:string(.[1])" analyzed="false"/>
                     </value>
                 </control>
-                <control scope="" prefixed-id="u5" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="u5" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis expression="instance('instance')/a//parent::a" analyzed="false"/>
                     </binding>
@@ -218,7 +218,7 @@
                         <analysis expression="xs:string(.[1])" analyzed="false"/>
                     </value>
                 </control>
-                <control scope="" prefixed-id="u6" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="u6" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis expression="instance('instance')/a//ancestor::a" analyzed="false"/>
                     </binding>
@@ -226,7 +226,7 @@
                         <analysis expression="xs:string(.[1])" analyzed="false"/>
                     </value>
                 </control>
-                <control scope="" prefixed-id="u7" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="u7" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis expression="/a/b" analyzed="false"/>
                     </binding>
@@ -234,7 +234,7 @@
                         <analysis expression="xs:string(.[1])" analyzed="false"/>
                     </value>
                 </control>
-                <control scope="" prefixed-id="u8" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="u8" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis expression="../a/b" analyzed="false"/>
                     </binding>
@@ -242,7 +242,7 @@
                         <analysis expression="xs:string(.[1])" analyzed="false"/>
                     </value>
                 </control>
-                <control scope="" prefixed-id="u9" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="u9" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis expression="root()/a/b" analyzed="false"/>
                     </binding>
@@ -286,7 +286,7 @@
         </input>
         <output name="analysis">
             <request request-uri="/orbeon/doc/home-welcome" query-string="id=12&amp;print=false" method="GET">
-                <control scope="" prefixed-id="p1" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="p1" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis expression="instance('instance')/a/b" analyzed="true">
                             <returnable>
@@ -317,7 +317,7 @@
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="p2" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="p2" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis expression="instance('instance')/a/.." analyzed="true">
                             <returnable>
@@ -348,7 +348,7 @@
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="p3" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="p3" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis expression="instance('instance')/a/../b" analyzed="true">
                             <returnable>
@@ -379,7 +379,7 @@
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="a1" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="a1" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis expression="instance('instance')/a/b/ancestor::a" analyzed="true">
                             <returnable>
@@ -410,7 +410,7 @@
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="a2" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="a2" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis expression="instance('instance')/a/b/ancestor::a/c" analyzed="true">
                             <returnable>
@@ -441,7 +441,7 @@
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="a3" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="a3" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis expression="instance('instance')/a/b/a/c/ancestor::a" analyzed="true">
                             <returnable>
@@ -474,7 +474,7 @@
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="a4" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="a4" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis expression="instance('instance')/a/b/a/(c/ancestor::a | d)" analyzed="true">
                             <returnable>
@@ -536,7 +536,7 @@
         </input>
         <output name="analysis">
             <request request-uri="/orbeon/doc/home-welcome" query-string="id=12&amp;print=false" method="GET">
-                <control scope="" prefixed-id="d1" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="d1" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis expression="instance('instance')/a[b]" analyzed="true">
                             <returnable>
@@ -567,7 +567,7 @@
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="d2" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="d2" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis expression="instance('instance')/a[b = 42]" analyzed="true">
                             <value-dependent>
@@ -602,7 +602,7 @@
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="d3" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="d3" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis expression="instance('instance')/a[../b = 42]" analyzed="true">
                             <value-dependent>
@@ -649,7 +649,7 @@
         <input name="form" href="oxf:/org/orbeon/oxf/xforms/analysis/model-variables.xml"/>
         <output name="analysis">
             <request request-uri="/orbeon/doc/home-welcome" query-string="id=12&amp;print=false" method="GET">
-                <control scope="" prefixed-id="output1" model-prefixed-id="model1" binding="false" value="true">
+                <control name="output" scope="" prefixed-id="output1" model-prefixed-id="model1" binding="false" value="true">
                     <value>
                         <analysis expression="xs:string(($mv)[1])" analyzed="true">
                             <value-dependent>
@@ -664,8 +664,8 @@
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="group2" model-prefixed-id="model2" binding="false" value="false"/>
-                <control scope="" prefixed-id="output2a" model-prefixed-id="model2" binding="false" value="true">
+                <control name="group" scope="" prefixed-id="group2" model-prefixed-id="model2" binding="false" value="false"/>
+                <control name="output" scope="" prefixed-id="output2a" model-prefixed-id="model2" binding="false" value="true">
                     <value>
                         <analysis expression="xs:string(($mv)[1])" analyzed="true">
                             <value-dependent>
@@ -680,7 +680,7 @@
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="output2b" model-prefixed-id="model1" binding="false" value="true">
+                <control name="output" scope="" prefixed-id="output2b" model-prefixed-id="model1" binding="false" value="true">
                     <value>
                         <analysis expression="xs:string(($mv)[1])" analyzed="true">
                             <value-dependent>
@@ -695,7 +695,7 @@
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="group3" model-prefixed-id="model1" binding="true" value="false">
+                <control name="group" scope="" prefixed-id="group3" model-prefixed-id="model1" binding="true" value="false">
                     <binding>
                         <analysis expression="xxf:instance('instance2')" analyzed="true">
                             <returnable>
@@ -713,7 +713,7 @@
                         </analysis>
                     </binding>
                 </control>
-                <control scope="" prefixed-id="output3a" model-prefixed-id="model1" binding="false" value="true">
+                <control name="output" scope="" prefixed-id="output3a" model-prefixed-id="model1" binding="false" value="true">
                     <value>
                         <analysis expression="xs:string(($mv)[1])" analyzed="true">
                             <value-dependent>
@@ -728,7 +728,7 @@
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="output3b" model-prefixed-id="model1" binding="false" value="true">
+                <control name="output" scope="" prefixed-id="output3b" model-prefixed-id="model1" binding="false" value="true">
                     <value>
                         <analysis expression="xs:string(($mv)[1])" analyzed="true">
                             <value-dependent>
@@ -743,7 +743,7 @@
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="output3c" model-prefixed-id="model2" binding="false" value="true">
+                <control name="output" scope="" prefixed-id="output3c" model-prefixed-id="model2" binding="false" value="true">
                     <value>
                         <analysis expression="xs:string(($mv)[1])" analyzed="true">
                             <value-dependent>
@@ -758,8 +758,8 @@
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="group4" model-prefixed-id="model1" binding="false" value="false"/>
-                <control scope="" prefixed-id="output4a" model-prefixed-id="model1" binding="false" value="true">
+                <control name="group" scope="" prefixed-id="group4" model-prefixed-id="model1" binding="false" value="false"/>
+                <control name="output" scope="" prefixed-id="output4a" model-prefixed-id="model1" binding="false" value="true">
                     <value>
                         <analysis expression="xs:string(($mv)[1])" analyzed="true">
                             <value-dependent>
@@ -774,7 +774,7 @@
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="output4b" model-prefixed-id="model1" binding="false" value="true">
+                <control name="output" scope="" prefixed-id="output4b" model-prefixed-id="model1" binding="false" value="true">
                     <value>
                         <analysis expression="xs:string(($mv)[1])" analyzed="true">
                             <value-dependent>
@@ -789,7 +789,7 @@
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="output4c" model-prefixed-id="model2" binding="false" value="true">
+                <control name="output" scope="" prefixed-id="output4c" model-prefixed-id="model2" binding="false" value="true">
                     <value>
                         <analysis expression="xs:string(($mv)[1])" analyzed="true">
                             <value-dependent>
@@ -840,7 +840,7 @@
                         </analysis>
                     </value>
                 </variable>
-                <control scope="" prefixed-id="output5a" model-prefixed-id="model1" binding="false" value="true">
+                <control name="output" scope="" prefixed-id="output5a" model-prefixed-id="model1" binding="false" value="true">
                     <value>
                         <analysis expression="xs:string(($mv1)[1])" analyzed="true">
                             <value-dependent>
@@ -855,7 +855,7 @@
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="output5b" model-prefixed-id="model1" binding="false" value="true">
+                <control name="output" scope="" prefixed-id="output5b" model-prefixed-id="model1" binding="false" value="true">
                     <value>
                         <analysis expression="xs:string(($mv2)[1])" analyzed="true">
                             <value-dependent>
@@ -1418,7 +1418,7 @@
                         </analysis>
                     </value>
                 </variable>
-                <control scope="" prefixed-id="osum" model-prefixed-id="model" binding="false" value="true">
+                <control name="output" scope="" prefixed-id="osum" model-prefixed-id="model" binding="false" value="true">
                     <value>
                         <analysis expression="xs:string(($sum)[1])" analyzed="true">
                             <value-dependent>
@@ -1434,7 +1434,7 @@
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="oproduct" model-prefixed-id="model" binding="false" value="true">
+                <control name="output" scope="" prefixed-id="oproduct" model-prefixed-id="model" binding="false" value="true">
                     <value>
                         <analysis expression="xs:string(($product)[1])" analyzed="true">
                             <value-dependent>
@@ -1450,7 +1450,7 @@
                         </analysis>
                     </value>
                 </control>
-                <control scope="" prefixed-id="odifference" model-prefixed-id="model" binding="false" value="true">
+                <control name="output" scope="" prefixed-id="odifference" model-prefixed-id="model" binding="false" value="true">
                     <value>
                         <analysis expression="xs:string(($difference)[1])" analyzed="true">
                             <value-dependent>
@@ -1504,7 +1504,7 @@
                         </value>
                     </variable>
                 </model>
-            </request>            
+            </request>
         </output>
     </test>
     
@@ -1606,7 +1606,7 @@
                         <analysis expression="exf:readonly($external)" analyzed="false"/>
                     </value>
                 </variable>
-                <control scope="my-foo" prefixed-id="my-foo$group-external" model-prefixed-id="my-foo$model" binding="true" value="false">
+                <control name="group" scope="my-foo" prefixed-id="my-foo$group-external" model-prefixed-id="my-foo$model" binding="true" value="false">
                     <binding>
                         <analysis expression="$external" analyzed="true">
                             <returnable>
@@ -1624,7 +1624,7 @@
                         </analysis>
                     </binding>
                 </control>
-                <control scope="my-foo" prefixed-id="my-foo$oexternal" model-prefixed-id="my-foo$model" binding="false" value="true">
+                <control name="output" scope="my-foo" prefixed-id="my-foo$oexternal" model-prefixed-id="my-foo$model" binding="false" value="true">
                     <value>
                         <analysis expression="xs:string(($external)[1])" analyzed="true">
                             <value-dependent>
@@ -1639,12 +1639,12 @@
                         </analysis>
                     </value>
                 </control>
-                <control scope="my-foo" prefixed-id="my-foo$oro" model-prefixed-id="my-foo$model" binding="false" value="true">
+                <control name="output" scope="my-foo" prefixed-id="my-foo$oro" model-prefixed-id="my-foo$model" binding="false" value="true">
                     <value>
                         <analysis expression="xs:string(($readonly)[1])" analyzed="false"/>
                     </value>
                 </control>
-                <control scope="" prefixed-id="my-foo" model-prefixed-id="model" binding="true" value="false">
+                <control name="foo" scope="" prefixed-id="my-foo" model-prefixed-id="model" binding="true" value="false">
                     <binding>
                         <analysis expression="instance('instance')" analyzed="true">
                             <returnable>
@@ -1725,7 +1725,7 @@
         </input>
         <output name="analysis">
             <request request-uri="/orbeon/doc/home-welcome" query-string="id=12&amp;print=false" method="GET">
-                <control scope="" prefixed-id="input" model-prefixed-id="model" binding="true" value="true">
+                <control name="input" scope="" prefixed-id="input" model-prefixed-id="model" binding="true" value="true">
                     <binding>
                         <analysis expression="name[. = 42]" analyzed="true">
                             <value-dependent>
@@ -1803,8 +1803,8 @@
                         </analysis>
                     </value>
                 </variable>
-                <control scope="" prefixed-id="enclosing-group" model-prefixed-id="model" binding="false" value="false"/>
-                <control scope="" prefixed-id="nested-group" model-prefixed-id="model" binding="true" value="false">
+                <control name="group" scope="" prefixed-id="enclosing-group" model-prefixed-id="model" binding="false" value="false"/>
+                <control name="group" scope="" prefixed-id="nested-group" model-prefixed-id="model" binding="true" value="false">
                     <binding>
                         <analysis expression=".[$show]" analyzed="true">
                             <value-dependent>
@@ -1846,7 +1846,7 @@
         </input>
         <output name="analysis">
             <request request-uri="/orbeon/doc/home-welcome" query-string="id=12&amp;print=false" method="GET">
-                <control scope="" prefixed-id="output" model-prefixed-id="model" binding="false" value="true">
+                <control name="output" scope="" prefixed-id="output" model-prefixed-id="model" binding="false" value="true">
                     <value>
                         <analysis expression="xs:string((current-date())[1])" analyzed="true"/>
                     </value>
@@ -1881,12 +1881,12 @@
         </input>
         <output name="analysis">
             <request request-uri="/orbeon/doc/home-welcome" query-string="id=12&amp;print=false" method="GET">
-                <control scope="my-foo" prefixed-id="my-foo$output" binding="false" value="true">
+                <control name="output" scope="my-foo" prefixed-id="my-foo$output" binding="false" value="true">
                     <value>
                         <analysis expression="xs:string((current-date())[1])" analyzed="true"/>
                     </value>
                 </control>
-                <control scope="" prefixed-id="my-foo" model-prefixed-id="model" binding="false" value="false"/>
+                <control name="foo" scope="" prefixed-id="my-foo" model-prefixed-id="model" binding="false" value="false"/>
                 <model scope="" prefixed-id="model" analyzed-binds="true"/>
             </request>
         </output>
