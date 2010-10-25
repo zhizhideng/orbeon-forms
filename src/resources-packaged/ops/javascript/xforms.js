@@ -3265,7 +3265,10 @@ ORBEON.xforms.Events = {
         // If we already have a tooltip for this control, but that the control is not in the page anymore, destroy the tooltip
         if (YAHOO.lang.isObject(tooltipForControl[control.id])) {
             if (! YAHOO.util.Dom.inDocument(tooltipForControl[control.id].orbeonControl, document)) {
-                tooltipForControl[control.id].destroy();
+                // Prevent the tooltip from becoming visible on mouseover
+                tooltipForControl[control.id].cfg.setProperty("disabled", true);
+                // If visible, hide the tooltip right away, otherwise it will only be hidden a few seconds later
+                tooltipForControl[control.id].hide();
                 tooltipForControl[control.id] = null;
             }
         }
@@ -7272,7 +7275,7 @@ ORBEON.xforms.Server = {
                                     // setting the innerHTML, so set focus it again
                                     if (! YAHOO.util.Dom.inDocument(ORBEON.xforms.Globals.currentFocusControlElement, document)) {
                                         var focusControl = document.getElementById(ORBEON.xforms.Globals.currentFocusControlId);
-                                        if (focusControl != null) ORBEON.xforms.Controls.setFocus(focusControl);
+                                        if (focusControl != null) ORBEON.xforms.Controls.setFocus(ORBEON.xforms.Globals.currentFocusControlId);
                                     }
                                 }
 
