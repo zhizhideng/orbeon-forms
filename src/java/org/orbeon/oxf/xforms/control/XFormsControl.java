@@ -534,11 +534,24 @@ public abstract class XFormsControl implements XFormsEventTarget, XFormsEventObs
 
         // Check LHHA
         for (final Map.Entry<XFormsConstants.LHHA, LHHA> entry: lhha.entrySet()) {
-            final XFormsConstants.LHHA key = entry.getKey();
-            final LHHA value = entry.getValue();
+            final XFormsConstants.LHHA lhhaName = entry.getKey();
+            final LHHA lhha = entry.getValue();
 
-            if (value != null && !value.isDirty() && xpathDependencies.requireLHHAUpdate(key, getPrefixedId()))
-                value.markDirty();
+            if (lhha != null && lhha != NULL_LHHA && !lhha.isDirty()) {
+                // LHHA exists and is clean
+                if (relevant != wasRelevant) {
+                    // Control becomes relevant or non-relevant
+                    lhha.markDirty();
+                } else if (relevant) {
+                    // Control remains relevant
+                    if (xpathDependencies.requireLHHAUpdate(lhhaName, getPrefixedId()))
+                        lhha.markDirty();
+                    else
+                        lhha.markOptimized(); // for statistics only
+                }
+                // If control is clean and remains non-relevant, no need to mark dirty as it's value remains null
+                // NOTE: Ideally nobody should call to get the value of LHHA elements if the control is not relevant=
+            }
         }
 
         // For now clear this all the time
@@ -1076,6 +1089,7 @@ public abstract class XFormsControl implements XFormsEventTarget, XFormsEventObs
         }
 
         public void markDirty() {}
+        public void markOptimized() {}
         public boolean isDirty() { return false; }
 
         @Override
@@ -1099,6 +1113,7 @@ public abstract class XFormsControl implements XFormsEventTarget, XFormsEventObs
         private String value;
         private boolean isEvaluated;
         private boolean isHTML;
+        private boolean isOptimized;
 
         public ConcreteLHHA(XFormsControl control, LHHAAnalysis lhhaAnalysis, boolean supportsHTML) {
 
@@ -1114,6 +1129,7 @@ public abstract class XFormsControl implements XFormsEventTarget, XFormsEventObs
         public String getValue(PropertyContext propertyContext) {
             if (!isEvaluated) {
                 if (control.isRelevant()) {
+                    control.containingDocument.getXPathDependencies().notifyComputeLHHA();
                     value = evaluateValue(propertyContext);
                     isHTML = value != null && control.tempContainsHTML[0];
                 } else {
@@ -1122,6 +1138,12 @@ public abstract class XFormsControl implements XFormsEventTarget, XFormsEventObs
                     isHTML = false;
                 }
                 isEvaluated = true;
+            } else if (isOptimized) {
+                // This is only for statistics: if the value was not re-evaluated because of the dependency engine
+                // giving us the green light, the first time the value is asked we notify the dependency engine of that
+                // situation.
+                control.containingDocument.getXPathDependencies().notifyOptimizeLHHA();
+                isOptimized = false;
             }
             return value;
         }
@@ -1143,6 +1165,12 @@ public abstract class XFormsControl implements XFormsEventTarget, XFormsEventObs
             value = null;
             isEvaluated = false;
             isHTML = false;
+            isOptimized = false;
+        }
+
+        @Override
+        public void markOptimized() {
+            isOptimized = true;
         }
 
         @Override
