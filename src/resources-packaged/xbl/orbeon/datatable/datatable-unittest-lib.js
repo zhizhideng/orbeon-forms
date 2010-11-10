@@ -479,7 +479,7 @@ YAHOO.xbl.fr.Datatable.unittests_lib = {
                     currentValue = parseFloat(currentValue);
                 }
                 if (typeof sortType == 'object') {
-                    YAHOO.util.Assert.areEqual(sortType[rowIndex - 1], currentValue, 'Column ' + columnIndex + ', row ' + rowIndex +', value "' + currentValue + '" should be equal to "' + sortType[rowIndex - 1] + '"');   
+                    YAHOO.util.Assert.areEqual(sortType[rowIndex - 1], currentValue, 'Column ' + columnIndex + ', row ' + rowIndex +', value "' + currentValue + '" should be equal to "' + sortType[rowIndex - 1] + '"');
                 } else if (precedingValue != null) {
                     if (expectedOrder == 'ascending') {
                         YAHOO.util.Assert.isTrue(currentValue >= precedingValue, 'Column ' + columnIndex + ' value "' + currentValue + '" should be bigger than "' + precedingValue + '"');
@@ -526,13 +526,14 @@ YAHOO.xbl.fr.Datatable.unittests_lib = {
         var headerCell = this.getSignificantElementByIndex(table.tHead.rows[0].cells, columnIndex);
         var liner = YAHOO.xbl.fr.Datatable.utils.getFirstChildByTagAndClassName(headerCell, 'div', 'yui-dt-liner');
         ORBEON.util.Test.executeCausingAjaxRequest(this, function() {
-            YAHOO.util.UserAction.click(liner, {clientX: 1});
+            var anchor = liner.getElementsByTagName("a")[0];
+            YAHOO.util.UserAction.click(anchor);
         }, function() {
             this.checkHint(table, columnIndex, expectedHintAfter, 'After click: ');
             YAHOO.util.Assert.isTrue(YAHOO.util.Dom.hasClass(headerCell, className), 'Column ' + columnIndex + ' header cell should now have a class ' + className);
             var firstRow = this.getSignificantElementByIndex(table.tBodies[0].rows, 1);
             var bodyCell = this.getSignificantElementByIndex(firstRow.cells, columnIndex);
-            YAHOO.util.Assert.isTrue(YAHOO.util.Dom.hasClass(bodyCell, className), 'Column ' + columnIndex + ' body cellls should now have a class ' + className);
+            YAHOO.util.Assert.isTrue(YAHOO.util.Dom.hasClass(bodyCell, className), 'Column ' + columnIndex + ' body cell should now have a class ' + className);
             this.checkActualSortOrder(table, columnIndex, expectedOrder, sortType);
 
             callback();
