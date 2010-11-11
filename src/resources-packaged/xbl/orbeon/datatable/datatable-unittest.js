@@ -46,22 +46,16 @@ var testCase = {
     }
     ,
 
-
-
     test314679: function() {
         var thiss = this;
         thiss.openAccordionCase(thiss, '_314679', function() {
-
             var table = YAHOO.util.Dom.get('my-accordion$table-314679$table-314679-table');
             thiss.clickAndCheckSortOrder(table, 1, 'descending', ['three', 'two', 'one'], function() {
-
                 thiss.closeAccordionCase(thiss, '_314679');
-
             });
-
         });
-    },
-
+    }
+    ,
 
     testOptionalScrollhV: function() {
         var thiss = this;
@@ -289,7 +283,7 @@ var testCase = {
     }
     ,
 
-    testWidthsResizeable100pxLeft: function() {
+    testWidthsResizeable50pxLeft: function() {
         var thiss = this;
         thiss.openAccordionCase(thiss, 'widths-resizeable', function() {
             var table = YAHOO.util.Dom.get('my-accordion$table-widths-resizeable$table-widths-resizeable-table');
@@ -297,10 +291,10 @@ var testCase = {
             var th2 = table.tHead.rows[0].cells[1];
             var width1 = th1.clientWidth;
             var width2 = th2.clientWidth;
-            thiss.resizeColumn(th2, -100, 10);
+            thiss.resizeColumn(th2, -50, 10);
             thiss.checkTableAndContainerWidths(table);
-            YAHOO.util.Assert.areEqual(width1, th1.clientWidth, "The wdith of the first column shouldn't change (before: " + width1 + ", after: " + width2 + ").");
-            YAHOO.util.Assert.areEqual(width2 - 100, th2.clientWidth, "The width of the second column should be " + (width2 - 100) + ", not " + th2.clientWidth);
+            YAHOO.util.Assert.areEqual(width1, th1.clientWidth, "The width of the first column shouldn't change (before: " + width1 + ", after: " + width2 + ").");
+            YAHOO.util.Assert.areEqual(width2 - 50, th2.clientWidth, "The width of the second column should be " + (width2 - 50) + ", not " + th2.clientWidth);
             thiss.checkRowWidth(table.tHead.rows[0]);
             thiss.closeAccordionCase(thiss, 'widths-resizeable');
         });
@@ -369,9 +363,10 @@ var testCase = {
 
     test314174: function() {
         var thiss = this;
-        thiss.openAccordionCase(thiss, '_314174');
-        //TODO: test something here!
-        thiss.closeAccordionCase(thiss, '_314174');
+        thiss.openAccordionCase(thiss, '_314174', function() {
+            //TODO: test something here!
+            thiss.closeAccordionCase(thiss, '_314174');
+        });
     }
     ,
 
@@ -379,7 +374,7 @@ var testCase = {
         var thiss = this;
         thiss.openAccordionCase(thiss, '_314210', function() {
             var headerTable = YAHOO.util.Dom.get('my-accordion$table-314210$table-314210-table');
-            YAHOO.util.Assert.isTrue(headerTable.clientWidth > headerTable.parentNode.clientWidth, 'The table header width (' + headerTable.clientWidth + 'px) should be larger than its container width (' + headerTable.parentNode.clientWidth + 'px).');
+            YAHOO.util.Assert.isTrue(headerTable.clientWidth == headerTable.parentNode.clientWidth, 'The table header width (' + headerTable.clientWidth + 'px) should be equal than its container width (' + headerTable.parentNode.clientWidth + 'px).');
             thiss.closeAccordionCase(thiss, '_314210');
         });
     }

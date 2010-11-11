@@ -182,15 +182,11 @@ YAHOO.xbl.fr.Datatable.prototype = {
     },
 
     /**
-     *  Get the request UUID
+     *  Get the request sequence number
      */
     getRequestUUID: function() {
         var form = ORBEON.xforms.Controls.getForm(this.container);
-        var formDynamicState = ORBEON.xforms.Globals.formDynamicState[form.id];
-        if (formDynamicState !== undefined) {
-            this.lastRequestUUID = formDynamicState.value;
-        }
-        return this.lastRequestUUID;
+        return ORBEON.xforms.Document.getFromClientState(form.id, "sequence");
     },
 
     /**
@@ -573,11 +569,10 @@ YAHOO.xbl.fr.Datatable.prototype = {
         var pxWidth;
 
         if (this.originalWidth.indexOf('%') != - 1) {
-
-            if (this.scrollH) {
+            if (this.scrollV) {
                 pxWidth = this.divContainer.clientWidth - 21;
             } else {
-                pxWidth = this.divContainer.clientWidth - 2;
+                pxWidth = this.divContainer.clientWidth;
             }
         } else if (this.originalWidth == 'auto') {
             pxWidth = this.table.clientWidth;
@@ -819,7 +814,7 @@ YAHOO.xbl.fr.Datatable.prototype = {
                         } else {
                             // Resizing is supported through dynamic styles
                             var className = 'dt-' + this.id + '-col-' + (icol + 1);
-                            className = className.replace('\$', '-', 'g');
+                            className = className.replace(/\$/g, '-');
                             for (var irow = 0; irow < this.bodyColumns[icol].length; irow++) {
                                 var cell = this.bodyColumns[icol][irow];
                                 var cellDivs = YAHOO.util.Dom.getElementsByClassName('yui-dt-liner', 'div', cell);

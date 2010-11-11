@@ -5798,7 +5798,7 @@ ORBEON.xforms.Server = {
      */
     showError: function(title, details, formID) {
         ORBEON.xforms.Events.errorEvent.fire({title: title, details: details });
-        if (!ORBEON.xforms.Globals.requestIgnoreErrors && ORBEON.util.Properties.showErrorDialog.get() == "true") {
+        if (!ORBEON.xforms.Globals.requestIgnoreErrors && ORBEON.util.Properties.showErrorDialog.get()) {
             var formErrorPanel = ORBEON.xforms.Globals.formErrorPanel[formID];
             if (formErrorPanel) {
                 // Render the dialog if needed
@@ -6287,7 +6287,6 @@ ORBEON.xforms.Server = {
             upload: ORBEON.xforms.Server.handleResponseUpload,
             failure: ORBEON.xforms.Server.handleFailureUpload
         };
-        ORBEON.xforms.Server.setTimeoutOnCallback(callback);
         YAHOO.util.Connect.asyncRequest("POST", ORBEON.xforms.Globals.xformsServerURL[formID], callback);
     },
 
