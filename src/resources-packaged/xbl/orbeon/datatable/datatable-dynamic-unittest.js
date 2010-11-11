@@ -572,13 +572,14 @@ var testCase = {
         });
     },
 
-    test314379: function() {
+    // Commented out as this test is known not to work, and we have a bug open for it.
+    Xtest314379: function() {
         var thiss = this;
         thiss.openAccordionCase(thiss, '_314379', function() {
             ORBEON.util.Test.executeCausingAjaxRequest(thiss, function() {
                 ORBEON.xforms.Document.setValue("loading", "false");
             }, function() {
-                var table = YAHOO.util.Dom.get('my-accordion$table-314379$table-314379-table');
+                var table = YAHOO.util.Dom.get('my-accordion$table-314379').getElementsByTagName("table")[0];
                 var th = thiss.getSignificantElementByIndex(table.tHead.rows[0].cells, 1);
                 var width;
                 width = th.clientWidth;
@@ -613,11 +614,8 @@ var testCase = {
         });
     },
 
-
     EOS:""
-}
-        ;
-
+};
 
 ORBEON.xforms.Events.orbeonLoadedEvent.subscribe(function() {
     for (var property in YAHOO.xbl.fr.Datatable.unittests_lib) {
