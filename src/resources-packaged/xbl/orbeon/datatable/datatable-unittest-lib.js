@@ -22,12 +22,12 @@ YAHOO.xbl.fr.Datatable.unittests_lib = {
         return YAHOO.util.Dom.hasClass(dd, 'a-m-d-expand');
     },
 
-    toggleAccordionCase: function (targetId) {
+    toggleAccordionCase: function(targetId) {
         var dt = YAHOO.util.Dom.get('my-accordion$t-' + targetId);
         YAHOO.util.UserAction.click(dt, {clientX: 1});
     },
 
-    openAccordionCase: function (testCase, targetId, callback) {
+    openAccordionCase: function(testCase, targetId, callback) {
         if (this.accordionAccessMethod == 'css') {
 
             var dt = YAHOO.util.Dom.get('my-accordion$t-' + targetId);
@@ -52,16 +52,14 @@ YAHOO.xbl.fr.Datatable.unittests_lib = {
         this.wait(function () {
             // Check if the action has been done and call back
             if (this.isOpenAccordionCase(targetId)) {
-                if (callback) {
-                    callback.call(this);
-                }
+                if (callback) callback.call(this);
             } else {
                 var thiss = this;
                 testCase.wait(function() {
                     thiss.openAccordionCase(testCase, targetId, callback);
                 }, 10);
             }
-        }, 200);
+        }, 1000);
     },
 
     closeAccordionCase: function (testCase, targetId, callback) {
