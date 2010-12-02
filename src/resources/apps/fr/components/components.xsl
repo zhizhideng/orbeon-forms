@@ -208,9 +208,6 @@
         <xi:include href="oxf:/apps/fr/includes/roles-model.xml" xxi:omit-xml-base="true"/>
         <!-- This model handles i18n resources -->
         <xi:include href="oxf:/apps/fr/i18n/resources-model.xml" xxi:omit-xml-base="true"/>
-        <!-- This model handles offline functionality through Google Gears -->
-        <!-- NOTE: commenting this out for now as Form Runner does not yet work 100% in offline mode -->
-        <!--<xi:include href="oxf:/apps/fr/offline/offline-model.xml" xxi:omit-xml-base="true"/>-->
         <!-- This model handles form sections -->
         <xi:include href="oxf:/apps/fr/includes/sections-model.xml" xxi:omit-xml-base="true"/>
         <!-- This model handles global error summary information -->
