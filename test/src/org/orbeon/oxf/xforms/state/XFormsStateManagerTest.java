@@ -66,7 +66,7 @@ public class XFormsStateManagerTest extends ResourceManagerTestBase {
 
         final ExternalContext.Session session = XFormsUtils.getExternalContext(pipelineContext).getSession(true);
         final XFormsStaticState staticState = XFormsStaticStateTest.getStaticState("oxf:/org/orbeon/oxf/xforms/state/server-cache.xhtml");
-        final XFormsContainingDocument document = new XFormsContainingDocument(pipelineContext, staticState, null, null);
+        final XFormsContainingDocument document = new XFormsContainingDocument(pipelineContext, staticState, null, null, null);
 
         stateManager.afterInitialResponse(pipelineContext, document);
 
@@ -103,7 +103,7 @@ public class XFormsStateManagerTest extends ResourceManagerTestBase {
 
     private XFormsState createDocumentGetState(PipelineContext pipelineContext) {
         final XFormsStaticState staticState = XFormsStaticStateTest.getStaticState("oxf:/org/orbeon/oxf/xforms/state/client-nocache.xhtml");
-        final XFormsContainingDocument document = new XFormsContainingDocument(pipelineContext, staticState, null, null);
+        final XFormsContainingDocument document = new XFormsContainingDocument(pipelineContext, staticState, null, null, null);
 
         final String staticStateString = stateManager.getClientEncodedDynamicState(pipelineContext, document);
         final String dynamicStateString = stateManager.getClientEncodedDynamicState(pipelineContext, document);
@@ -136,7 +136,7 @@ public class XFormsStateManagerTest extends ResourceManagerTestBase {
         {
             final PipelineContext pipelineContext = createPipelineContextWithExternalContext();
 
-            state1.document = new XFormsContainingDocument(pipelineContext, staticState, null, null);
+            state1.document = new XFormsContainingDocument(pipelineContext, staticState, null, null, null);
 
             state1.uuid = state1.document.getUUID();
             state1.staticStateString = stateManager.getClientEncodedStaticState(pipelineContext, state1.document);
@@ -147,6 +147,7 @@ public class XFormsStateManagerTest extends ResourceManagerTestBase {
             assertNotNull(StringUtils.trimToNull(state1.dynamicStateString));
 
             // Initial response sent
+            state1.document.afterInitialResponse();
             stateManager.afterInitialResponse(pipelineContext, state1.document);
         }
 
@@ -202,7 +203,7 @@ public class XFormsStateManagerTest extends ResourceManagerTestBase {
         {
             final PipelineContext pipelineContext = createPipelineContextWithExternalContext();
             session = XFormsUtils.getExternalContext(pipelineContext).getSession(true);
-            state1.document = new XFormsContainingDocument(pipelineContext, staticState, null, null);
+            state1.document = new XFormsContainingDocument(pipelineContext, staticState, null, null, null);
 
             state1.uuid = state1.document.getUUID();
             state1.staticStateString = stateManager.getClientEncodedStaticState(pipelineContext, state1.document);
@@ -213,6 +214,7 @@ public class XFormsStateManagerTest extends ResourceManagerTestBase {
             assertNull(StringUtils.trimToNull(state1.dynamicStateString));
 
             // Initial response sent
+            state1.document.afterInitialResponse();
             stateManager.afterInitialResponse(pipelineContext, state1.document);
 
             initialDynamicStateString = state1.document.createEncodedDynamicState(pipelineContext, false);
@@ -281,13 +283,13 @@ public class XFormsStateManagerTest extends ResourceManagerTestBase {
             assertNotSame(state1.document, state2.document);// can't be the same because cache is disabled
 
         // Run events if any
-        state2.document.beforeExternalEvents(pipelineContext, null, false);
+        state2.document.beforeExternalEvents(pipelineContext, null);
         if (callback != null) {
             for (final XFormsEvent event: callback.createEvents(state2.document)) {
-                state2.document.handleExternalEvent(pipelineContext, event, false);
+                state2.document.handleExternalEvent(pipelineContext, event);
             }
         }
-        state2.document.afterExternalEvents(pipelineContext, false);
+        state2.document.afterExternalEvents(pipelineContext);
 
         stateManager.beforeUpdateResponse(pipelineContext, state2.document, false);
 
