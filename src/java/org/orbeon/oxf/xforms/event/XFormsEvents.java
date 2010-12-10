@@ -35,8 +35,6 @@ public class XFormsEvents {
     public static final String XXFORMS_SUBMIT_REPLACE = "xxforms-submit-replace";
     public static final String XXFORMS_LOAD = "xxforms-load";
     public static final String XXFORMS_REPEAT_FOCUS = "xxforms-repeat-focus";
-    public static final String XXFORMS_OFFLINE = "xxforms-offline";
-    public static final String XXFORMS_ONLINE = "xxforms-online";
     public static final String XXFORMS_PROCESS_UPLOAD = "xxforms-process-upload";
 
     public static final String XXFORMS_DIALOG_CLOSE = "xxforms-dialog-close";
