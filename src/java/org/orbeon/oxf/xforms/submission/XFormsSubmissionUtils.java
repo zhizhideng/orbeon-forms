@@ -14,12 +14,17 @@
 package org.orbeon.oxf.xforms.submission;
 
 import org.apache.http.entity.mime.MultipartEntity;
-import org.apache.http.entity.mime.content.*;
+import org.apache.http.entity.mime.content.ContentBody;
+import org.apache.http.entity.mime.content.InputStreamBody;
+import org.apache.http.entity.mime.content.StringBody;
 import org.dom4j.*;
 import org.orbeon.oxf.common.OXFException;
 import org.orbeon.oxf.pipeline.api.ExternalContext;
 import org.orbeon.oxf.resources.URLFactory;
-import org.orbeon.oxf.util.*;
+import org.orbeon.oxf.util.IndentedLogger;
+import org.orbeon.oxf.util.NetUtils;
+import org.orbeon.oxf.util.PropertyContext;
+import org.orbeon.oxf.util.StringBuilderWriter;
 import org.orbeon.oxf.xforms.*;
 import org.orbeon.oxf.xforms.control.XFormsControl;
 import org.orbeon.oxf.xforms.control.controls.XFormsUploadControl;
@@ -218,9 +223,9 @@ public class XFormsSubmissionUtils {
                         {
                             // Got one!
                             final String localName = element.getName();
-                            final String nodeType = InstanceData.getType(element);
+                            final QName nodeType = InstanceData.getType(element);
 
-                            if (XMLConstants.XS_ANYURI_EXPLODED_QNAME.equals(nodeType)) {
+                            if (XMLConstants.XS_ANYURI_QNAME.equals(nodeType)) {
                                 // Interpret value as xs:anyURI
 
                                 if (InstanceData.getValid(element) && value.trim().length() > 0) {
@@ -234,7 +239,7 @@ public class XFormsSubmissionUtils {
                                     multipartEntity.addPart(localName, new StringBody(value, Charset.forName("UTF-8")));
                                 }
 
-                            } else if (XMLConstants.XS_BASE64BINARY_EXPLODED_QNAME.equals(nodeType)) {
+                            } else if (XMLConstants.XS_BASE64BINARY_QNAME.equals(nodeType)) {
                                 // Interpret value as xs:base64Binary
 
                                 if (InstanceData.getValid(element) && value.trim().length() > 0) {
