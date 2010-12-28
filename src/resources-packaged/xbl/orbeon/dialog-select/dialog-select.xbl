@@ -86,12 +86,16 @@
 
                 <!-- Inner group -->
                 <xforms:group xxbl:scope="inner">
+                    <!-- Stops events on group and variable from propagating outside the component -->
+                    <xforms:action ev:event="#all" ev:propagate="stop" ev:target="#observer binding-var"/>
+
                     <!-- Variable pointing to external single-node binding -->
-                    <xxforms:variable name="binding" as="node()?">
+                    <xxforms:variable name="binding" id="binding-var" as="node()?">
                         <xxforms:sequence select="." xxbl:scope="outer"/>
                     </xxforms:variable>
 
                     <!-- Internal selection control providing access to the itemset -->
+                    <!-- NOTE: Events on this control will propagate out -->
                     <xforms:select ref="$binding" appearance="xxforms:internal" id="hidden-select">
                         <xforms:choices xxbl:scope="outer">
                             <xbl:content includes="fr|dialog-select > xforms|itemset, fr|dialog-select > xforms|item, fr|dialog-select > xforms|choices"/>
