@@ -253,7 +253,7 @@ class PathMapXPathDependencies(var logger: IndentedLogger, staticState: XFormsSt
     }
 
     def afterInitialResponse {
-        outputLHHAStats()
+        outputLHHAItemsetStats()
     }
 
     def beforeUpdateResponse {
@@ -271,7 +271,7 @@ class PathMapXPathDependencies(var logger: IndentedLogger, staticState: XFormsSt
     }
 
     def afterUpdateResponse {
-        outputLHHAStats()
+        outputLHHAItemsetStats()
     }
 
     def notifyComputeLHHA: Unit = lhhaEvaluationCount += 1
@@ -280,7 +280,7 @@ class PathMapXPathDependencies(var logger: IndentedLogger, staticState: XFormsSt
     def notifyComputeItemset: Unit = itemsetEvaluationCount += 1
     def notifyOptimizeItemset: Unit = itemsetOptimizedCount += 1
 
-    private def outputLHHAStats() {
+    private def outputLHHAItemsetStats() {
         if (getLogger.isDebugEnabled)
             getLogger.logDebug("dependencies", "summary after response",
                 Array("LHHA evaluations", lhhaEvaluationCount.toString,
