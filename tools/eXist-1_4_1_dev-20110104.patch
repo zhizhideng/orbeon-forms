@@ -382,11 +382,13 @@ Index: src/org/exist/validation/XmlLibraryChecker.java
 ===================================================================
 --- src/org/exist/validation/XmlLibraryChecker.java	(revision 13502)
 +++ src/org/exist/validation/XmlLibraryChecker.java	(working copy)
-@@ -45,7 +45,7 @@
+@@ -44,8 +44,8 @@
+      * Possible XML Parsers, at least one must be valid
       */
      private final static ClassVersion[] validParsers = {
-         new ClassVersion("Xerces", "Xerces-J 2.9.1", 
+-        new ClassVersion("Xerces", "Xerces-J 2.9.1", 
 -                "org.apache.xerces.impl.Version.getVersion()")
++        new ClassVersion("Xerces", "Xerces-J 2.9.0",
 +                "orbeon.apache.xerces.impl.Version.getVersion()")
      };
      
