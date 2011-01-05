@@ -13,7 +13,6 @@
  */
 package org.orbeon.oxf.xml.dom4j;
 
-import org.orbeon.saxon.om.FastStringBuffer;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXParseException;
 
