@@ -165,14 +165,14 @@ object Multipart {
                         session.getAttributesMap.put(newSessionKey, uploadProgress)
 
                         // Copy stream and update progress information
-                        copyStream(inputStream, fileItem.getOutputStream, true, uploadProgress.receivedSize += _)
+                        copyStream(inputStream, fileItem.getOutputStream, uploadProgress.receivedSize += _)
 
                         uploadProgress.completed = true
 
                         fileItem
                     } else {
                         // File upload without progress notification -> just copy the stream
-                        copyStream(item.openStream, fileItem.getOutputStream, true)
+                        copyStream(item.openStream, fileItem.getOutputStream)
 
                         fileItem
                     }
