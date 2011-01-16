@@ -48,7 +48,7 @@ class CoffeeScriptTask extends MatchingTask {
                 // Write result
                 oFile.getParentFile.mkdirs()
                 val javascriptReader = new StringReader(javascriptString)
-                copyReader(javascriptReader, new OutputStreamWriter(new FileOutputStream(oFile), Charset.forName("UTF-8")))
+                copyStream(javascriptReader, new OutputStreamWriter(new FileOutputStream(oFile), Charset.forName("UTF-8")))
             }
         }
     }
