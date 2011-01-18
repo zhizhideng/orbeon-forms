@@ -55,8 +55,6 @@
     <typedef resource="org/exist/ant/antlib.xml" uri="http://exist-db.org/ant">
         <classpath>
             <fileset dir="${lib.dir}">
-                <!--<include name="exist*.jar"/>-->
-                <!--<include name="log4j*.jar"/>-->
                 <include name="*.jar"/>
             </fileset>
             <fileset dir="${build.dir}/lib">
@@ -809,6 +807,11 @@
                 <exclude name="forms/orbeon/register/**"/>
                 <exclude name="forms/orbeon/license"/>
                 <exclude name="forms/orbeon/license/**"/>
+            </zipfileset>
+            <!-- eXist sample database -->
+            <zipfileset dir="build/exist-data" prefix="WEB-INF/exist-data">
+                <exclude name="*.log"/>
+                <exclude name="*.lck"/>
             </zipfileset>
             <!-- eXist sample database -->
             <zipfileset dir="build/exist-data" prefix="WEB-INF/exist-data">
