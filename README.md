@@ -1,6 +1,5 @@
-
-About Orbeon Forms
-==================
+Orbeon Forms - Open source web forms done the right way
+=======================================================
 
 Last updated for Orbeon Forms 3.9, January 2011
 
@@ -19,9 +18,9 @@ includes:
 
 For more information about Orbeon Forms, please visit:
 
-- http://www.orbeon.com/
-- http://www.orbeon.com/orbeon/doc/
-- http://wiki.orbeon.com/forms/
+- <http://www.orbeon.com/>
+- <http://www.orbeon.com/orbeon/doc/>
+- <http://wiki.orbeon.com/forms/>
 
 Also check the Orbeon Forms Frequently Asked Questions (FAQ):
 
@@ -45,13 +44,18 @@ For more information:
 3. Community and support
 ------------------------
 
+See: http://www.orbeon.com/forms/community
 
-- If you have questions, comments, or difficulties with Orbeon
-  Forms, please subscribe to the ops-users mailing-list at:
+In a nutshell:
 
-  http://www.orbeon.com/forms/community
+- Technical questions: ask them on StackOverflow (don't forget the "orbeon"
+  tag):
 
-- For commercial support and licensing alternatives, please visit:
+  http://stackoverflow.com/
+
+- Discussions and feedback: please subscribe to the ops-users mailing-list.
+
+- Commercial support and licensing:
 
   http://www.orbeon.com/support-services/overview
 
@@ -105,6 +109,10 @@ information about compiling Orbeon Forms from sources, please visit:
 
 > http://wiki.orbeon.com/forms/doc/contributor-guide/development-environment/java-development
 
+The source code is on github:
+
+> https://github.com/orbeon/orbeon-forms/
+
 Orbeon Forms is written mainly using the following languages and technologies:
 
 - Java
@@ -113,10 +121,10 @@ Orbeon Forms is written mainly using the following languages and technologies:
 - XForms, XSLT, and related XML technologies
 
 
-8. Known Issues
----------------
+8. Known bugs and requests for enhancements
+-------------------------------------------
 
-For a list of known issues, consult the OW2 issue tracking system:
+For a list of known issues and RFEs, consult the OW2 issue tracking system:
 
 > http://goo.gl/iSEyq
 
