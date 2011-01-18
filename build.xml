@@ -812,6 +812,7 @@
             </zipfileset>
             <zipfileset dir="build/exist-data" prefix="WEB-INF/exist-data">
                 <exclude name="*.log"/>
+                <exclude name="*.lck"/>
             </zipfileset>
         </zip>
     </target>
@@ -961,6 +962,8 @@
                 <exclude name="orbeon/fr/orbeon/builder/**"/>
             </fileset>
         </xdb:store>
+        <!-- Make sure the database is shut down -->
+        <xdb:shutdown configuration="descriptors/ant-exist-conf.xml" uri="xmldb:exist:///db" user="admin" password=""/>
     </target>
 
 </project>
