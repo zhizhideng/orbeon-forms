@@ -590,10 +590,6 @@
                 <exclude name="tools/**"/>
                 <exclude name="src/scala/"/>
                 <exclude name="src/scala/**"/>
-                <exclude name="src/resources/forms/orbeon/register"/>
-                <exclude name="src/resources/forms/orbeon/register/**"/>
-                <exclude name="src/resources/forms/orbeon/license"/>
-                <exclude name="src/resources/forms/orbeon/license/**"/>
             </zipfileset>
         </zip>
     </target>
