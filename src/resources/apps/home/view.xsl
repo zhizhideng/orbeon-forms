@@ -15,8 +15,8 @@
     <head>
         <title><xsl:value-of select="/*/@title"/></title>
         <style type="text/css">
-            .example { float: left; width: 360px; height: 450px; margin: 0 .5em .5em 0; border-right: 1px solid #ccc; border-bottom: 1px solid #ccc }
-            .example .image { max-height: 300px; overflow-y: auto; overflow-x: hidden; padding: 1px 0 } <!-- padding 1px to make FF 3.6 happy -->
+            .example { float: left; width: 360px; height: 455px; margin: 0 .5em .5em 0; border-right: 1px solid #ccc; border-bottom: 1px solid #ccc }
+            .example .image { max-height: 310px; overflow-y: auto; overflow-x: hidden; padding: 1px 0 } <!-- padding 1px to make FF 3.6 happy -->
             .example img { border: none; display: block; margin: 0 auto; padding: 1px 0 1px }
             .example:hover { background-color: #FFCC66 }
             .example h2 { color: #004B92; font-size: larger; margin-top: 0 }
