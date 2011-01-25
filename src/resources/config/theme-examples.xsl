@@ -137,12 +137,6 @@
                                                             </xhtml:a>
                                                         </xsl:otherwise>
                                                     </xsl:choose>
-                                                    <!--<xsl:if test="@xforms-ng = 'true'">-->
-                                                        <!--&#160;-->
-                                                        <!--<xhtml:span style="font-size: 9px; color: #f90; font-weight: normal">-->
-                                                            <!--XForms NG-->
-                                                        <!--</xhtml:span>-->
-                                                    <!--</xsl:if>-->
                                                 </xhtml:li>
                                             </xsl:for-each>
                                         </xhtml:ul>
