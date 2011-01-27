@@ -62,10 +62,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
-import java.util.zip.CRC32;
 import java.util.zip.Deflater;
-import java.util.zip.DeflaterOutputStream;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class XFormsUtils {
 
@@ -166,7 +165,7 @@ public class XFormsUtils {
             if (compress) {
                 deflater = (Deflater) DEFLATER_POOL.borrowObject();
                 final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                final DeflaterGZIPOutputStream gzipOutputStream = new DeflaterGZIPOutputStream(deflater, byteArrayOutputStream, 1024);
+                final DeflaterGZIPOutputStream gzipOutputStream = new DeflaterGZIPOutputStream(deflater, byteArrayOutputStream, 1024 * 8);
                 gzipOutputStream.write(bytesToEncode);
                 gzipOutputStream.close();
                 gzipByteArray = byteArrayOutputStream.toByteArray();
@@ -588,7 +587,8 @@ public class XFormsUtils {
     private static class DeflaterPoolableObjectFactory implements PoolableObjectFactory {
         public Object makeObject() throws Exception {
             indentedLogger.logDebug("", "creating new Deflater");
-            return new Deflater(Deflater.DEFAULT_COMPRESSION, true);
+            // Use BEST_SPEED as profiler shows that DEFAULT_COMPRESSION is slower
+            return new Deflater(Deflater.BEST_SPEED, true);
         }
 
         public void destroyObject(Object object) throws Exception {
@@ -605,81 +605,24 @@ public class XFormsUtils {
         }
     }
 
-    private static class DeflaterGZIPOutputStream extends DeflaterOutputStream {
-        public DeflaterGZIPOutputStream(Deflater deflater, OutputStream out, int size) throws IOException {
-            super(out, deflater, size);
-            writeHeader();
-            crc.reset();
-        }
+    // Version of GZIPOutputStream which uses a custom Deflater
+    private static class DeflaterGZIPOutputStream extends GZIPOutputStream {
 
         private boolean closed = false;
-        protected CRC32 crc = new CRC32();
-        private final static int GZIP_MAGIC = 0x8b1f;
-        private final static int TRAILER_SIZE = 8;
 
-        public synchronized void write(byte[] buf, int off, int len) throws IOException {
-            super.write(buf, off, len);
-            crc.update(buf, off, len);
+        public DeflaterGZIPOutputStream(Deflater deflater, OutputStream out, int size) throws IOException {
+            super(out, size);
+            def = deflater;
         }
 
-        public void finish() throws IOException {
-            if (!def.finished()) {
-                def.finish();
-                while (!def.finished()) {
-                    int len = def.deflate(buf, 0, buf.length);
-                    if (def.finished() && len <= buf.length - TRAILER_SIZE) {
-                        writeTrailer(buf, len);
-                        len = len + TRAILER_SIZE;
-                        out.write(buf, 0, len);
-                        return;
-                    }
-                    if (len > 0)
-                        out.write(buf, 0, len);
-                }
-                byte[] trailer = new byte[TRAILER_SIZE];
-                writeTrailer(trailer, 0);
-                out.write(trailer);
-            }
-        }
-
+        @Override
         public void close() throws IOException {
+            // Override because default implementation calls def.close()
             if (!closed) {
                 finish();
                 out.close();
                 closed = true;
             }
-        }
-
-        private final static byte[] header = {
-                (byte) GZIP_MAGIC,
-                (byte) (GZIP_MAGIC >> 8),
-                Deflater.DEFLATED,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-        };
-
-        private void writeHeader() throws IOException {
-            out.write(header);
-        }
-
-        private void writeTrailer(byte[] buf, int offset) {
-            writeInt((int) crc.getValue(), buf, offset);
-            writeInt(def.getTotalIn(), buf, offset + 4);
-        }
-
-        private void writeInt(int i, byte[] buf, int offset) {
-            writeShort(i & 0xffff, buf, offset);
-            writeShort((i >> 16) & 0xffff, buf, offset + 2);
-        }
-
-        private void writeShort(int s, byte[] buf, int offset) {
-            buf[offset] = (byte) (s & 0xff);
-            buf[offset + 1] = (byte) ((s >> 8) & 0xff);
         }
     }
 
@@ -764,7 +707,7 @@ public class XFormsUtils {
                 if (gzipByteArray != null) {
                     final ByteArrayInputStream compressedData = new ByteArrayInputStream(gzipByteArray);
                     final GZIPInputStream gzipInputStream = new GZIPInputStream(compressedData);
-                    final ByteArrayOutputStream binaryData = new ByteArrayOutputStream(1024);
+                    final ByteArrayOutputStream binaryData = new ByteArrayOutputStream(1024 * 8);
                     NetUtils.copyStream(gzipInputStream, binaryData);
                     resultBytes = binaryData.toByteArray();
                 } else {
