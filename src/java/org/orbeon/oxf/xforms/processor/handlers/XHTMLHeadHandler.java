@@ -17,7 +17,6 @@ import org.apache.commons.collections.map.CompositeMap;
 import org.dom4j.Element;
 import org.orbeon.oxf.common.Version;
 import org.orbeon.oxf.pipeline.api.XMLReceiver;
-import org.orbeon.oxf.util.IndentedLogger;
 import org.orbeon.oxf.util.URLRewriterUtils;
 import org.orbeon.oxf.xforms.*;
 import org.orbeon.oxf.xforms.control.XFormsControl;
@@ -25,14 +24,12 @@ import org.orbeon.oxf.xforms.control.controls.XXFormsDialogControl;
 import org.orbeon.oxf.xforms.event.XFormsEventHandler;
 import org.orbeon.oxf.xforms.event.XFormsEvents;
 import org.orbeon.oxf.xforms.processor.XFormsFeatures;
-import org.orbeon.oxf.xforms.processor.XFormsResourceServer;
 import org.orbeon.oxf.xforms.state.XFormsStateManager;
 import org.orbeon.oxf.xml.ContentHandlerHelper;
 import org.orbeon.oxf.xml.ElementHandlerController;
 import org.orbeon.oxf.xml.XMLConstants;
 import org.orbeon.oxf.xml.XMLUtils;
 import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
@@ -75,36 +72,20 @@ public class XHTMLHeadHandler extends XFormsBaseHandler {
         final Map<String, Map<String, List<String>>> javaScriptControlsAppearancesMap = gatherJavascriptControls();
 
         // Create prefix for combined resources if needed
-        final boolean isMinimal = XFormsProperties.isMinimalResources(containingDocument);
+        final boolean isMinimal = XFormsProperties.isMinimalResources();
         final boolean isVersionedResources = URLRewriterUtils.isResourcesVersioned();
-        final String combinedResourcesPrefix = XFormsFeatures.getCombinedResourcesPrefix(containingDocument, javaScriptControlsAppearancesMap, isMinimal, isVersionedResources);
 
-        final boolean isCombineResources = XFormsProperties.isCombinedResources(containingDocument);
-        final boolean isCacheCombinedResources = isCombineResources && XFormsProperties.isCacheCombinedResources();
-
-        final IndentedLogger resourcesIndentedLogger = XFormsResourceServer.getIndentedLogger();
-        if (isCombineResources) {
-            resourcesIndentedLogger.logDebug("", "creating xhtml:head with combined resources");
-            if (isCacheCombinedResources) {
-                resourcesIndentedLogger.logDebug("", "attempting to cache combined resources");
-            }
-        }
 
         // Stylesheets
         final AttributesImpl attributesImpl = new AttributesImpl();
-        outputCSSResources(helper, xhtmlPrefix, javaScriptControlsAppearancesMap, isMinimal, combinedResourcesPrefix,
-                isCombineResources, isCacheCombinedResources, resourcesIndentedLogger, attributesImpl);
+        outputCSSResources(helper, xhtmlPrefix, javaScriptControlsAppearancesMap, isMinimal, attributesImpl);
 
         // Scripts
         // TODO: Have option to put this at the bottom of the page. See theme-plain.xsl and http://developer.yahoo.com/performance/rules.html#js_bottom -->
         if (!handlerContext.isNoScript() && !XFormsProperties.isReadonly(containingDocument)) {
 
             // Main JavaScript resources
-            outputJavaScriptResources(helper, xhtmlPrefix, javaScriptControlsAppearancesMap, isMinimal, combinedResourcesPrefix,
-                    isCombineResources, isCacheCombinedResources, resourcesIndentedLogger, attributesImpl);
-
-            // XBL scripts
-            outputXBLScripts(helper, xhtmlPrefix, attributesImpl);
+            outputJavaScriptResources(helper, xhtmlPrefix, javaScriptControlsAppearancesMap, isMinimal, attributesImpl);
 
             // Configuration properties
             outputConfigurationProperties(helper, xhtmlPrefix, isVersionedResources);
@@ -166,34 +147,16 @@ public class XHTMLHeadHandler extends XFormsBaseHandler {
         return javaScriptControlsAppearancesMap;
     }
 
-    private void outputCSSResources(ContentHandlerHelper helper, String xhtmlPrefix,
+    protected void outputCSSResources(ContentHandlerHelper helper, String xhtmlPrefix,
                                     Map<String, Map<String, List<String>>> javaScriptControlsAppearancesMap,
-                                    boolean minimal, String combinedResourcesPrefix, boolean combineResources,
-                                    boolean cacheCombinedResources, IndentedLogger resourcesIndentedLogger, AttributesImpl attributesImpl) {
+                                    boolean minimal, AttributesImpl attributesImpl) {
         // Main CSS resources
-        if (combineResources) {
-            final String combinedResourceName = combinedResourcesPrefix + ".css";
-
+        for (final XFormsFeatures.ResourceConfig resourceConfig: XFormsFeatures.getCSSResources(containingDocument, javaScriptControlsAppearancesMap)) {
+            // Only include stylesheet if needed
             attributesImpl.clear();
-            final String[] attributesList = new String[] { "rel", "stylesheet", "href", combinedResourceName, "type", "text/css", "media", "all" };
+            final String[] attributesList = new String[]{"rel", "stylesheet", "href", resourceConfig.getResourcePath(minimal), "type", "text/css", "media", "all"};
             ContentHandlerHelper.populateAttributes(attributesImpl, attributesList);
             helper.element(xhtmlPrefix, XMLConstants.XHTML_NAMESPACE_URI, "link", attributesImpl);
-
-            if (cacheCombinedResources) {
-                // Attempt to cache combined resources
-                // Do it at this point so that deployments using an HTTP server front-end can access the resource on disk directly
-                final List<XFormsFeatures.ResourceConfig> resources = XFormsFeatures.getCSSResources(containingDocument, javaScriptControlsAppearancesMap);
-                final long combinedLastModified = XFormsResourceServer.computeCombinedLastModified(resources, minimal);
-                XFormsResourceServer.cacheResources(resourcesIndentedLogger, resources, pipelineContext, combinedResourceName, combinedLastModified, true, minimal);
-            }
-        } else {
-            for (final XFormsFeatures.ResourceConfig resourceConfig: XFormsFeatures.getCSSResources(containingDocument, javaScriptControlsAppearancesMap)) {
-                // Only include stylesheet if needed
-                attributesImpl.clear();
-                final String[] attributesList = new String[]{"rel", "stylesheet", "href", resourceConfig.getResourcePath(minimal), "type", "text/css", "media", "all"};
-                ContentHandlerHelper.populateAttributes(attributesImpl, attributesList);
-                helper.element(xhtmlPrefix, XMLConstants.XHTML_NAMESPACE_URI, "link", attributesImpl);
-            }
         }
 
         // XBL resources
@@ -218,38 +181,19 @@ public class XHTMLHeadHandler extends XFormsBaseHandler {
         }
     }
 
-    private void outputJavaScriptResources(ContentHandlerHelper helper, String xhtmlPrefix,
+    protected void outputJavaScriptResources(ContentHandlerHelper helper, String xhtmlPrefix,
                                            Map<String, Map<String, List<String>>> javaScriptControlsAppearancesMap,
-                                           boolean minimal, String combinedResourcesPrefix, boolean combineResources,
-                                           boolean cacheCombinedResources, IndentedLogger resourcesIndentedLogger, AttributesImpl attributesImpl) {
-        if (combineResources) {
-            final String combinedResourceName = combinedResourcesPrefix + ".js";
+                                           boolean minimal, AttributesImpl attributesImpl) {
 
+        for (final XFormsFeatures.ResourceConfig resourceConfig: XFormsFeatures.getJavaScriptResources(containingDocument, javaScriptControlsAppearancesMap)) {
+            // Only include stylesheet if needed
             attributesImpl.clear();
-            final String[] attributesList = new String[] { "type", "text/javascript", "src", combinedResourceName };
+            final String[] attributesList = new String[]{"type", "text/javascript", "src", resourceConfig.getResourcePath(minimal)};
             ContentHandlerHelper.populateAttributes(attributesImpl, attributesList);
             helper.element(xhtmlPrefix, XMLConstants.XHTML_NAMESPACE_URI, "script", attributesImpl);
-
-            if (cacheCombinedResources) {
-                // Attempt to cache combined resources
-                // Do it at this point so that deployments using an HTTP server front-end can access the resource on disk directly
-                final List<XFormsFeatures.ResourceConfig> resources = XFormsFeatures.getJavaScriptResources(containingDocument, javaScriptControlsAppearancesMap);
-                final long combinedLastModified = XFormsResourceServer.computeCombinedLastModified(resources, minimal);
-                XFormsResourceServer.cacheResources(resourcesIndentedLogger, resources, pipelineContext, combinedResourceName, combinedLastModified, false, minimal);
-            }
-
-        } else {
-            for (final XFormsFeatures.ResourceConfig resourceConfig: XFormsFeatures.getJavaScriptResources(containingDocument, javaScriptControlsAppearancesMap)) {
-                // Only include stylesheet if needed
-                attributesImpl.clear();
-                final String[] attributesList = new String[]{"type", "text/javascript", "src", resourceConfig.getResourcePath(minimal)};
-                ContentHandlerHelper.populateAttributes(attributesImpl, attributesList);
-                helper.element(xhtmlPrefix, XMLConstants.XHTML_NAMESPACE_URI, "script", attributesImpl);
-            }
         }
-    }
 
-    private void outputXBLScripts(ContentHandlerHelper helper, String xhtmlPrefix, AttributesImpl attributesImpl) {
+        // XBL resources
         final List<Element> xblScripts = containingDocument.getStaticState().getXBLBindings().getXBLScripts();
         if (xblScripts != null) {
             for (final Element scriptElement: xblScripts) {
@@ -320,11 +264,6 @@ public class XHTMLHeadHandler extends XFormsBaseHandler {
                         }
                     }
                 }
-
-                // Offline mode
-//                        if (containingDocument.getStaticState().isHasOfflineSupport()) {
-//                            dynamicProperties.put(XFormsProperties.OFFLINE_SUPPORT_PROPERTY, Boolean.TRUE);
-//                        }
             }
 
             final Map<String, Object> nonDefaultProperties = containingDocument.getStaticState().getNonDefaultProperties();
@@ -614,8 +553,8 @@ public class XHTMLHeadHandler extends XFormsBaseHandler {
     public void end(String uri, String localname, String qName) throws SAXException {
 
         // Close head element
-        final ContentHandler contentHandler = handlerContext.getController().getOutput();
-        contentHandler.endElement(uri, localname, qName);
+        final XMLReceiver xmlReceiver = handlerContext.getController().getOutput();
+        xmlReceiver.endElement(uri, localname, qName);
 
         // Undeclare xmlns:f
         handlerContext.findFormattingPrefixUndeclare(formattingPrefix);
