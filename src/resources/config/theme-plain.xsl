@@ -52,12 +52,7 @@
                 <xhtml:link rel="shortcut icon" href="/ops/images/orbeon-icon-16.ico"/>
                 <xhtml:link rel="icon" href="/ops/images/orbeon-icon-16.png" type="image/png"/>
             </xhtml:head>
-            <xhtml:body>
-                <!-- Copy body attributes -->
-                <xsl:apply-templates select="/xhtml:html/xhtml:body/@*"/>
-                <!-- Copy body -->
-                <xsl:apply-templates select="/xhtml:html/xhtml:body/node()"/>
-            </xhtml:body>
+            <xsl:apply-templates select="/xhtml:html/xhtml:body"/>
             <!-- Scripts at the bottom of the page. This is not valid HTML, but it is a recommended practice for
                  performance as of early 2008. See http://developer.yahoo.com/performance/rules.html#js_bottom -->
             <xsl:for-each select="/xhtml:html/xhtml:head/xhtml:script">

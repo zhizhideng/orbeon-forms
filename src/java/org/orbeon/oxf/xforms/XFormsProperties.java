@@ -60,9 +60,6 @@ public class XFormsProperties {
     private static final String AJAX_SHOW_ERRORS_PROPERTY = "ajax.show-errors";
     private static final String AJAX_UPDATE_FULL_THRESHOLD = "ajax.update.full.threshold";
 
-    private static final String MINIMAL_RESOURCES_PROPERTY = "minimal-resources";
-    private static final String COMBINE_RESOURCES_PROPERTY = "combine-resources";
-
     private static final String TYPE_OUTPUT_FORMAT_PROPERTY_PREFIX = "format.output.";
     private static final String TYPE_INPUT_FORMAT_PROPERTY_PREFIX = "format.input.";
 
@@ -198,8 +195,6 @@ public class XFormsProperties {
             new PropertyDefinition(EXPOSE_XPATH_TYPES_PROPERTY, false, false),
             new PropertyDefinition(AJAX_SHOW_LOADING_ICON_PROPERTY, true, false),
             new PropertyDefinition(AJAX_SHOW_ERRORS_PROPERTY, true, false),
-            new PropertyDefinition(MINIMAL_RESOURCES_PROPERTY, true, false),
-            new PropertyDefinition(COMBINE_RESOURCES_PROPERTY, true, false),
             new PropertyDefinition(DATE_FORMAT_PROPERTY, "if (. castable as xs:date) then format-date(xs:date(.), '[FNn] [MNn] [D], [Y] [ZN]', 'en', (), ()) else .", false),
             new PropertyDefinition(DATETIME_FORMAT_PROPERTY, "if (. castable as xs:dateTime) then format-dateTime(xs:dateTime(.), '[FNn] [MNn] [D], [Y] [H01]:[m01]:[s01] [ZN]', 'en', (), ()) else .", false),
             new PropertyDefinition(TIME_FORMAT_PROPERTY, "if (. castable as xs:time) then format-time(xs:time(.), '[H01]:[m01]:[s01] [ZN]', 'en', (), ()) else .", false),
@@ -281,7 +276,12 @@ public class XFormsProperties {
     private static final String HOST_LANGUAGE_AVTS_PROPERTY = XFORMS_PROPERTY_PREFIX + "host-language-avts"; // global but should be per document
     private static final boolean HOST_LANGUAGE_AVTS_DEFAULT = false;
 
-    private static final String CACHE_COMBINED_RESOURCES_PROPERTY = XFORMS_PROPERTY_PREFIX + "cache-combined-resources"; // global but could possibly be per document
+    private static final String MINIMAL_RESOURCES_PROPERTY = XFORMS_PROPERTY_PREFIX + "minimal-resources";
+    private static final boolean MINIMAL_RESOURCES_PROPERTY_DEFAULT = true;
+    private static final String COMBINE_RESOURCES_PROPERTY = XFORMS_PROPERTY_PREFIX + "combine-resources";
+    private static final boolean COMBINE_RESOURCES_PROPERTY_DEFAULT = true;
+
+    private static final String CACHE_COMBINED_RESOURCES_PROPERTY = XFORMS_PROPERTY_PREFIX + "cache-combined-resources";
     private static final boolean CACHE_COMBINED_RESOURCES_DEFAULT = false;
 
     private static final String TEST_AJAX_PROPERTY = XFORMS_PROPERTY_PREFIX + "test.ajax";
@@ -380,6 +380,16 @@ public class XFormsProperties {
                 (HOST_LANGUAGE_AVTS_PROPERTY, HOST_LANGUAGE_AVTS_DEFAULT);
     }
 
+    public static boolean isMinimalResources() {
+        return Properties.instance().getPropertySet().getBoolean
+                (MINIMAL_RESOURCES_PROPERTY, MINIMAL_RESOURCES_PROPERTY_DEFAULT);
+    }
+
+    public static boolean isCombinedResources() {
+        return Properties.instance().getPropertySet().getBoolean
+                (COMBINE_RESOURCES_PROPERTY, COMBINE_RESOURCES_PROPERTY_DEFAULT);
+    }
+
     public static boolean isCacheCombinedResources() {
         return Properties.instance().getPropertySet().getBoolean
                 (CACHE_COMBINED_RESOURCES_PROPERTY, CACHE_COMBINED_RESOURCES_DEFAULT);
@@ -433,13 +443,6 @@ public class XFormsProperties {
         return getBooleanProperty(containingDocument, AJAX_SHOW_ERRORS_PROPERTY);
     }
 
-    public static boolean isMinimalResources(XFormsContainingDocument containingDocument) {
-        return getBooleanProperty(containingDocument, MINIMAL_RESOURCES_PROPERTY);
-    }
-
-    public static boolean isCombinedResources(XFormsContainingDocument containingDocument) {
-        return getBooleanProperty(containingDocument, COMBINE_RESOURCES_PROPERTY);
-    }
 
     public static boolean isOptimizeRelevance(XFormsContainingDocument containingDocument) {
         return getBooleanProperty(containingDocument, OPTIMIZE_RELEVANCE_PROPERTY);

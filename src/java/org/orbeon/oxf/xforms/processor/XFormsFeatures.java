@@ -13,119 +13,15 @@
  */
 package org.orbeon.oxf.xforms.processor;
 
-import org.orbeon.oxf.common.Version;
 import org.orbeon.oxf.xforms.XFormsContainingDocument;
 import org.orbeon.oxf.xforms.XFormsProperties;
 import org.orbeon.oxf.xforms.control.controls.XFormsSelect1Control;
-import org.orbeon.saxon.om.FastStringBuffer;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class XFormsFeatures {
-
-    private static final FeatureConfig[] features = {
-            new FeatureConfig("range", "range"),
-            new FeatureConfig("tree", new String[] { "select", "select1" }, XFormsSelect1Control.TREE_APPEARANCE),
-            new FeatureConfig("menu", "select1", XFormsSelect1Control.MENU_APPEARANCE),
-            new FeatureConfig("autocomplete", "select1", XFormsSelect1Control.AUTOCOMPLETE_APPEARANCE),
-            new FeatureConfig("fckeditor", "textarea", "text/html") {
-                public boolean isInUse(XFormsContainingDocument containingDocument, Map appearancesMap) {
-                    return super.isInUse(containingDocument, appearancesMap)
-                            && !"yui".equals(XFormsProperties.getHTMLEditor(containingDocument));
-                }
-            },
-            new FeatureConfig("yuirte", "textarea", "text/html") {
-                public boolean isInUse(XFormsContainingDocument containingDocument, Map appearancesMap) {
-                    return super.isInUse(containingDocument, appearancesMap)
-                            && "yui".equals(XFormsProperties.getHTMLEditor(containingDocument));
-                }
-            },
-            new FeatureConfig("dialog", "dialog"),
-            new FeatureConfig("offline") {
-                public boolean isInUse(XFormsContainingDocument containingDocument, Map appearancesMap) {
-                    return XFormsProperties.isOfflineMode(containingDocument);
-                }
-            },
-            new FeatureConfig("jscalendar") {
-                public boolean isInUse(XFormsContainingDocument containingDocument, Map appearancesMap) {
-                    return "jscalendar".equals(XFormsProperties.getDatePicker(containingDocument));
-                }
-            },
-            new FeatureConfig("yuicalendar") {
-                public boolean isInUse(XFormsContainingDocument containingDocument, Map appearancesMap) {
-                    return !"jscalendar".equals(XFormsProperties.getDatePicker(containingDocument));
-                }
-            }
-    };
-
-    public static class FeatureConfig {
-        private String name;
-//        private String id;
-        private String[] controlNames;
-        private String[] controlAppearanceOrMediatypes;
-
-        public FeatureConfig(String name) {
-            this(name, null, (String[]) null);
-        }
-
-        public FeatureConfig(String name, String controlName) {
-            this(name, new String[] { controlName }, (String[]) null);
-        }
-
-        public FeatureConfig(String name, String controlName, String controlAppearanceOrMediatype) {
-            this(name, new String[] { controlName }, new String[] { controlAppearanceOrMediatype });
-        }
-
-        public FeatureConfig(String name, String[] controlNames, String controlAppearanceOrMediatype) {
-            this(name, controlNames, new String[] { controlAppearanceOrMediatype });
-        }
-
-        public FeatureConfig(String name, String[] controlNames, String[] controlAppearanceOrMediatypes) {
-            this.name = name;
-//            this.id = SecureUtils.digestString(name, "md5", "base64");
-            this.controlNames = controlNames;
-            this.controlAppearanceOrMediatypes = controlAppearanceOrMediatypes;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public String getId() {
-//            return id;
-            return name;
-        }
-
-        public boolean isInUse(XFormsContainingDocument containingDocument, Map appearancesMap) {
-            if (controlAppearanceOrMediatypes != null && controlAppearanceOrMediatypes.length > 0) {
-                // Test by control name and appearance/mediatype
-                for (final String controlName: controlNames) {
-                    for (final String controlAppearanceOrMediatype: controlAppearanceOrMediatypes) {
-                        if (ResourceConfig.isInUse(appearancesMap, controlName, controlAppearanceOrMediatype)) {
-                            return true;
-                        }
-                    }
-                }
-            } else {
-                // Test by control name only
-                for (final String controlName: controlNames) {
-                    if (ResourceConfig.isInUse(appearancesMap, controlName))
-                        return true;
-                }
-            }
-            return false;
-        }
-    }
-
-    private static Map<String, FeatureConfig> featuresByIdMap = new HashMap<String, FeatureConfig>();
-    static {
-        for (final FeatureConfig currentFeatureConfig: features) {
-            featuresByIdMap.put(currentFeatureConfig.getId(), currentFeatureConfig);
-        }
-    }
 
     private static final ResourceConfig[] stylesheets = {
             // Standard CSS
@@ -382,36 +278,6 @@ public class XFormsFeatures {
             return true;
         }
 
-        public boolean isInUseByFeatureMap(Map<String, FeatureConfig> featureMap) {
-            // Default to true but can be overridden
-            final String[] featureNames = getFeatureNames();
-            if (featureNames == null)
-                return true;
-
-            for (final String featureName: featureNames) {
-                final FeatureConfig featureConfig = featureMap.get(featureName);
-                // At least one feature uses this resource
-                if (featureConfig != null)
-                    return true;
-            }
-
-            // Not found
-            return false;
-        }
-
-        protected String getFeatureName() {
-            return null;
-        }
-
-        protected String[] getFeatureNames() {
-            // Default implementation just calls getFeatureName() as a given resource is usually used by just one feature
-            final String featureName = getFeatureName();
-            if (featureName == null)
-                return null;
-            else
-                return new String[] { featureName };
-        }
-
         public static boolean isInUse(Map appearancesMap, String controlName) {
             final Map controlMap = (Map) appearancesMap.get(controlName);
             return controlMap != null;
@@ -452,53 +318,12 @@ public class XFormsFeatures {
         protected boolean isYUIRTEInUse(XFormsContainingDocument containingDocument, Map appearancesMap) {
             return isHtmlAreaInUse(appearancesMap) && "yui".equals(XFormsProperties.getHTMLEditor(containingDocument));
         }
-
-        protected boolean isDialogInUse(Map appearancesMap) {
-            return isInUse(appearancesMap, "dialog");
-        }
-    }
-
-    public static String getCombinedResourcesPrefix(XFormsContainingDocument containingDocument, Map appearancesMap, boolean isMinimal, boolean isVersioned) {
-        if (XFormsProperties.isCombinedResources(containingDocument)) {
-            final FastStringBuffer sb = new FastStringBuffer("/xforms-server/");
-
-            // Make the Orbeon Forms version part of the path if requested
-            if (isVersioned) {
-                sb.append(Version.getVersionNumber());
-                sb.append('/');
-            }
-
-            sb.append("xforms");
-
-            for (final FeatureConfig currentFeature: features) {
-                if (currentFeature.isInUse(containingDocument, appearancesMap)) {
-                    sb.append('-');
-                    sb.append(currentFeature.getId());
-                }
-            }
-            if (isMinimal)
-                sb.append("-min");
-            return sb.toString();
-        } else {
-            return null;
-        }
     }
 
     public static List<ResourceConfig> getCSSResources(XFormsContainingDocument containingDocument, Map appearancesMap) {
         final List<ResourceConfig> result = new ArrayList<ResourceConfig>();
         for (final ResourceConfig resourceConfig: stylesheets) {
             if (resourceConfig.isInUse(containingDocument, appearancesMap)) {
-                // Only include stylesheet if needed
-                result.add(resourceConfig);
-            }
-        }
-        return result;
-    }
-
-    public static List<ResourceConfig> getCSSResourcesByFeatureMap(Map<String, FeatureConfig> featureMap) {
-        final List<ResourceConfig> result = new ArrayList<ResourceConfig>();
-        for (final ResourceConfig resourceConfig: stylesheets) {
-            if (resourceConfig.isInUseByFeatureMap(featureMap)) {
                 // Only include stylesheet if needed
                 result.add(resourceConfig);
             }
@@ -515,20 +340,5 @@ public class XFormsFeatures {
             }
         }
         return result;
-    }
-
-    public static List<ResourceConfig> getJavaScriptResourcesByFeatureMap(Map<String, FeatureConfig> featureMap) {
-        final List<ResourceConfig> result = new ArrayList<ResourceConfig>();
-        for (final ResourceConfig resourceConfig: scripts) {
-            if (resourceConfig.isInUseByFeatureMap(featureMap)) {
-                // Only include script if needed
-                result.add(resourceConfig);
-            }
-        }
-        return result;
-    }
-
-    public static FeatureConfig getFeatureById(String featureId) {
-        return featuresByIdMap.get(featureId);
     }
 }
