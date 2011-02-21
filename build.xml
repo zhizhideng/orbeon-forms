@@ -460,9 +460,6 @@
                 <exclude name="ops/fckeditor/_testcases/**"/>
                 <include name="config/theme/**/*.*"/>
             </fileset>
-            <zipfileset dir="${build.temp.dir}/theme" prefix="config/theme">
-                <include name="*.css"/>
-            </zipfileset>
             <zipfileset dir="${war.dir}/WEB-INF/resources/ops" prefix="ops">
                 <include name="**/*.js"/>
             </zipfileset>
