@@ -2294,7 +2294,7 @@
         </output>
     </test>
 
-    <test description="oxf:resources-aggregator" name="oxf:pipeline">
+    <test description="oxf:resources-aggregator" name="oxf:pipeline" only="true">
         <input name="config">
             <p:config xmlns:oxf="http://www.orbeon.com/oxf/processors">
                 <p:param name="data" type="output"/>
@@ -2332,7 +2332,8 @@
                 <p:processor name="oxf:unsafe-xslt">
                     <p:input name="config">
                         <xsl:transform version="2.0" xmlns:xh="http://www.w3.org/1999/xhtml"
-                                       xmlns:rs="java:org.orbeon.oxf.xforms.processor.XFormsResourceServer">
+                                       xmlns:rs="java:org.orbeon.oxf.xforms.processor.XFormsResourceServer"
+                                       xmlns:version="java:org.orbeon.oxf.common.Version">
                             <xsl:import href="oxf:/oxf/xslt/utils/copy.xsl"/>
                             <xsl:template match="xh:body">
                                 <xsl:copy>
@@ -2340,7 +2341,7 @@
                                     <xsl:for-each select="(//xh:link[starts-with(@href, '/xforms-server/')] | // xh:script[starts-with(@src, '/xforms-server/')])">
                                         <xh:ul>
                                             <xsl:for-each select="rs:testGetResources(substring-before(substring-after(concat(@href, @src), 'orbeon-'), '.'))">
-                                                <xh:li><xsl:value-of select="."/></xh:li>
+                                                <xh:li><xsl:value-of select="if (version:isPE()) then string-join(remove(tokenize(., '/'), 3)) else ."/></xh:li>
                                             </xsl:for-each>
                                         </xh:ul>
                                     </xsl:for-each>
