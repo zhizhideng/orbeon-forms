@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2010 Orbeon, Inc.
+ * Copyright (C) 2011 Orbeon, Inc.
  *
  * This program is free software; you can redistribute it and/or modify it under the terms of the
  * GNU Lesser General Public License as published by the Free Software Foundation; either version
@@ -14,8 +14,6 @@
 package org.orbeon.oxf.xforms.processor.handlers;
 
 import org.apache.commons.collections.map.CompositeMap;
-import org.dom4j.Element;
-import org.orbeon.oxf.common.Version;
 import org.orbeon.oxf.pipeline.api.XMLReceiver;
 import org.orbeon.oxf.util.URLRewriterUtils;
 import org.orbeon.oxf.xforms.*;
@@ -23,7 +21,6 @@ import org.orbeon.oxf.xforms.control.XFormsControl;
 import org.orbeon.oxf.xforms.control.controls.XXFormsDialogControl;
 import org.orbeon.oxf.xforms.event.XFormsEventHandler;
 import org.orbeon.oxf.xforms.event.XFormsEvents;
-import org.orbeon.oxf.xforms.processor.XFormsFeatures;
 import org.orbeon.oxf.xforms.state.XFormsStateManager;
 import org.orbeon.oxf.xml.ContentHandlerHelper;
 import org.orbeon.oxf.xml.ElementHandlerController;
@@ -39,11 +36,11 @@ import java.util.*;
 /**
  * Handle xhtml:head.
  */
-public class XHTMLHeadHandler extends XFormsBaseHandler {
+public abstract class XHTMLHeadHandlerBase extends XFormsBaseHandler {
 
     private String formattingPrefix;
 
-    public XHTMLHeadHandler() {
+    public XHTMLHeadHandlerBase() {
         super(false, true);
     }
 
@@ -66,11 +63,6 @@ public class XHTMLHeadHandler extends XFormsBaseHandler {
         final ContentHandlerHelper helper = new ContentHandlerHelper(xmlReceiver);
         final String xhtmlPrefix = XMLUtils.prefixFromQName(qName); // current prefix for XHTML
 
-        // Gather information about appearances of controls which use Script
-        // Map<String controlName, Map<String appearanceOrMediatype, List<String effectiveId>>>
-        // TODO: This would probably be done better, and more correctly, based on statically-gathered information in XFormsStaticState
-        final Map<String, Map<String, List<String>>> javaScriptControlsAppearancesMap = gatherJavascriptControls();
-
         // Create prefix for combined resources if needed
         final boolean isMinimal = XFormsProperties.isMinimalResources();
         final boolean isVersionedResources = URLRewriterUtils.isResourcesVersioned();
@@ -81,14 +73,14 @@ public class XHTMLHeadHandler extends XFormsBaseHandler {
 
         // Stylesheets
         final AttributesImpl attributesImpl = new AttributesImpl();
-        outputCSSResources(helper, xhtmlPrefix, javaScriptControlsAppearancesMap, isMinimal, attributesImpl);
+        outputCSSResources(helper, xhtmlPrefix, isMinimal, attributesImpl);
 
         // Scripts
         // TODO: Have option to put this at the bottom of the page. See theme-plain.xsl and http://developer.yahoo.com/performance/rules.html#js_bottom -->
         if (!handlerContext.isNoScript() && !XFormsProperties.isReadonly(containingDocument)) {
 
             // Main JavaScript resources
-            outputJavaScriptResources(helper, xhtmlPrefix, javaScriptControlsAppearancesMap, isMinimal, attributesImpl);
+            outputJavaScriptResources(helper, xhtmlPrefix, isMinimal, attributesImpl);
 
             // Configuration properties
             outputConfigurationProperties(helper, xhtmlPrefix, isVersionedResources);
@@ -111,6 +103,9 @@ public class XHTMLHeadHandler extends XFormsBaseHandler {
             outputScriptDeclarations(helper, xhtmlPrefix, scriptsToDeclare, focusElementId, messagesToRun, dialogsToOpen);
 
             // Store information about "special" controls that need JavaScript initialization
+            // Gather information about appearances of controls which use Script
+            // Map<String controlName, Map<String appearanceOrMediatype, List<String effectiveId>>>
+            final Map<String, Map<String, List<String>>> javaScriptControlsAppearancesMap = gatherJavascriptControls();
             outputJavaScriptInitialData(helper, xhtmlPrefix, javaScriptControlsAppearancesMap);
         }
     }
@@ -150,73 +145,11 @@ public class XHTMLHeadHandler extends XFormsBaseHandler {
         return javaScriptControlsAppearancesMap;
     }
 
-    protected void outputCSSResources(ContentHandlerHelper helper, String xhtmlPrefix,
-                                    Map<String, Map<String, List<String>>> javaScriptControlsAppearancesMap,
-                                    boolean minimal, AttributesImpl attributesImpl) {
-        // Main CSS resources
-        for (final XFormsFeatures.ResourceConfig resourceConfig: XFormsFeatures.getCSSResources(containingDocument, javaScriptControlsAppearancesMap)) {
-            // Only include stylesheet if needed
-            attributesImpl.clear();
-            final String[] attributesList = new String[]{"rel", "stylesheet", "href", resourceConfig.getResourcePath(minimal), "type", "text/css", "media", "all"};
-            ContentHandlerHelper.populateAttributes(attributesImpl, attributesList);
-            helper.element(xhtmlPrefix, XMLConstants.XHTML_NAMESPACE_URI, "link", attributesImpl);
-        }
+    protected abstract void outputCSSResources(ContentHandlerHelper helper, String xhtmlPrefix,
+        boolean minimal, AttributesImpl attributesImpl);
 
-        // XBL resources
-        final List<Element> xblStyles = containingDocument.getStaticState().getXBLBindings().getXBLStyles();
-        if (xblStyles != null) {
-            for (final Element styleElement: xblStyles) {
-                attributesImpl.clear();
-                if (styleElement.attributeValue(XFormsConstants.SRC_QNAME) != null) {
-                    // xhtml:link
-                    final String[] attributesList = new String[]{"rel", "stylesheet", "href", styleElement.attributeValue(XFormsConstants.SRC_QNAME), "type", "text/css", "media", styleElement.attributeValue("media")};
-                    ContentHandlerHelper.populateAttributes(attributesImpl, attributesList);
-                    helper.element(xhtmlPrefix, XMLConstants.XHTML_NAMESPACE_URI, "link", attributesImpl);
-                } else {
-                    // xhtml:style
-                    final String[] attributesList = new String[]{"rel", "stylesheet", "type", "text/css", "media", styleElement.attributeValue("media")};
-                    ContentHandlerHelper.populateAttributes(attributesImpl, attributesList);
-                    helper.startElement(xhtmlPrefix, XMLConstants.XHTML_NAMESPACE_URI, "style", attributesImpl);
-                    helper.text(styleElement.getText());
-                    helper.endElement();
-                }
-            }
-        }
-    }
-
-    protected void outputJavaScriptResources(ContentHandlerHelper helper, String xhtmlPrefix,
-                                           Map<String, Map<String, List<String>>> javaScriptControlsAppearancesMap,
-                                           boolean minimal, AttributesImpl attributesImpl) {
-
-        for (final XFormsFeatures.ResourceConfig resourceConfig: XFormsFeatures.getJavaScriptResources(containingDocument, javaScriptControlsAppearancesMap)) {
-            // Only include stylesheet if needed
-            attributesImpl.clear();
-            final String[] attributesList = new String[]{"type", "text/javascript", "src", resourceConfig.getResourcePath(minimal)};
-            ContentHandlerHelper.populateAttributes(attributesImpl, attributesList);
-            helper.element(xhtmlPrefix, XMLConstants.XHTML_NAMESPACE_URI, "script", attributesImpl);
-        }
-
-        // XBL resources
-        final List<Element> xblScripts = containingDocument.getStaticState().getXBLBindings().getXBLScripts();
-        if (xblScripts != null) {
-            for (final Element scriptElement: xblScripts) {
-                attributesImpl.clear();
-                if (scriptElement.attributeValue(XFormsConstants.SRC_QNAME) != null) {
-                    // xhtml:script with @src
-                    final String[] attributesList = new String[]{"type", "text/javascript", "src", scriptElement.attributeValue(XFormsConstants.SRC_QNAME)};
-                    ContentHandlerHelper.populateAttributes(attributesImpl, attributesList);
-                    helper.element(xhtmlPrefix, XMLConstants.XHTML_NAMESPACE_URI, "script", attributesImpl);
-                } else {
-                    // xhtml:script without @src
-                    final String[] attributesList = new String[]{"type", "text/javascript"};
-                    ContentHandlerHelper.populateAttributes(attributesImpl, attributesList);
-                    helper.startElement(xhtmlPrefix, XMLConstants.XHTML_NAMESPACE_URI, "script", attributesImpl);
-                    helper.text(scriptElement.getText());
-                    helper.endElement();
-                }
-            }
-        }
-    }
+    protected abstract void outputJavaScriptResources(ContentHandlerHelper helper, String xhtmlPrefix,
+        boolean minimal, AttributesImpl attributesImpl);
 
     private void outputConfigurationProperties(ContentHandlerHelper helper, String xhtmlPrefix, boolean versionedResources) {
         final Map clientPropertiesMap;
@@ -230,17 +163,6 @@ public class XHTMLHeadHandler extends XFormsBaseHandler {
                     final long heartbeatDelay = XFormsStateManager.getHeartbeatDelay(containingDocument, handlerContext.getExternalContext());
                     if (heartbeatDelay != ((Number) propertyDefinition.getDefaultValue()).longValue())
                         dynamicProperties.put(XFormsProperties.SESSION_HEARTBEAT_DELAY_PROPERTY, heartbeatDelay);
-                }
-
-                // Produce JavaScript paths for use on the client
-                {
-                    // FCKeditor path
-                    {
-                        final XFormsProperties.PropertyDefinition propertyDefinition = XFormsProperties.getPropertyDefinition(XFormsProperties.FCK_EDITOR_BASE_PATH_PROPERTY);
-                        final String fckEditorPath = versionedResources ? "/" + Version.getVersionNumber() + propertyDefinition.getDefaultValue() : (String) propertyDefinition.getDefaultValue();
-                        if (!fckEditorPath.equals(propertyDefinition.getDefaultValue()))
-                            dynamicProperties.put(XFormsProperties.FCK_EDITOR_BASE_PATH_PROPERTY, fckEditorPath);
-                    }
                 }
 
                 // Help events

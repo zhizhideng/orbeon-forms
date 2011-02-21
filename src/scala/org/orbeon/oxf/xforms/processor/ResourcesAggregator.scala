@@ -37,13 +37,15 @@ class ResourcesAggregator extends ProcessorImpl {
 
     override def createOutput(name: String) = {
         val output = new ProcessorOutputImpl(ResourcesAggregator.this, name) {
-            override def readImpl(pipelineContext: PipelineContext, xmlReceiver: XMLReceiver ) =
+            override def readImpl(pipelineContext: PipelineContext, xmlReceiver: XMLReceiver) =
                 readInputAsSAX(pipelineContext, ProcessorImpl.INPUT_DATA,
                     if (!XFormsProperties.isCombinedResources) xmlReceiver else new SimpleForwardingXMLReceiver(xmlReceiver) {
 
                     case class InlineElement(attributes: Attributes) {
                         var content = new StringBuilder
                     }
+
+                    val attributesImpl = new AttributesImpl
 
                     // State
                     var level = 0
@@ -53,6 +55,8 @@ class ResourcesAggregator extends ProcessorImpl {
                     var currentInlineElement: InlineElement = _
 
                     // Resources gathered
+                    var baselineCSS = LinkedHashSet[String]()
+                    var baselineJS = LinkedHashSet[String]()
                     var css = LinkedHashSet[String]()
                     var js = LinkedHashSet[String]()
 
@@ -69,14 +73,15 @@ class ResourcesAggregator extends ProcessorImpl {
                             lazy val href = attributes.getValue("href")
                             lazy val src = attributes.getValue("src")
                             lazy val resType = attributes.getValue("type")
+                            lazy val cssClasses = attributes.getValue("class")
 
                             // Gather resources that match
                             localname match {
                                 case "link" if (href ne null) && ((resType eq null) || resType == "text/css") =>
-                                    css += href
+                                    (if (cssClasses == "xforms-baseline") baselineCSS else css) += href
                                     filter = true
                                 case "script" if (src ne null) && ((resType eq null) || resType == "text/javascript")  =>
-                                    js += src
+                                    (if (cssClasses == "xforms-baseline") baselineJS else js) += src
                                     filter = true
                                 case "style" if (resType eq null) =>
                                     currentInlineElement = InlineElement(new AttributesImpl(attributes))
@@ -95,30 +100,27 @@ class ResourcesAggregator extends ProcessorImpl {
                     }
 
                     override def endElement(uri: String, localname: String, qName: String) = {
-                        
-                        if (level == 2 && localname == "head") {
 
-                            val xhtmlPrefix = XMLUtils.prefixFromQName(qName)
-                            val helper = new ContentHandlerHelper(xmlReceiver)
+                        lazy val xhtmlPrefix = XMLUtils.prefixFromQName(qName)
+                        lazy val helper = new ContentHandlerHelper(xmlReceiver)
 
-                            val attributesImpl = new AttributesImpl
+                        // Configurable function to output an element
+                        def outputElement(getAttributes: String => Array[String], elementName: String)(resource: String) = {
+                            attributesImpl.clear()
+                            ContentHandlerHelper.populateAttributes(attributesImpl, getAttributes(resource))
+                            helper.element(xhtmlPrefix, XMLConstants.XHTML_NAMESPACE_URI, elementName, attributesImpl)
+                        }
 
-                            // Configurable function to output an element
-                            def outputElement(getAttributes: String => Array[String], elementName: String)(resource: String) = {
-                                attributesImpl.clear()
-                                ContentHandlerHelper.populateAttributes(attributesImpl, getAttributes(resource))
-                                helper.element(xhtmlPrefix, XMLConstants.XHTML_NAMESPACE_URI, elementName, attributesImpl)
-                            }
+                        // Output an inline element
+                        def outputInlineElement(elementName: String, element: InlineElement) = {
+                            helper.startElement(xhtmlPrefix, XMLConstants.XHTML_NAMESPACE_URI, elementName, element.attributes)
+                            helper.text(element.content.toString)
+                            helper.endElement()
+                        }
 
-                            // Output an inline element
-                            def outputInlineElement(elementName: String, element: InlineElement) = {
-                                helper.startElement(xhtmlPrefix, XMLConstants.XHTML_NAMESPACE_URI, elementName, element.attributes)
-                                helper.text(element.content.toString)
-                                helper.endElement()
-                            }
-
-                            // Output combined resources
-                            def outputCombined(resources: scala.collection.Set[String], isCSS: Boolean, outputElement: String => Unit) {
+                        // Output combined resources
+                        def outputCombined(resources: scala.collection.Set[String], isCSS: Boolean, outputElement: String => Unit) {
+                            if (resources.nonEmpty) {
                                 // All resource paths are hashed
                                 val resourcesHash = ScalaUtils.digest("SHA-1", Seq(resources mkString "|"))
 
@@ -139,19 +141,41 @@ class ResourcesAggregator extends ProcessorImpl {
                                     XFormsResourceServer.cacheResources(resourcesConfig, pipelineContext, resourcesHash, combinedLastModified, isCSS, false)
                                 }
                             }
+                        }
+
+                        def outputJS = {
+                            val outputJSElement = outputElement(resource => Array("type", "text/javascript", "src", resource), "script") _
+                            outputCombined(baselineJS, false, outputJSElement)
+                            outputCombined(js -- baselineJS, false, outputJSElement)
+                            inlineJS foreach (e => outputInlineElement("script", e))
+                        }
+                        
+                        if (level == 2 && localname == "head") {
 
                             // 1. Combined and inline CSS
-                            outputCombined(css, true, outputElement(resource => Array("rel", "stylesheet", "href", resource, "type", "text/css", "media", "all"), "link") _)
+                            val outputCSSElement = outputElement(resource => Array("rel", "stylesheet", "href", resource, "type", "text/css", "media", "all"), "link") _
+                            outputCombined(baselineCSS, true, outputCSSElement)
+                            outputCombined(css -- baselineCSS, true, outputCSSElement)
                             inlineCSS foreach (e => outputInlineElement("style", e))
 
-                            // 2. Combined amd inline JS
-                            outputCombined(js, false, outputElement(resource => Array("type", "text/javascript", "src", resource), "script") _)
-                            inlineJS foreach (e => outputInlineElement("script", e))
+                            // 2. Combined and inline JS
+                            if (!XFormsProperties.isJavaScriptAtBottom)
+                                outputJS
 
                             // Close head element
                             super.endElement(uri, localname, qName)
 
                             inHead = false
+                        } else if (level == 2 && localname == "body") {
+                            // Close body element
+                            super.endElement(uri, localname, qName)
+
+                            // Combined and inline JS
+                            // Scripts at the bottom of the page. This is not valid HTML, but it is a recommended practice for
+                            // performance as of early 2008. See http://developer.yahoo.com/performance/rules.html#js_bottom
+                            if (XFormsProperties.isJavaScriptAtBottom)
+                                outputJS
+
                         } else if (filter && level == 3 && inHead) {
                             currentInlineElement = null
                             filter = false

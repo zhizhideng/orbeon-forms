@@ -430,4 +430,14 @@ public class XFormsResourceServer extends ProcessorImpl {
         os.flush();
         os.close();
     }
+    
+    // For unit tests only (called from XSLT)
+    public static String[] testGetResources(String key) {
+        final Element cacheElement = Caches.resourcesCache().get(key);
+        if (cacheElement != null) {
+            return (String[]) cacheElement.getValue();
+        } else {
+            return null;
+        }
+    }
 }
