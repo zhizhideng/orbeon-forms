@@ -4672,7 +4672,7 @@ ORBEON.xforms.Init = {
      * Initialize HTML areas.
      */
     _htmlArea: function (htmlArea) {
-        ORBEON.widgets.RTE.init(htmlArea);
+        ORBEON.xforms.Page.getControl(container);
     },
 
     /**
