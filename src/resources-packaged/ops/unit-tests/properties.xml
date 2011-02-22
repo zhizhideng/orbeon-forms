@@ -15,6 +15,9 @@
             xmlns:oxf="http://www.orbeon.com/oxf/processors">
 
     <property as="xs:anyURI"  name="oxf.log4j-config"                                value="oxf:/ops/unit-tests/log4j.xml"/>
+
+    <property as="xs:boolean" name="oxf.resources.versioned"                         value="true"/>
+
     <property as="xs:string"  name="oxf.schemas.urn://adress-book"                   value="oxf:/ops/unit-tests/address-book-schema.xml"/>
     <property as="xs:boolean" name="oxf.xforms.encrypt-hidden"                       value="true"/>
     <property as="xs:boolean" name="oxf.xforms.encrypt-names"                        value="true"/>
