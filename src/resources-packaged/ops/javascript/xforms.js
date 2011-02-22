@@ -943,7 +943,7 @@ var DEFAULT_LOADING_TEXT = "Loading...";
                 this.showErrorDialog = new ORBEON.util.Property("show-error-dialog", true);
                 this.clientEventMode = new ORBEON.util.Property("client.events.mode", "default");
                 this.clientEventsFilter = new ORBEON.util.Property("client.events.filter", "");
-                this.resourcesVersioned = new ORBEON.util.Property("oxf.resources.versioned", false);
+                this.resourcesVersioned = new ORBEON.util.Property("oxf.resources.versioned", true);
                 this.resourcesVersionNumber = new ORBEON.util.Property("oxf.resources.version-number", "");
                 this.newXHTMLLayout = new ORBEON.util.Property("new-xhtml-layout", false);
                 this.xhtmlLayout = new ORBEON.util.Property("xhtml-layout", "nospan");
@@ -4152,7 +4152,7 @@ ORBEON.xforms.Init = {
                 ORBEON.xforms.Globals.ns[formID] = formID.substring(0, formID.indexOf("xforms-form"));
 
                 // Initialize XForms server URL
-                ORBEON.xforms.Init._setBasePaths(formID, document.getElementsByTagName("script"), ORBEON.util.Properties.resourcesVersioned.get() == "true");
+                ORBEON.xforms.Init._setBasePaths(formID, document.getElementsByTagName("script"), ORBEON.util.Properties.resourcesVersioned.get());
 
                 // Remove class xforms-initially-hidden on form element, which might have been added to prevent user
                 // interaction with the form before it is initialized
