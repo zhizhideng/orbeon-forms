@@ -214,32 +214,44 @@ public class Item implements ItemContainer {
 
         return sb.toString();
     }
-    
+
     public static class Label {
-    	
-    	private final String label;
-    	private final boolean isHTML;
-		
-		public Label(String label, boolean isHTML) {
-			this.label = label;
-			this.isHTML = isHTML;
-		}
 
-		public String getLabel() {
-			return label;
-		}
+        private final String label;
+        private final boolean isHTML;
 
-		public boolean isHTML() {
-			return isHTML;
-		}
+        public Label(String label, boolean isHTML) {
+            this.label = label;
+            this.isHTML = isHTML;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+
+        public boolean isHTML() {
+            return isHTML;
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + (isHTML ? 1231 : 1237);
+            result = prime * result + ((label == null) ? 0 : label.hashCode());
+            return result;
+        }
 
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof Label))
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
                 return false;
 
             final Label other = (Label) obj;
-
             return isHTML == other.isHTML && XFormsUtils.compareStrings(label, other.label);
         }
     }
