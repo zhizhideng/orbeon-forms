@@ -17,16 +17,16 @@ import org.apache.commons.lang.StringUtils;
 import org.dom4j.QName;
 import org.orbeon.oxf.util.PropertyContext;
 import org.orbeon.oxf.xforms.XFormsUtils;
-import org.orbeon.oxf.xforms.control.XFormsControl;
 import org.orbeon.oxf.xforms.control.controls.XFormsCaseControl;
-import org.orbeon.oxf.xml.XMLUtils;
-import org.orbeon.oxf.xml.dom4j.LocationData;
 import org.orbeon.oxf.xml.XMLUtils;
 import org.orbeon.oxf.xml.dom4j.LocationData;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Represents an item (xforms:item, xforms:choice, or item in itemset).
@@ -232,5 +232,15 @@ public class Item implements ItemContainer {
 		public boolean isHTML() {
 			return isHTML;
 		}
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof Label))
+                return false;
+
+            final Label other = (Label) obj;
+
+            return isHTML == other.isHTML && XFormsUtils.compareStrings(label, other.label);
+        }
     }
 }
