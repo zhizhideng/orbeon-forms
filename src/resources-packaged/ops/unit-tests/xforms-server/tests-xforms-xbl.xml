@@ -1859,15 +1859,15 @@
                                     <event observer="main-group" type="xforms-enabled" target="main-group" phase="target" original-target="main-group" indexes=""/>
                                     <event observer="fr-level1-binding" type="xforms-enabled" target="level1-component" phase="bubbling" original-target="level1-repeat" indexes=""/>
                                     <event observer="main-group" type="xforms-enabled" target="level1-component" phase="bubbling" original-target="level1-repeat" indexes=""/>
-                                    <event observer="fr-level2-binding" type="xforms-enabled" target="level2-repeat" phase="bubbling" original-target="level2-repeat" indexes="1"/>
+                                    <event observer="fr-level2-binding" type="xforms-enabled" target="level2-component" phase="bubbling" original-target="level2-repeat" indexes="1"/>
                                     <event observer="fr-level1-binding" type="xforms-enabled" target="level1-component" phase="bubbling" original-target="level2-repeat" indexes="1"/>
                                     <event observer="main-group" type="xforms-enabled" target="level1-component" phase="bubbling" original-target="level2-repeat" indexes="1"/>
-                                    <event observer="fr-level3-binding" type="xforms-enabled" target="level3-repeat" phase="bubbling" original-target="level3-repeat" indexes="1 1"/>
-                                    <event observer="fr-level2-binding" type="xforms-enabled" target="level3-repeat" phase="bubbling" original-target="level3-repeat" indexes="1 1"/>
+                                    <event observer="fr-level3-binding" type="xforms-enabled" target="level3-component" phase="bubbling" original-target="level3-repeat" indexes="1 1"/>
+                                    <event observer="fr-level2-binding" type="xforms-enabled" target="level2-component" phase="bubbling" original-target="level3-repeat" indexes="1 1"/>
                                     <event observer="fr-level1-binding" type="xforms-enabled" target="level1-component" phase="bubbling" original-target="level3-repeat" indexes="1 1"/>
                                     <event observer="main-group" type="xforms-enabled" target="level1-component" phase="bubbling" original-target="level3-repeat" indexes="1 1"/>
-                                    <event observer="fr-level3-binding" type="xforms-enabled" target="title-control" phase="bubbling" original-target="title-control" indexes="1 1 1"/>
-                                    <event observer="fr-level2-binding" type="xforms-enabled" target="title-control" phase="bubbling" original-target="title-control" indexes="1 1 1"/>
+                                    <event observer="fr-level3-binding" type="xforms-enabled" target="level3-component" phase="bubbling" original-target="title-control" indexes="1 1 1"/>
+                                    <event observer="fr-level2-binding" type="xforms-enabled" target="level2-component" phase="bubbling" original-target="title-control" indexes="1 1 1"/>
                                     <event observer="fr-level1-binding" type="xforms-enabled" target="level1-component" phase="bubbling" original-target="title-control" indexes="1 1 1"/>
                                     <event observer="main-group" type="xforms-enabled" target="level1-component" phase="bubbling" original-target="title-control" indexes="1 1 1"/>
                                     <event observer="fr-level1-binding" type="up-value1" target="level1-component" phase="target" original-target="level1-component" indexes=""/>
@@ -1877,13 +1877,13 @@
                                     <event observer="fr-level2-binding" type="down-2" target="level2-component" phase="target" original-target="level2-component" indexes="1"/>
                                     <event observer="fr-level1-binding" type="down-1" target="level1-component" phase="target" original-target="level1-component" indexes=""/>
                                     <event observer="main-group" type="down-1" target="level1-component" phase="bubbling" original-target="level1-component" indexes=""/>
-                                    <event observer="fr-level3-binding" type="DOMFocusIn" target="title-control" phase="bubbling" original-target="title-control" indexes="1 1 1"/>
-                                    <event observer="fr-level2-binding" type="DOMFocusIn" target="title-control" phase="bubbling" original-target="title-control" indexes="1 1 1"/>
+                                    <event observer="fr-level3-binding" type="DOMFocusIn" target="level3-component" phase="bubbling" original-target="title-control" indexes="1 1 1"/>
+                                    <event observer="fr-level2-binding" type="DOMFocusIn" target="level2-component" phase="bubbling" original-target="title-control" indexes="1 1 1"/>
                                     <event observer="fr-level1-binding" type="DOMFocusIn" target="level1-component" phase="bubbling" original-target="title-control" indexes="1 1 1"/>
                                     <event observer="main-group" type="DOMFocusIn" target="level1-component" phase="bubbling" original-target="title-control" indexes="1 1 1"/>
                                     <event observer="main-group" type="up-value1" target="level1-component" phase="bubbling" original-target="level1-component" indexes=""/>
-                                    <event observer="fr-level3-binding" type="xforms-value-changed" target="title-control" phase="bubbling" original-target="title-control" indexes="1 1 1"/>
-                                    <event observer="fr-level2-binding" type="xforms-value-changed" target="title-control" phase="bubbling" original-target="title-control" indexes="1 1 1"/>
+                                    <event observer="fr-level3-binding" type="xforms-value-changed" target="level3-component" phase="bubbling" original-target="title-control" indexes="1 1 1"/>
+                                    <event observer="fr-level2-binding" type="xforms-value-changed" target="level2-component" phase="bubbling" original-target="title-control" indexes="1 1 1"/>
                                     <event observer="fr-level1-binding" type="xforms-value-changed" target="level1-component" phase="bubbling" original-target="title-control" indexes="1 1 1"/>
                                     <event observer="main-group" type="xforms-value-changed" target="level1-component" phase="bubbling" original-target="title-control" indexes="1 1 1"/>
                                 </events>
@@ -3872,6 +3872,110 @@
                 </xxf:dynamic-state>
                 <xxf:action>
                     <xxf:control-values/>
+                </xxf:action>
+            </xxf:event-response>
+        </output>
+    </test>
+
+    <test description="xxbl:global" name="oxf:pipeline">
+        <input name="config" href="xforms-server/wrap-xforms-state.xpl"/>
+        <input name="document">
+            <xhtml:html xmlns:xforms="http://www.w3.org/2002/xforms"
+                    xmlns:xhtml="http://www.w3.org/1999/xhtml"
+                    xmlns:xxforms="http://orbeon.org/oxf/xml/xforms"
+                    xmlns:ev="http://www.w3.org/2001/xml-events"
+                    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                    xmlns:xbl="http://www.w3.org/ns/xbl"
+                    xmlns:xxbl="http://orbeon.org/oxf/xml/xbl"
+                    xmlns:fr="http://orbeon.org/oxf/xml/form-runner">
+
+                <xhtml:head>
+                    <xforms:model id="model">
+                        <!-- Upon ready, simulate click on button + close dialog for both XBL controls -->
+                        <xforms:action ev:event="xforms-ready">
+                            <xforms:dispatch name="DOMActivate" targetid="my-foo1$foo-trigger"/>
+                            <xxforms:hide dialog="my-dialog"/>
+                            <xforms:dispatch name="DOMActivate" targetid="my-foo2$foo-trigger"/>
+                            <xxforms:hide dialog="my-dialog"/>
+                        </xforms:action>
+                    </xforms:model>
+                    <xbl:xbl>
+                        <xbl:binding element="fr|foo">
+                            <xxbl:global>
+                                <!-- The single global dialog -->
+                                <xxforms:dialog id="my-dialog" level="modal" model="my-dialog-model">
+                                    <xforms:label>My Dialog</xforms:label>
+
+                                    <!-- Dialog model -->
+                                    <xforms:model id="my-dialog-model">
+                                        <xforms:instance id="my-dialog-instance">
+                                            <count>0</count>
+                                        </xforms:instance>
+                                    </xforms:model>
+
+                                    <!-- Dialog keeps track of # of times it is open, and sends current count back to caller -->
+                                    <xforms:action ev:event="xxforms-dialog-open">
+                                        <xforms:setvalue ref="instance()" value="xs:integer(.) + 1"/>
+                                        <xforms:dispatch name="my-callback" targetid="{event('my-id')}">
+                                            <xxforms:context name="my-value" select="instance()"/>
+                                        </xforms:dispatch>
+                                    </xforms:action>
+
+                                </xxforms:dialog>
+                            </xxbl:global>
+                            <xbl:template>
+                                <!-- Local model state -->
+                                <xforms:model id="model">
+                                    <xforms:instance id="instance">
+                                        <count/>
+                                    </xforms:instance>
+                                </xforms:model>
+                                <xforms:trigger id="foo-trigger">
+                                    <xforms:label>Open me</xforms:label>
+                                    <!-- Open global dialog upon click -->
+                                    <xxforms:show ev:event="DOMActivate" dialog="my-dialog" xxbl:scope="outer">
+                                        <xxforms:context name="my-id" select="event('xxforms:effective-targetid')"/>
+                                    </xxforms:show>
+                                    <!-- Upon callback, store value received -->
+                                    <xforms:setvalue ev:event="my-callback" ref="instance()" value="event('my-value')"/>
+                                </xforms:trigger>
+                            </xbl:template>
+                        </xbl:binding>
+                    </xbl:xbl>
+                </xhtml:head>
+                <xhtml:body>
+                    <fr:foo id="my-foo1"/>
+                    <fr:foo id="my-foo2"/>
+                </xhtml:body>
+            </xhtml:html>
+        </input>
+        <output name="response">
+            <xxf:event-response xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+                <xxf:dynamic-state>
+                    <dynamic-state>
+                        <instances>
+                            <instance id="my-dialog-instance" model-id="my-dialog-model">
+                                <count>2</count>
+                            </instance>
+                            <instance id="instance" model-id="my-foo1$model">
+                                <count>1</count>
+                            </instance>
+                            <instance id="instance" model-id="my-foo2$model">
+                                <count>2</count>
+                            </instance>
+                        </instances>
+                        <controls>
+                            <control effective-id="my-dialog" visible="false"/>
+                        </controls>
+                    </dynamic-state>
+                </xxf:dynamic-state>
+                <xxf:action>
+                    <xxf:control-values>
+                        <xxf:control id="my-foo1$foo-trigger" label="Open me"/>
+                        <xxf:control id="my-foo2$foo-trigger" label="Open me"/>
+                        <xxf:control id="my-dialog" label="My Dialog"/>
+                        <xxf:div id="my-dialog" visibility="hidden"/>
+                    </xxf:control-values>
                 </xxf:action>
             </xxf:event-response>
         </output>
