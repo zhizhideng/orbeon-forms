@@ -12,7 +12,7 @@
 
   The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
   -->
-<group description="Page Flow" xmlns:p="http://www.orbeon.com/oxf/pipeline">
+<group description="Page Flow" xmlns:p="http://www.orbeon.com/oxf/pipeline" xmlns:oxf="http://www.orbeon.com/oxf/processors">
 
     <test description="Setvalues 1 (with elements and attributes)" name="oxf:unsafe-xslt">
         <input name="config" href="oxf:/ops/pfc/setvalue-extract.xsl"/>
