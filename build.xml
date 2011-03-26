@@ -801,6 +801,7 @@
                 <include name="${full.release.name}.war"/>
                 <include name="orbeon-proxy-portlet.war"/>
             </zipfileset>
+            <zipfileset file="${build.distrib.dir}/orbeon-proxy-portlet.war" prefix="${full.release.name}"/>
             <zipfileset file="README.md" prefix="${full.release.name}"/>
             <zipfileset file="LICENSE.txt" prefix="${full.release.name}"/>
             <zipfileset dir="${build.doc.dir}" prefix="${full.release.name}/doc"/>
