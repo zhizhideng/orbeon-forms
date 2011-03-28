@@ -1218,7 +1218,7 @@ public class XMLUtils {
         }
         return newAttributes;
     }
-    
+
     public static AttributesImpl removeAttribute(Attributes attributes, String uri, String localname) {
         final AttributesImpl newAttributes = new AttributesImpl();
         for (int i = 0; i < attributes.getLength(); i++) {
