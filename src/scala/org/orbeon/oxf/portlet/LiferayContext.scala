@@ -23,8 +23,6 @@ import javax.portlet.PortletRequest
 class LiferayContext() extends CustomContext {
 
     def amendRequest(portletRequest: PortletRequest, request: ExternalContext.Request) {
-        val companyId = PortalUtil.getCompanyId(portletRequest)
-
         // NOTE: request.getRemoteUser() can be configured in liferay-portlet.xml with user-principal-strategy to
         // either userId (a number) or screenName (a string). It seems more reliable to use the API below to obtain the
         // user.
