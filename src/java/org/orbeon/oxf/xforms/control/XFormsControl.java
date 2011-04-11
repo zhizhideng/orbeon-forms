@@ -1082,7 +1082,7 @@ public abstract class XFormsControl implements XFormsEventTarget, XFormsEventObs
         protected abstract void notifyOptimized();
         protected abstract T evaluateValue();
 
-        final public T getValue() {
+        public T getValue() {
             if (!isEvaluated) {
                 if (XFormsControl.this.isRelevant()) {
                     notifyCompute();
