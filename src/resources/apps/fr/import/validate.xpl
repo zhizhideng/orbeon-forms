@@ -21,8 +21,8 @@
           xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xmlns:saxon="http://saxon.sf.net/"
-          xmlns:pipeline="java:org.orbeon.oxf.processor.pipeline.PipelineFunctionLibrary"
-          xmlns:fr="http://orbeon.org/oxf/xml/form-runner">
+          xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
+          xmlns:utils="java:org.orbeon.oxf.xml.XMLUtils">
 
     <p:param type="input" name="instance"/>
     <p:param type="output" name="data"/>
@@ -33,7 +33,7 @@
         <p:input name="config" href="apply.xpl"/>
         <p:input name="xforms-model">
             <!-- XForms model that gets inserted into Form Runner to perform validation upon initialization -->
-            <xf:model id="fr-batch-validation-model" xxf:xpath-analysis="true">
+            <xf:model id="fr-batch-validation-model">
 
                 <xf:instance src="input:data" id="fr-batch-data" xxf:readonly="true"/>
                 <xf:instance id="fr-empty-data"><dummy/></xf:instance>
@@ -48,7 +48,7 @@
 
                 <xf:submission id="fr-send-stats" ref="instance('fr-import-stats')" method="post" action="echo:" replace="all"/>
 
-                <xf:action ev:event="xforms-ready">
+                <xf:action ev:event="xforms-ready" xxf:xpath-analysis="true">
                     <!-- Remember original empty data -->
                     <xf:insert ref="instance('fr-empty-data')" origin="xxf:instance('fr-form-instance')"/>
                     <xxf:var name="headers" value="instance()/row[1]/c"/>
@@ -56,6 +56,8 @@
                     <!-- TODO: validate that headers match data -->
 
                     <xf:setvalue ref="instance('fr-import-stats')/total" value="count(instance()/row) - 1"/>
+
+                    <!--<xf:message level="xxf:log-info" value="concat('xxx ', string-join($headers/string(), ', '))"/>-->
 
                     <xf:action type="xpath">
                         xxf:set-session-attribute('org.orbeon.fr.import.total', xs:integer(instance('fr-import-stats')/total)),
@@ -78,8 +80,10 @@
                             <xf:action xxf:iterate="c">
                                 <xxf:var name="p" value="position()"/>
                                 <xxf:var name="v" value="xs:string(.)"/>
+                                <xxf:var name="raw-header" value="normalize-space($headers[$p])"/>
 
-                                <xf:setvalue ref="$new//*[not(*) and name() = $headers[$p]]" value="$v"/>
+                                <!-- Only set value if header name is not blank -->
+                                <xf:setvalue ref="$new//*[not(*) and $raw-header != '' and name() = utils:makeNCName($raw-header)]" value="$v"/>
                             </xf:action>
 
                             <!-- Set filled data -->
@@ -97,6 +101,8 @@
                                 xxf:set-session-attribute('org.orbeon.fr.import.succeeded', instance('fr-import-stats')/succeeded)
                             </xf:action>
                         </xf:action>
+
+                        <xf:message level="xxf:log-info" value="concat('xxx', $p)"/>
                     </xf:action>
 
                     <xf:action type="xpath">

@@ -21,8 +21,8 @@
           xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xmlns:saxon="http://saxon.sf.net/"
-          xmlns:pipeline="java:org.orbeon.oxf.processor.pipeline.PipelineFunctionLibrary"
-          xmlns:fr="http://orbeon.org/oxf/xml/form-runner">
+          xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
+          xmlns:utils="java:org.orbeon.oxf.xml.XMLUtils">
 
     <p:param type="input" name="instance"/>
     <p:param type="output" name="data"/>
@@ -85,8 +85,10 @@
                                 <xf:action xxf:iterate="c">
                                     <xxf:var name="p" value="position()"/>
                                     <xxf:var name="v" value="xs:string(.)"/>
+                                    <xxf:var name="raw-header" value="normalize-space($headers[$p])"/>
 
-                                    <xf:setvalue ref="$new//*[not(*) and name() = $headers[$p]]" value="$v"/>
+                                    <!-- Only set value if header name is not blank -->
+                                    <xf:setvalue ref="$new//*[not(*) and $raw-header != '' and name() = utils:makeNCName($raw-header)]" value="$v"/>
                                 </xf:action>
 
                                 <!-- Set filled data -->
@@ -111,6 +113,7 @@
 
                         </xf:action>
 
+                        <!--<xf:message level="xxf:log-info" value="concat('xxx', $p)"/>-->
                     </xf:action>
 
                     <!-- Output resulting instance -->
