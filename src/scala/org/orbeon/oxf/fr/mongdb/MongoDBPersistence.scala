@@ -24,7 +24,7 @@ import org.dom4j.{Document, Text, Element}
 import scala.collection.JavaConversions._
 import org.orbeon.saxon.value.DateTimeValue
 import java.util.Date
-import com.mongodb.casbah.gridfs.{GridFSDBFile, GridFS}
+import com.mongodb.casbah.gridfs.GridFS
 
 /**
  * Experimental: Form Runner MongoDB persistence layer implementation.
@@ -54,7 +54,6 @@ class MongoDBPersistence extends HttpServlet {
 
     // Put document or attachment
     override def doPut(req: HttpServletRequest, resp: HttpServletResponse) {
-
         req.getPathInfo match {
             case DataPath(app, form, documentId, "data.xml") =>
                 putDocument(app, form, documentId, req.getInputStream)
@@ -159,7 +158,7 @@ class MongoDBPersistence extends HttpServlet {
                     val text = element.getText
                     builder += (element.getName -> text)
                     if (text.trim.nonEmpty)
-                        keywords ++= text.split("""\s+"""")
+                        keywords ++= text.split("""\s+""")
                 }
             }
 
@@ -172,7 +171,7 @@ class MongoDBPersistence extends HttpServlet {
 
         // Create or update
         withCollection(app, form) {
-            _.update(MongoDBObject(DOCUMENT_ID_KEY -> documentId), builder.result, true, false)
+            _.update(MongoDBObject(DOCUMENT_ID_KEY -> documentId), builder.result, upsert = true, multi = false)
         }
     }
 
