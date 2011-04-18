@@ -228,8 +228,4 @@ class MongoDBPersistence extends HttpServlet {
     def withFS(t: (GridFS) => Any) {
         withDB { db => t(GridFS(db))}
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> master
