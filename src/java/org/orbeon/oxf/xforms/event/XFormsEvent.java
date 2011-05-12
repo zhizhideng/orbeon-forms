@@ -158,6 +158,10 @@ public abstract class XFormsEvent implements Cloneable {
         } else if (XXFORMS_EFFECTIVE_TARGETID_ATTRIBUTE.equals(name)) {
             // Return the target effective id
             return SingletonIterator.makeIterator(StringValue.makeStringValue(targetObject.getEffectiveId()));
+        } else if (customAttributes != null && customAttributes.get(name) != null) {
+            // TODO: These should be checked first, or last, but not in the middle. fr:error-summary relies on these being first.
+            // Return custom attribute if found
+            return (customAttributes.get(name)).iterate();
         } else if ("repeat-indexes".equals(name) || XXFORMS_REPEAT_INDEXES_ATTRIBUTE.equals(name)) {
 
             if ("repeat-indexes".equals(name)) {
@@ -217,9 +221,6 @@ public abstract class XFormsEvent implements Cloneable {
             } else {
                 return EmptyIterator.getInstance();
             }
-        } else if (customAttributes != null && customAttributes.get(name) != null) {
-            // Return custom attribute if found
-            return (customAttributes.get(name)).iterate();
         } else {
             // "If the event context information does not contain the property indicated by the string argument, then an
             // empty node-set is returned."
