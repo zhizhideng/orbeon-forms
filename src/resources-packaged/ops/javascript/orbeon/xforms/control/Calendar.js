@@ -102,7 +102,8 @@ ORBEON.widgets.YUICalendar = function() {
             }
 
             // Try to make sure the calendar appears in front of a dialog; doesn't work automatically as of 2008-12-10
-            YAHOO.util.Dom.setStyle(calendarDiv, "z-index", ORBEON.xforms.Globals.lastDialogZIndex++);
+            ORBEON.xforms.Globals.lastDialogZIndex += 2;
+            YAHOO.util.Dom.setStyle(calendarDiv, "z-index", ORBEON.xforms.Globals.lastDialogZIndex);
 
             if (yuiCalendar == null) {
                 // Create YUI calendar
@@ -237,8 +238,9 @@ ORBEON.widgets.YUICalendar = function() {
         },
 
         keydown: function(event, target) {
-            // Close calendar when user starts typing
-            closeCalendar();
+            // Close calendar when users start typing, except if they type in the year field
+            var eventTarget = YAHOO.util.Event.getTarget(event);
+            if (eventTarget.className != "yui-cal-nav-yc") closeCalendar();
         }
     };
 }();

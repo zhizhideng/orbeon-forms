@@ -22,6 +22,8 @@
         xmlns:xi="http://www.w3.org/2001/XInclude"
         xmlns:xforms="http://www.w3.org/2002/xforms"
         xmlns:ev="http://www.w3.org/2001/xml-events"
+        xmlns:f="http//www.orbeon.com/function"
+        xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
         xmlns:pipeline="java:org.orbeon.oxf.processor.pipeline.PipelineFunctionLibrary">
 
     <p:param type="input" name="instance"/>
@@ -34,14 +36,14 @@
                 <include>/request/request-path</include>
                 <include>/request/content-type</include>
                 <include>/request/method</include>
-                <include>/request/headers/header[name = 'orbeon-username' or name = 'orbeon-roles' or name = 'orbeon-datasource']</include>
+                <include>/request/headers/header[name = 'orbeon-username' or name = 'orbeon-roles' or name = 'orbeon-datasource' or name = 'orbeon-create-flat-view']</include>
                 <include>/request/body</include>
             </config>
         </p:input>
         <p:output name="data" id="request"/>
     </p:processor>
     <p:processor name="oxf:perl5-matcher">
-        <p:input name="config"><config>/fr/service/oracle/crud/([^/]+)/([^/]+)/((form)/([^/]+)|(data)/([^/]+)/([^/]+))</config></p:input>
+        <p:input name="config"><config>/fr/service/oracle/crud/([^/]+)/([^/]+)/((form)/([^/]+)|(data)/(([^/]+)/([^/]+))?)</config></p:input>
         <p:input name="data" href="#request#xpointer(/request/request-path)"/>
         <p:output name="data" id="matcher-groups"/>
     </p:processor>
@@ -57,27 +59,7 @@
                 <xsl:variable name="matcher-groups" as="element(group)+" select="doc('input:matcher-groups')/result/group"/>
                 <xsl:variable name="request" as="element(request)" select="doc('input:request')/request"/>
                 <content-type><xsl:value-of select="$request/content-type"/></content-type>
-                <document>
-                    <!-- See comments below -->
-                    <!--<xsl:variable name="output" as="element(xsl:output)">-->
-                        <!--<xsl:element name="output">-->
-                            <!--<xsl:attribute name="method">xml</xsl:attribute>-->
-                            <!--<xsl:attribute name="omit-xml-declaration">yes</xsl:attribute>-->
-                        <!--</xsl:element>-->
-                    <!--</xsl:variable>-->
-                    <!--<xsl:value-of select="saxon:serialize(doc('input:instance'), $output)"/>-->
-
-                    <!-- NOTE: This is not a good way because:
-
-                         o the current XSLT stylesheet has some namespaces in scope, e.g. xmlns:sql
-                         o if the form declares xmlns:sql for use in attribute values only, the resulting namespace
-                            declaration might be moved to the document's root element after extraction
-
-                         It would be better to use saxon:serialize() and then saxon:parse() in oxf:sql, but oxf:sql
-                         doesn't support saxon:parse() as of 2009-0422.
-                     -->
-                    <xsl:copy-of select="doc('input:instance')"/>
-                </document>
+                <document><xsl:copy-of select="doc('input:instance')"/></document>
                 <timestamp><xsl:value-of select="current-dateTime()"/></timestamp>
                 <username><xsl:value-of select="$request/headers/header[name = 'orbeon-username']/value"/></username>
                 <roles><xsl:value-of select="$request/headers/header[name = 'orbeon-roles']/value"/></roles>
@@ -85,16 +67,21 @@
                 <form><xsl:value-of select="$matcher-groups[2]"/></form>
                 <xsl:variable name="type" as="xs:string" select="if ($matcher-groups[4] = 'form') then 'form' else 'data'"/>
                 <type><xsl:value-of select="$type"/></type>
-                <!-- Document ID is only used for data -->
-                <xsl:if test="$type = 'data'">
-                    <document-id><xsl:value-of select="$matcher-groups[7]"/></document-id>
+                <xsl:if test="$type = 'data' and $matcher-groups[8] != ''">                             <!-- Document id is only used for data; might be missing for operations over a collection -->
+                    <document-id><xsl:value-of select="$matcher-groups[8]"/></document-id>
                 </xsl:if>
-                <filename><xsl:value-of select="if ($type = 'data') then $matcher-groups[8] else $matcher-groups[5]"/></filename>
+                <xsl:if test="$type = 'form' or $matcher-groups[9] != ''">                              <!-- Filename isn't present for operations over an app/form collection -->
+                    <filename><xsl:value-of select="if ($type = 'data') then $matcher-groups[9] else $matcher-groups[5]"/></filename>
+                </xsl:if>
                 <sql:datasource><xsl:value-of select="$request/headers/header[name = 'orbeon-datasource']/value/string() treat as xs:string"/></sql:datasource>
+                <create-flat-view>
+                    <xsl:variable name="create-flat-view-property" as="xs:string?" select="$request/headers/header[name = 'orbeon-create-flat-view']/value/string()"/>
+                    <xsl:value-of select="($create-flat-view-property, 'false')[1]"/>
+                </create-flat-view>
                 <xsl:copy-of select="$request/body"/>
             </request>
         </p:input>
-        <p:output name="data" id="request-description" debug="request-description"/>
+        <p:output name="data" id="request-description"/>
     </p:processor>
 
     <p:processor name="oxf:null-serializer">
@@ -245,9 +232,11 @@
                                         <sql:execute>
                                             <sql:update>
                                                 <xsl:variable name="is-data" as="xs:boolean" select="/request/type = 'data'"/>
+                                                <xsl:variable name="has-document-id" as="xs:boolean" select="exists(/request/document-id)"/>
                                                 <xsl:variable name="table-name" as="xs:string" select="if ($is-data) then 'orbeon_form_data' else 'orbeon_form_definition'"/>
 
                                                 insert into <xsl:value-of select="$table-name"/>
+                                                    <!-- TODO: This list of columns only works for the data (not form definition) table -->
                                                     (created, last_modified, username, app, form, <xsl:if test="$is-data">document_id,</xsl:if> deleted, xml)
                                                 select
                                                     created,
@@ -255,22 +244,16 @@
                                                     <sql:param type="xs:string" select="/request/username"/>,
                                                     app, form, <xsl:if test="$is-data">document_id,</xsl:if>
                                                     'Y', xml
-                                                from (
-                                                    select * from <xsl:value-of select="$table-name"/>
-                                                    where
-                                                        (app, form, <xsl:if test="$is-data">document_id,</xsl:if> last_modified) =
-                                                        (
-                                                            select
-                                                                app, form, <xsl:if test="$is-data">document_id,</xsl:if> max(last_modified)
-                                                            from <xsl:value-of select="$table-name"/>
-                                                            where
-                                                                app = <sql:param type="xs:string" select="/request/app"/>
-                                                                and form = <sql:param type="xs:string" select="/request/form"/>
-                                                                <xsl:if test="$is-data">and document_id = <sql:param type="xs:string" select="/request/document-id"/></xsl:if>
-                                                            group by
-                                                                app, form <xsl:if test="$is-data">, document_id</xsl:if>
-                                                        )
-                                                )
+                                                from
+                                                    (
+                                                        select t.*, dense_rank() over (partition by <xsl:value-of select="if ($is-data) then 'document_id' else 'app, form'"/> order by last_modified desc) as latest
+                                                        from <xsl:value-of select="$table-name"/> t
+                                                        where
+                                                            app = <sql:param type="xs:string" select="/request/app"/>
+                                                            and form = <sql:param type="xs:string" select="/request/form"/>
+                                                            <xsl:if test="$is-data and $has-document-id">and document_id = <sql:param type="xs:string" select="/request/document-id"/></xsl:if>
+                                                    )
+                                                where latest = 1 and deleted = 'N'
                                             </sql:update>
                                         </sql:execute>
                                     </sql:connection>
@@ -284,6 +267,7 @@
                 <!-- PUT -->
                 <p:when test="/*/method = 'PUT'">
 
+                    <!-- Store data -->
                     <p:processor name="oxf:sql">
                         <p:input name="data" href="#request-description"/>
                         <p:input name="config" transform="oxf:unsafe-xslt" href="#request-description">
@@ -374,6 +358,98 @@
                         </p:input>
                     </p:processor>
 
+                    <!-- For form data, create materialized view -->
+                    <p:choose href="#request-description">
+                        <p:when test="/request/type = 'form' and /request/filename = 'form.xhtml' and /request/create-flat-view = 'true'">
+                            <p:processor name="oxf:unsafe-xslt">
+                                <p:input name="data" href="#request-description"/>
+                                <p:input name="config">
+                                    <xsl:stylesheet version="2.0">
+                                        <xsl:import href="sql-utils.xsl"/>
+                                        <xsl:template match="/">
+
+                                            <!-- Compute materialized view name -->
+                                            <!-- NOTE: Max name length is 30. -12 for "orbeon_flat_", leaves 18, or 8 for the app name, 9 for the form name -->
+                                            <xsl:variable name="mv-name" select="concat('orbeon_flat_', f:xml-to-sql-id(/request/app, 8), '_', f:xml-to-sql-id(/request/form, 9))"/>
+
+                                            <!-- SQL to drop possibly existing materialized view -->
+                                            <xsl:result-document href="output:drop-sql">
+                                                <xsl:call-template name="update-wrapper">
+                                                    <xsl:with-param name="sql">
+                                                        begin
+                                                            <!-- Drop table catching exception, as Oracle doesn't have a "create or replace materialized view" -->
+                                                            <!-- NOTE: Use "execute immediate", as Oracle doesn't like DDL in PL/SQL -->
+                                                            execute immediate 'drop view <xsl:value-of select="$mv-name"/>';
+                                                        exception
+                                                            <!-- Ignore code -12003, which means the materialized view didn't exist -->
+                                                            <!-- TODO: Change back code to -942 when we switch from views to materialized views -->
+                                                            when others then if sqlcode != -942 then raise; end if;
+                                                        end;
+                                                    </xsl:with-param>
+                                                </xsl:call-template>
+                                            </xsl:result-document>
+
+                                            <!-- SQL to create materialized view -->
+                                            <xsl:result-document href="output:create-sql">
+                                                <xsl:call-template name="update-wrapper">
+                                                    <xsl:with-param name="sql">
+                                                        <xsl:variable name="metadata-column" as="xs:string+" select="('document_id', 'created', 'last_modified', 'username')"/>
+                                                        <xsl:variable name="paths-ids" as="xs:string*" select="f:document-to-paths-ids(/request/document, $metadata-column)"/>
+                                                        create view <xsl:value-of select="$mv-name"/> as
+                                                        select
+                                                            <!-- Metadata columns -->
+                                                            <xsl:value-of select="string-join(for $c in $metadata-column return concat($c, ' ', 'metadata_', $c), ', ')"/>
+                                                            <!-- Columns corresponding to elements in the XML data -->
+                                                            <xsl:for-each select="1 to count($paths-ids) div 2">
+                                                                <xsl:variable name="i" select="position()"/>
+                                                                , extractValue(xml, '/*/<xsl:value-of select="$paths-ids[$i * 2 - 1]"/>')
+                                                                "<xsl:value-of select="$paths-ids[$i * 2]"/>"
+                                                            </xsl:for-each>
+                                                        from (
+                                                            select d.*, dense_rank() over (partition by document_id order by last_modified desc) as latest
+                                                            from orbeon_form_data d
+                                                            where
+                                                                <!-- NOTE: Generate app/form name in SQL, as Oracle doesn't allow bind variables for data definition operations -->
+                                                                app = '<xsl:value-of select="f:escape-sql(/request/app)"/>'
+                                                                and form = '<xsl:value-of select="f:escape-sql(/request/form)"/>'
+                                                            )
+                                                        where latest = 1 and deleted = 'N'
+                                                    </xsl:with-param>
+                                                </xsl:call-template>
+                                            </xsl:result-document>
+                                        </xsl:template>
+
+                                        <!-- Wrap an update statement in the SQL processor boilerplate -->
+                                        <xsl:template name="update-wrapper">
+                                            <xsl:param name="sql"/>
+                                            <sql:config>
+                                                <result>
+                                                    <sql:connection>
+                                                        <xsl:copy-of select="/request/sql:datasource"/>
+                                                        <sql:execute>
+                                                            <sql:update>
+                                                                <xsl:copy-of select="$sql"/>
+                                                            </sql:update>
+                                                        </sql:execute>
+                                                    </sql:connection>
+                                                </result>
+                                            </sql:config>
+                                        </xsl:template>
+                                    </xsl:stylesheet>
+                                </p:input>
+                                <p:output name="drop-sql" id="drop-sql"/>
+                                <p:output name="create-sql" id="create-sql"/>
+                            </p:processor>
+                            <p:processor name="oxf:sql">
+                                <p:input name="data"><dummy/></p:input>
+                                <p:input name="config" href="#drop-sql"/>
+                            </p:processor>
+                            <p:processor name="oxf:sql">
+                                <p:input name="data"><dummy/></p:input>
+                                <p:input name="config" href="#create-sql"/>
+                            </p:processor>
+                        </p:when>
+                    </p:choose>
                 </p:when>
             </p:choose>
 

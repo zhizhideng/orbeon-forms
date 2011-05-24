@@ -19,6 +19,7 @@
          xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
          xmlns:xxforms="http://orbeon.org/oxf/xml/xforms"
          xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
+         xmlns:fb="http://orbeon.org/oxf/xml/form-builder"
          xmlns:saxon="http://saxon.sf.net/"
          xmlns:xbl="http://www.w3.org/ns/xbl"
          xmlns:xxbl="http://orbeon.org/oxf/xml/xbl"
@@ -40,18 +41,38 @@
                 <large-icon>/forms/orbeon/builder/images/autocomplete.png</large-icon>
             </icon>
             <datatype>xforms:string</datatype>
-            <template>
-                <fr:autocomplete id="" appearance="minimal" ref="" xmlns="">
+            <fb:template>
+                <fr:autocomplete id="" appearance="minimal" ref="" xmlns="" resource="">
                     <xforms:label ref=""/>
                     <xforms:hint ref=""/>
                     <xforms:help ref=""/>
                     <xforms:alert ref="$fr-resources/detail/labels/alert"/>
-                    <xforms:itemset nodeset="">
-                        <xforms:label ref="label"/>
-                        <xforms:value ref="value"/>
+                    <xforms:itemset ref="">
+                        <xforms:label ref=""/>
+                        <xforms:value ref=""/>
                     </xforms:itemset>
                 </fr:autocomplete>
-            </template>
+            </fb:template>
+            <control-details>
+                <xforms:input ref="@resource">
+                    <xforms:label lang="en">Resource URI</xforms:label>
+                    <xforms:label lang="fr">URI de la ressource</xforms:label>
+                    <xforms:hint lang="en">HTTP URI returning data used for the suggestions</xforms:hint>
+                    <xforms:hint lang="fr">URI HTTP auquel réside le service</xforms:hint>
+                </xforms:input>
+                <xforms:input ref="xforms:itemset/@ref">
+                    <xforms:label ref="$resources/dialog-actions/items/label"/>
+                    <xforms:hint ref="$resources/dialog-actions/items/hint"/>
+                </xforms:input>
+                <xforms:input ref="xforms:itemset/xforms:label/@ref">
+                    <xforms:label ref="$resources/dialog-actions/label/label"/>
+                    <xforms:hint ref="$resources/dialog-actions/label/hint"/>
+                </xforms:input>
+                <xforms:input ref="xforms:itemset/xforms:value/@ref">
+                    <xforms:label ref="$resources/dialog-actions/value/label"/>
+                    <xforms:hint ref="$resources/dialog-actions/value/hint"/>
+                </xforms:input>
+            </control-details>
         </metadata>
 
         <xbl:resources>
@@ -65,21 +86,9 @@
                 <!--  This case is tested by the unit test testSetLabelOnXFormsReady, and we'll hopefully soon be able to remove this refresh. -->
                 <xforms:refresh/>
                 <xforms:setvalue ref="textfield-value" value="event('label')"/>
-                <xxforms:script id="arp">YAHOO.xbl.fr.Autocomplete.instance(this).ajaxResponseProcessed();</xxforms:script>
+                <xxforms:script id="out-arp">YAHOO.xbl.fr.Autocomplete.instance(this).ajaxResponseProcessed();</xxforms:script>
             </xbl:handler>
         </xbl:handlers>
-        <xbl:implementation>
-            <!-- Local model -->
-            <xforms:model id="autocomplete-model">
-                <xforms:instance id="autocomplete-instance">
-                    <autocomplete>
-                        <readonly>false</readonly>
-                        <textfield-value/>
-                    </autocomplete>
-                </xforms:instance>
-                <xforms:bind ref="textfield-value" readonly="../readonly = 'true'"/>
-            </xforms:model>
-        </xbl:implementation>
         <xbl:template xxbl:transform="oxf:unsafe-xslt">
             <xsl:transform version="2.0">
                 <xsl:import href="oxf:/oxf/xslt/utils/copy-modes.xsl"/>
@@ -92,9 +101,65 @@
                         <!-- Inner group -->
                         <xforms:group id="component-inner-group" xxbl:scope="inner">
 
+                            <!-- Local model (declared here instead of in xbl:implementation so we can use XSLT) -->
+                            <xforms:model id="autocomplete-model">
+                                <xforms:instance id="local">
+                                    <autocomplete>
+                                        <readonly>false</readonly>
+                                        <textfield-value/>
+                                        <resource/>
+                                        <get-itemset-target-instance>
+                                            <!-- If we have a full itemset button, the first submission goes to a separate instance -->
+                                            <xsl:value-of select="if (@show-full-itemset-dropdown = 'true') then 'full-itemset-instance' else 'suggestions-instance'"/>
+                                        </get-itemset-target-instance>
+                                    </autocomplete>
+                                </xforms:instance>
+                                <xforms:bind ref="textfield-value" readonly="../readonly = 'true'"/>
+                                <!-- In resource mode, the suggestions -->
+                                <xforms:instance id="suggestions-instance"><dummy/></xforms:instance>
+                                <!-- In resource mode, if full itemset is true, the "full" list -->
+                                <xforms:instance id="full-itemset-instance"><dummy/></xforms:instance>
+                                <!-- What do when doing a refresh -->
+                                <xforms:submission id="get-itemset" method="get" resource="{{instance('local')/resource}}" replace="instance"
+                                                   targetref="instance(instance('local')/get-itemset-target-instance)" serialization="none">
+                                    <xforms:insert ev:event="xforms-submit-error" nodeset="instance('itemset')" origin="xxforms:element('dummy')"/>
+                                    <!-- Results of submissions after the first one always go to suggestions-instance -->
+                                    <xforms:setvalue ev:event="xforms-submit-done" ref="instance('local')/get-itemset-target-instance" value="'suggestions-instance'"/>
+                                </xforms:submission>
+                            </xforms:model>
+
                             <!-- Variable pointing to external single-node binding -->
-                            <xxforms:variable name="external-value" as="node()?"><xxforms:sequence select="." xxbl:scope="outer"/></xxforms:variable>
-                            <xxforms:variable name="dynamic-itemset" xbl:attr="xbl:text=dynamic-itemset"/>
+                            <xxforms:variable name="external-value"><xxforms:sequence select="." xxbl:scope="outer"/></xxforms:variable>
+                            <xxforms:variable name="local" select="instance('local')"/>
+                            <xxforms:variable name="dynamic-itemset-attribute" xbl:attr="xbl:text=dynamic-itemset"/>
+                            <xxforms:variable name="resource-avt" xbl:attr="xbl:text=resource"/>
+                            <xxforms:variable name="resource-avt" xbl:attr="xbl:text=resource" xxbl:scope="outer"/>
+                            <!-- Mode is either: static, dynamic, resource -->
+                            <xxforms:variable name="mode" select="if ($resource-avt != '') then 'resource' else if ($dynamic-itemset-attribute = 'true') then 'dynamic' else 'static'"/>
+                            <xxforms:variable name="dynamic-itemset" select="$mode = ('dynamic', 'resource')"/>
+
+                            <!-- Declare a variable fr-search-value in outer scope so it can be used in the AVT -->
+                            <xxforms:variable name="fr-search-value" xxbl:scope="outer">
+                                <xxforms:sequence select="$local/textfield-value" xxbl:scope="inner"/>
+                            </xxforms:variable>
+                            <!-- When the component is initialized or when resources changes, update our internal itemset -->
+                            <xsl:if test="exists(@resource)">
+                                <xxforms:variable name="resource" xbl:attr="xbl:text=resource">
+                                    <xxforms:sequence select="xxforms:evaluate-avt($resource-avt)" xxbl:scope="outer"/>
+                                    <xforms:action ev:event="xforms-value-changed{if (@show-full-itemset-dropdown = 'true') then ' xforms-enabled' else ''}">
+                                        <!-- Save resource in model, as it is used as an AVT by the submission -->
+                                        <xforms:setvalue ref="$local/resource" value="$resource"/>
+                                        <!-- Update itemset based on resource -->
+                                        <xforms:send submission="get-itemset"/>
+                                        <!-- Get sequence of values in the new itemset -->
+                                        <xxforms:variable name="nodeset"><xsl:value-of select="/*/xforms:itemset/@nodeset"/></xxforms:variable>
+                                        <xxforms:variable name="value"><xsl:value-of select="/*/xforms:itemset/xforms:value/(@value | @ref)"/></xxforms:variable>
+                                        <xxforms:variable name="new-values" select="instance('itemset')/saxon:evaluate($nodeset)/saxon:evaluate($value)"/>
+                                        <!-- If the current value is not in the new itemset, set it to blank -->
+                                        <xforms:setvalue if="not($external-value = ($new-values, ''))" ref="$external-value"/>
+                                    </xforms:action>
+                                </xxforms:variable>
+                            </xsl:if>
 
                             <!-- Init event -->
                             <xforms:action id="xf-en" ev:event="xforms-enabled" ev:observer="component-inner-group" ev:target="component-inner-group">
@@ -103,14 +168,17 @@
 
                             <!-- Markup with input for the YUI autocomplete -->
                             <xhtml:div xbl:attr="class style">
-                                <xforms:input id="search" ref="instance()/textfield-value" incremental="true" class="fr-autocomplete-search"  xbl:attr="tabindex accesskey">
+                                <xforms:input id="search" ref="$local/textfield-value" incremental="true" class="fr-autocomplete-search"  xbl:attr="tabindex accesskey">
+                                    <!-- Forward focus event -->
+                                    <xforms:dispatch ev:event="DOMFocusIn" name="DOMFocusIn" target="fr-autocomplete"/>
+                                    <xforms:dispatch ev:event="DOMFocusOut" name="DOMFocusOut" target="fr-autocomplete"/>
                                     <xforms:action ev:event="xforms-value-changed">
                                         <!-- If the search value is empty, set the external value to empty as well -->
                                         <xforms:action if=". = ''">
                                             <xforms:setvalue ref="$external-value"/>
                                         </xforms:action>
                                         <!-- As the user types, dispatch event to notify the external world about the value entered by the user so far -->
-                                        <xforms:action if="$dynamic-itemset = 'true'">
+                                        <xforms:action if="$dynamic-itemset">
                                             <xforms:dispatch targetid="fr-autocomplete" name="fr-search-changed">
                                                 <xxforms:context name="fr-search-value" select="."/>
                                             </xforms:dispatch>
@@ -119,9 +187,28 @@
                                 </xforms:input>
                                 <!-- Drop-down with the list of all the possible values -->
                                 <xsl:if test="not(@dynamic-itemset = 'true') and @show-full-itemset-dropdown = 'true'">
-                                    <fr:select1-button ref="." xxbl:scope="outer">
-                                        <xbl:content includes="xforms|itemset,xforms|item"/>
-                                    </fr:select1-button>
+                                    <xforms:group>
+                                        <xsl:if test="exists(/*/@resource)">
+                                            <!-- In resource mode, we want to set the label to the -->
+                                            <!-- NOTE: Listener is on a group, not in the fr:select1-button so the JavaScript this finds the autocomplete object, not the select1-button object -->
+                                            <xforms:action ev:event="xforms-select">
+                                                <xxforms:variable name="selected-label" select="xxforms:itemset('full-itemset-select1', 'xml', true())/itemset/choices/item[@selected = 'true']/label"/>
+                                                <xforms:setvalue ref="$local/textfield-value" value="$selected-label"/>
+                                                <xxforms:script id="full-arp">YAHOO.xbl.fr.Autocomplete.instance(this).ajaxResponseProcessed();</xxforms:script>
+                                            </xforms:action>
+                                        </xsl:if>
+                                        <fr:select1-button ref="$external-value" id="full-itemset-button">
+                                            <xsl:apply-templates select="xforms:itemset | xforms:item">
+                                                <xsl:with-param name="resource-instance" tunnel="yes">full-itemset-instance</xsl:with-param>
+                                            </xsl:apply-templates>
+                                        </fr:select1-button>
+                                    </xforms:group>
+                                    <!-- NOTE: This select1 has the same itemset as the select1-button; it is here just so we can use xxforms:itemset() on it -->
+                                    <xforms:select1 ref="$external-value" id="full-itemset-select1" style="display: none">
+                                        <xsl:apply-templates select="xforms:itemset | xforms:item">
+                                            <xsl:with-param name="resource-instance" tunnel="yes">full-itemset-instance</xsl:with-param>
+                                        </xsl:apply-templates>
+                                    </xforms:select1>
                                 </xsl:if>
                                 <xhtml:div class="fr-autocomplete-yui-div"/>
                             </xhtml:div>
@@ -132,18 +219,23 @@
 
                             <!-- Dropdown with value shown by autocomplete -->
                             <xforms:select1 id="select1" ref="$external-value" class="fr-autocomplete-select1" appearance="minimal" xxforms:encrypt-item-values="false" style="display: none">
-                                <xsl:apply-templates select="xforms:itemset | xforms:item" mode="copy-label"/>
-                                <xsl:apply-templates select="xforms:itemset | xforms:item" mode="copy-value"/>
+                                <!-- The hidden dropdown contains first all the label/label, then all the value/value -->
+                                <xsl:apply-templates select="xforms:itemset | xforms:item" mode="copy-label">
+                                    <xsl:with-param name="resource-instance" tunnel="yes">suggestions-instance</xsl:with-param>
+                                </xsl:apply-templates>
+                                <xsl:apply-templates select="xforms:itemset | xforms:item" mode="copy-value">
+                                    <xsl:with-param name="resource-instance" tunnel="yes">suggestions-instance</xsl:with-param>
+                                </xsl:apply-templates>
                             </xforms:select1>
                             <!-- Input with external value -->
                             <xforms:input id="external-value" ref="$external-value" class="fr-autocomplete-external-value" style="display: none">
-                                <xforms:setvalue ev:event="xforms-readonly" ref="instance()/readonly">true</xforms:setvalue>
-                                <xforms:setvalue ev:event="xforms-readwrite" ref="instance()/readonly">false</xforms:setvalue>
-                                <xforms:action ev:event="xforms-enabled xforms-value-changed" if="not($dynamic-itemset = 'true')">
+                                <xforms:setvalue ev:event="xforms-readonly" ref="$local/readonly">true</xforms:setvalue>
+                                <xforms:setvalue ev:event="xforms-readwrite" ref="$local/readonly">false</xforms:setvalue>
+                                <xforms:action ev:event="xforms-enabled xforms-value-changed" if="not($dynamic-itemset)">
                                     <xxforms:variable name="select-items" select="xxforms:itemset('select1', 'xml')//item"/>
                                     <xxforms:variable name="values" select="($select-items/value)[position() > count($select-items) div 2]"/>
                                     <xxforms:variable name="label" select="$select-items[index-of($values, $external-value)]/label"/>
-                                    <xforms:setvalue if="exists($label)" ref="instance()/textfield-value" value="$label"/>
+                                    <xforms:setvalue if="exists($label)" ref="$local/textfield-value" value="$label"/>
                                 </xforms:action>
                             </xforms:input>
                             <!-- Bridge so the JS code can notify the XForms code the user typed in the field -->
@@ -159,8 +251,13 @@
 
                 <!-- Add the xxbl:scope="outer" on the xforms:itemset and xforms:item -->
                 <xsl:template match="xforms:itemset | xforms:item" mode="#all">
+                    <xsl:param name="resource-instance" tunnel="yes"/>
                     <xsl:copy>
-                        <xsl:attribute name="xxbl:scope">outer</xsl:attribute>
+                        <!-- If we have a resource, XPath expressions are relative to suggestions-instance -->
+                        <xsl:variable name="has-resource" select="exists(/*/@resource)"/>
+                        <xsl:if test="$resource-instance = 'suggestions-instance'"><xsl:attribute name="xxbl:scope" select="if ($has-resource) then 'inner' else 'outer'"/></xsl:if>
+                        <xsl:if test="$has-resource"><xsl:attribute name="context" select="concat('instance(''', $resource-instance, ''')')"/></xsl:if>
+
                         <xsl:apply-templates select="@* | node()" mode="#current"/>
                     </xsl:copy>
                 </xsl:template>

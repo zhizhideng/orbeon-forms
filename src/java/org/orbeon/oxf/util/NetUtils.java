@@ -20,12 +20,13 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.orbeon.oxf.common.OXFException;
-import org.orbeon.oxf.pipeline.StaticExternalContext;
 import org.orbeon.oxf.pipeline.api.ExternalContext;
 import org.orbeon.oxf.pipeline.api.PipelineContext;
+import org.orbeon.oxf.processor.generator.RequestGenerator;
 import org.orbeon.oxf.resources.URLFactory;
 import org.orbeon.oxf.xml.XMLReceiverAdapter;
 import org.orbeon.oxf.xml.XMLUtils;
+import org.orbeon.oxf.xml.dom4j.Dom4jUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
@@ -93,12 +94,12 @@ public class NetUtils {
      * header. If the request method was not "GET", or if no valid lastModified value was provided,
      * consider the document modified.
      */
-    public static boolean checkIfModifiedSince(HttpServletRequest request, long lastModified) {
+    public static boolean checkIfModifiedSince(ExternalContext.Request request, long lastModified) {
         // Do the check only for the GET method
         if (!"GET".equals(request.getMethod()) || lastModified <= 0)
             return true;
         // Check dates
-        String ifModifiedHeader = request.getHeader("If-Modified-Since");
+        final String ifModifiedHeader = StringConversions.getFirstValueFromStringArray(request.getHeaderValuesMap().get("if-modified-since"));
         if (logger.isDebugEnabled())
             logger.debug("Found If-Modified-Since header");
         if (ifModifiedHeader != null) {
@@ -557,12 +558,11 @@ public class NetUtils {
     }
 
    public static String readURIToLocalURI(String uri) throws URISyntaxException, IOException {
-       final PipelineContext pipelineContext = StaticExternalContext.getStaticContext().getPipelineContext();
        final URLConnection urlConnection = new URI(uri).toURL().openConnection();
        InputStream inputStream = null;
        try {
            inputStream = urlConnection.getInputStream();
-           return inputStreamToAnyURI(pipelineContext, inputStream, REQUEST_SCOPE);
+           return inputStreamToAnyURI(inputStream, REQUEST_SCOPE);
        } finally {
            if (inputStream != null) inputStream.close();
        }
@@ -578,11 +578,11 @@ public class NetUtils {
      * NOTE: The implementation creates a temporary file. The Pipeline Context is required so
      * that the file can be deleted when no longer used.
      */
-    public static String base64BinaryToAnyURI(PipelineContext pipelineContext, String value, int scope) {
+    public static String base64BinaryToAnyURI(String value, int scope) {
         // Convert Base64 to binary first
         final byte[] bytes = base64StringToByteArray(value);
 
-        return inputStreamToAnyURI(pipelineContext, new ByteArrayInputStream(bytes), scope);
+        return inputStreamToAnyURI(new ByteArrayInputStream(bytes), scope);
     }
 
     /**
@@ -625,19 +625,23 @@ public class NetUtils {
         }
     }
 
+    public static InputStream uriToInputStream(String uri) throws Exception {
+        return new URI(uri).toURL().openStream();
+    }
+
     /**
      * Convert a URI to a FileItem.
      *
      * The implementation creates a temporary file. The PipelineContext is required so that the file can be deleted
      * when no longer used.
      */
-    public static FileItem anyURIToFileItem(PipelineContext pipelineContext, String uri, int scope) {
+    public static FileItem anyURIToFileItem(String uri, int scope) {
         InputStream inputStream = null;
         try {
             inputStream = new URI(uri).toURL().openStream();
 
             // Get FileItem
-            return prepareFileItemFromInputStream(pipelineContext, inputStream, scope);
+            return prepareFileItemFromInputStream(inputStream, scope);
 
         } catch (Exception e) {
             throw new OXFException(e);
@@ -651,15 +655,24 @@ public class NetUtils {
         }
     }
 
+    public static String createTemporaryFile(int scope) {
+        return inputStreamToAnyURI(new InputStream() {
+            @Override
+            public int read() {
+                return -1;
+            }
+        }, scope);
+    }
+
     /**
      * Convert an InputStream to an xs:anyURI.
      *
      * The implementation creates a temporary file. The PipelineContext is required so that the file can be deleted
      * when no longer used.
      */
-    public static String inputStreamToAnyURI(PipelineContext pipelineContext, InputStream inputStream, int scope) {
+    public static String inputStreamToAnyURI(InputStream inputStream, int scope) {
         // Get FileItem
-        final FileItem fileItem = prepareFileItemFromInputStream(pipelineContext, inputStream, scope);
+        final FileItem fileItem = prepareFileItemFromInputStream(inputStream, scope);
 
         // Return a file URL
         final File storeLocation = ((DiskFileItem) fileItem).getStoreLocation();
@@ -667,9 +680,9 @@ public class NetUtils {
         return storeLocation.toURI().toString().replace("+", "%2B");
     }
 
-    private static FileItem prepareFileItemFromInputStream(PipelineContext pipelineContext, InputStream inputStream, int scope) {
+    private static FileItem prepareFileItemFromInputStream(InputStream inputStream, int scope) {
         // Get FileItem
-        final FileItem fileItem = prepareFileItem(pipelineContext, scope);
+        final FileItem fileItem = prepareFileItem(scope);
         // Write to file
         OutputStream os = null;
         try {
@@ -701,18 +714,18 @@ public class NetUtils {
      * Return a FileItem which is going to be automatically destroyed upon destruction of the request, session or
      * application.
      */
-    public static FileItem prepareFileItem(PipelineContext pipelineContext, int scope) {
+    public static FileItem prepareFileItem(int scope) {
         // We use the commons file upload utilities to save a file
         if (fileItemFactory == null)
             fileItemFactory = new DiskFileItemFactory(0, SystemUtils.getTemporaryDirectory());
         final FileItem fileItem = fileItemFactory.createItem("dummy", "dummy", false, null);
         // Make sure the file is deleted appropriately
         if (scope == REQUEST_SCOPE) {
-            deleteFileOnRequestEnd(pipelineContext, fileItem);
+            deleteFileOnRequestEnd(fileItem);
         } else if (scope == SESSION_SCOPE) {
-            deleteFileOnSessionTermination(pipelineContext, fileItem);
+            deleteFileOnSessionTermination(fileItem);
         } else if (scope == APPLICATION_SCOPE) {
-            deleteFileOnContextDestroyed(pipelineContext, fileItem);
+            deleteFileOnApplicationDestroyed(fileItem);
         } else {
             throw new OXFException("Invalid context requested: " + scope);
         }
@@ -723,12 +736,11 @@ public class NetUtils {
     /**
      * Add listener to fileItem which is going to be automatically destroyed at the end of request
      *
-     * @param pipelineContext PipelineContext
      * @param fileItem        FileItem
      */
-    public static void deleteFileOnRequestEnd(PipelineContext pipelineContext, final FileItem fileItem) {
+    public static void deleteFileOnRequestEnd(final FileItem fileItem) {
         // Make sure the file is deleted at the end of request
-        pipelineContext.addContextListener(new PipelineContext.ContextListenerAdapter() {
+        PipelineContext.get().addContextListener(new PipelineContext.ContextListenerAdapter() {
             public void contextDestroyed(boolean success) {
                 deleteFileItem(fileItem, REQUEST_SCOPE);
             }
@@ -738,12 +750,11 @@ public class NetUtils {
     /**
      * Add listener to fileItem which is going to be automatically destroyed on session destruction
      *
-     * @param pipelineContext PipelineContext
      * @param fileItem        FileItem
      */
-    public static void deleteFileOnSessionTermination(PipelineContext pipelineContext, final FileItem fileItem) {
+    public static void deleteFileOnSessionTermination(final FileItem fileItem) {
         // Try to delete the file on exit and on session termination
-        final ExternalContext externalContext = getExternalContext(pipelineContext);
+        final ExternalContext externalContext = getExternalContext();
         final ExternalContext.Session session = externalContext.getSession(false);
         if (session != null) {
             session.addListener(new ExternalContext.Session.SessionListener() {
@@ -759,12 +770,11 @@ public class NetUtils {
     /**
      * Add listener to fileItem which is going to be automatically destroyed when the servlet is destroyed
      *
-     * @param pipelineContext PipelineContext
      * @param fileItem        FileItem
      */
-    public static void deleteFileOnContextDestroyed(PipelineContext pipelineContext, final FileItem fileItem) {
+    public static void deleteFileOnApplicationDestroyed(final FileItem fileItem) {
         // Try to delete the file on exit and on session termination
-        final ExternalContext externalContext = getExternalContext(pipelineContext);
+        final ExternalContext externalContext = getExternalContext();
         ExternalContext.Application application = externalContext.getApplication();
         if (application != null) {
             application.addListener(new ExternalContext.Application.ApplicationListener() {
@@ -950,16 +960,28 @@ public class NetUtils {
     }
 
     /**
-     * Get the external context from the property context.
+     * Get the current external context.
      *
-     * @param propertyContext   current context
-     * @return                  external context if found, null otherwise
+     * @return  external context if found, null otherwise
      */
-    public static ExternalContext getExternalContext(PropertyContext propertyContext) {
-        return (ExternalContext) propertyContext.getAttribute(PipelineContext.EXTERNAL_CONTEXT);
+    public static ExternalContext getExternalContext() {
+        final PipelineContext pipelineContext = PipelineContext.get();
+        return (pipelineContext != null) ? (ExternalContext) pipelineContext.getAttribute(PipelineContext.EXTERNAL_CONTEXT) : null;
     }
 
-    public static File renameAndExpireWithSession(PropertyContext propertyContext, String existingFileURI, final Logger logger) {
+    /**
+     * Get the current session.
+     *
+     * Can return null if the external context is not found or if the session doesn't exist and is not forced.
+     *
+     * @return  session if found, null otherwise
+     */
+    public static ExternalContext.Session getSession(boolean create) {
+        final ExternalContext externalContext = NetUtils.getExternalContext();
+        return (externalContext != null) ? NetUtils.getExternalContext().getSession(create) : null;
+    }
+
+    public static File renameAndExpireWithSession(String existingFileURI, final Logger logger) {
 
         try {
             // Assume the file will be deleted with the request so rename it first
@@ -982,7 +1004,7 @@ public class NetUtils {
             // Mark deletion of the file on exit and on session termination
             {
                 newFile.deleteOnExit();
-                final ExternalContext.Session session = getExternalContext(propertyContext).getSession(false);
+                final ExternalContext.Session session = getExternalContext().getSession(false);
                 if (session != null) {
                     session.addListener(new ExternalContext.Session.SessionListener() {
                         public void sessionDestroyed() {
@@ -1003,5 +1025,9 @@ public class NetUtils {
         } catch (Exception e) {
             throw new OXFException(e);
         }
+    }
+
+    public static void debugLogRequestAsXML(final ExternalContext.Request request) {
+        System.out.println(Dom4jUtils.domToPrettyString(RequestGenerator.readWholeRequestAsDOM4J(request, null)));
     }
 }

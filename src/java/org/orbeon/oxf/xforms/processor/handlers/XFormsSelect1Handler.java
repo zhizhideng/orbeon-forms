@@ -15,7 +15,6 @@ package org.orbeon.oxf.xforms.processor.handlers;
 
 import org.dom4j.QName;
 import org.orbeon.oxf.common.ValidationException;
-import org.orbeon.oxf.pipeline.api.PipelineContext;
 import org.orbeon.oxf.pipeline.api.XMLReceiver;
 import org.orbeon.oxf.xforms.XFormsConstants;
 import org.orbeon.oxf.xforms.XFormsContainingDocument;
@@ -124,7 +123,7 @@ public class XFormsSelect1Handler extends XFormsControlLifecyleHandler {
         // Get items if:
         // 1. The itemset is static
         // 2. The control exists and is relevant
-        final Itemset itemset = XFormsSelect1Control.getInitialItemset(pipelineContext, containingDocument, xformsSelect1Control, getPrefixedId());
+        final Itemset itemset = XFormsSelect1Control.getInitialItemset(containingDocument, xformsSelect1Control, getPrefixedId());
 
         outputContent(uri, localname, attributes, effectiveId, xformsSelect1Control, itemset, isMultiple, isFull, false);
     }
@@ -388,8 +387,8 @@ public class XFormsSelect1Handler extends XFormsControlLifecyleHandler {
                     reusableAttributes.addAttribute("", "class", "class", ContentHandlerHelper.CDATA, "xforms-label");
                     xmlReceiver.startElement(XMLConstants.XHTML_NAMESPACE_URI, legendName, legendQName, reusableAttributes);
                     if (xformsControl != null) {
-                        final boolean mustOutputHTMLFragment = xformsControl.isHTMLLabel(pipelineContext);
-                        outputLabelText(xmlReceiver, xformsControl, xformsControl.getLabel(pipelineContext), xhtmlPrefix, mustOutputHTMLFragment);
+                        final boolean mustOutputHTMLFragment = xformsControl.isHTMLLabel();
+                        outputLabelText(xmlReceiver, xformsControl, xformsControl.getLabel(), xhtmlPrefix, mustOutputHTMLFragment);
                     }
                     xmlReceiver.endElement(XMLConstants.XHTML_NAMESPACE_URI, legendName, legendQName);
                 }
@@ -399,7 +398,7 @@ public class XFormsSelect1Handler extends XFormsControlLifecyleHandler {
                     for (Iterator<Item> i = itemset.toList().iterator(); i.hasNext(); itemIndex++) {
                         final Item item = i.next();
                         final String itemEffectiveId = getItemId(effectiveId, Integer.toString(itemIndex));
-                        handleItemFull(pipelineContext, this, xmlReceiver, reusableAttributes, attributes, xhtmlPrefix, spanQName,
+                        handleItemFull(this, xmlReceiver, reusableAttributes, attributes, xhtmlPrefix, spanQName,
                                 containingDocument, xformsControl, effectiveId, itemEffectiveId, isMultiple, fullItemType, item, itemIndex == 0);
                     }
                 }
@@ -411,7 +410,7 @@ public class XFormsSelect1Handler extends XFormsControlLifecyleHandler {
         // NOTE: Templates for full items are output globally in XHTMLBodyHandler
     }
 
-    public static void outputItemFullTemplate(PipelineContext pipelineContext, XFormsBaseHandler baseHandler,
+    public static void outputItemFullTemplate(XFormsBaseHandler baseHandler,
                                               ContentHandler contentHandler, String xhtmlPrefix, String spanQName,
                                               XFormsContainingDocument containingDocument,
                                               AttributesImpl reusableAttributes, Attributes attributes, String templateId,
@@ -425,7 +424,7 @@ public class XFormsSelect1Handler extends XFormsControlLifecyleHandler {
         contentHandler.startElement(XMLConstants.XHTML_NAMESPACE_URI, "span", spanQName, reusableAttributes);
         {
             final String itemEffectiveId = "$xforms-item-effective-id$";
-            handleItemFull(pipelineContext, baseHandler, contentHandler, reusableAttributes, attributes,
+            handleItemFull(baseHandler, contentHandler, reusableAttributes, attributes,
                     xhtmlPrefix, spanQName, containingDocument, null, effectiveId, itemEffectiveId, isMultiple, fullItemType,
                     new Item(isMultiple, false, null, // make sure the value "$xforms-template-value$" is not encrypted
                             new Item.Label("$xforms-template-label$", false), "$xforms-template-value$"), true);
@@ -436,14 +435,14 @@ public class XFormsSelect1Handler extends XFormsControlLifecyleHandler {
     private void outputJSONTreeInfo(XFormsValueControl valueControl, Itemset itemset, boolean many, ContentHandler contentHandler) throws SAXException {
         if (valueControl != null && !handlerContext.isTemplate()) {
             // Produce a JSON fragment with hierarchical information
-            final String result = itemset.getJSONTreeInfo(pipelineContext, valueControl.getValue(), many, handlerContext.getLocationData());
+            final String result = itemset.getJSONTreeInfo(valueControl.getValue(), many, handlerContext.getLocationData());
             contentHandler.characters(result.toCharArray(), 0, result.length());
         } else {
             // Don't produce any content when generating a template
         }
     }
 
-    public static void handleItemFull(PipelineContext pipelineContext, XFormsBaseHandler baseHandler, ContentHandler contentHandler,
+    public static void handleItemFull(XFormsBaseHandler baseHandler, ContentHandler contentHandler,
                                       AttributesImpl reusableAttributes, Attributes attributes, String xhtmlPrefix, String spanQName,
                                       XFormsContainingDocument containingDocument, XFormsValueControl xformsControl,
                                       String effectiveId, String itemEffectiveId, boolean isMultiple, String type,
@@ -463,7 +462,7 @@ public class XFormsSelect1Handler extends XFormsControlLifecyleHandler {
 
         {
             final Item.Label itemLabel = item.getLabel();
-            final boolean labelNonEmpty = itemLabel != null && !itemLabel.getLabel().isEmpty();// empty only for xforms|input:xxforms-type(xs:boolean)
+            final boolean labelNonEmpty = itemLabel != null && itemLabel.getLabel().length() != 0;// empty only for xforms|input:xxforms-type(xs:boolean)
             if (labelNonEmpty) {
                 reusableAttributes.clear();
                 outputLabelForStart(handlerContext, reusableAttributes, itemEffectiveId, itemEffectiveId, LHHAC.LABEL, "label", false);
@@ -481,7 +480,7 @@ public class XFormsSelect1Handler extends XFormsControlLifecyleHandler {
                 final String name = (!isMultiple && xformsControl instanceof XFormsSelect1Control) ? ((XFormsSelect1Control) xformsControl).getGroupName() : effectiveId;
                 reusableAttributes.addAttribute("", "name", "name", ContentHandlerHelper.CDATA, name);
 
-                reusableAttributes.addAttribute("", "value", "value", ContentHandlerHelper.CDATA, item.getExternalValue(pipelineContext));
+                reusableAttributes.addAttribute("", "value", "value", ContentHandlerHelper.CDATA, item.getExternalValue());
 
                 if (!handlerContext.isTemplate() && xformsControl != null) {
 
@@ -528,7 +527,7 @@ public class XFormsSelect1Handler extends XFormsControlLifecyleHandler {
         final AttributesImpl optionAttributes = getAttributes(XMLUtils.EMPTY_ATTRIBUTES, itemClasses, null);
         // Add item attributes to option
         addItemAttributes(item, optionAttributes);
-        optionAttributes.addAttribute("", "value", "value", ContentHandlerHelper.CDATA, item.getExternalValue(pipelineContext));
+        optionAttributes.addAttribute("", "value", "value", ContentHandlerHelper.CDATA, item.getExternalValue());
 
         // Figure out whether what items are selected
         boolean isSelected = isSelected(handlerContext, xformsControl, isMultiple, item);

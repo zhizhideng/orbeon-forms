@@ -35,7 +35,6 @@ import org.orbeon.oxf.xml.dom4j.LocationData;
 import org.orbeon.oxf.xml.dom4j.LocationSAXContentHandler;
 import org.orbeon.saxon.Configuration;
 import org.orbeon.saxon.om.DocumentInfo;
-import org.orbeon.saxon.om.FastStringBuffer;
 import org.orbeon.saxon.tinytree.TinyBuilder;
 import org.w3c.dom.Document;
 
@@ -349,7 +348,7 @@ public abstract class ProcessorImpl implements Processor {
 
         if (keyValidity != null && keyValidity.key != null && keyValidity.validity != null) {
             // We got a key and a validity
-            final Object inputObject = cache.findValid(pipelineContext, keyValidity.key, keyValidity.validity);
+            final Object inputObject = cache.findValid(keyValidity.key, keyValidity.validity);
             if (inputObject != null) {
                 // Return cached object
                 if (logger.isDebugEnabled())
@@ -373,7 +372,7 @@ public abstract class ProcessorImpl implements Processor {
             if (logger.isDebugEnabled())
                 logger.debug("Cache " + debugInfo + ": source cacheable for key '" + keyValidity.key + "'. STORING object:" + result);
 
-            cache.add(pipelineContext, keyValidity.key, keyValidity.validity, result);
+            cache.add(keyValidity.key, keyValidity.validity, result);
 
             reader.storedInCache();
         }
@@ -496,7 +495,7 @@ public abstract class ProcessorImpl implements Processor {
      */
     public boolean isInputInCache(PipelineContext context, ProcessorInput input) {
         final KeyValidity keyValidity = getInputKeyValidity(context, input);
-        return keyValidity != null && ObjectCache.instance().findValid(context, keyValidity.key, keyValidity.validity) != null;
+        return keyValidity != null && ObjectCache.instance().findValid(keyValidity.key, keyValidity.validity) != null;
     }
 
     public boolean isInputInCache(PipelineContext context, String inputName) {
@@ -504,7 +503,7 @@ public abstract class ProcessorImpl implements Processor {
     }
 
     public boolean isInputInCache(PipelineContext context, KeyValidity keyValidity) {
-        return ObjectCache.instance().findValid(context, keyValidity.key, keyValidity.validity) != null;
+        return ObjectCache.instance().findValid(keyValidity.key, keyValidity.validity) != null;
     }
 
     /**
@@ -614,10 +613,10 @@ public abstract class ProcessorImpl implements Processor {
         }
 
         public String toString() {
-            FastStringBuffer result = null;
+            StringBuilder result = null;
             for (Processor processor: processors) {
                 if (result == null) {
-                    result = new FastStringBuffer(hash + ": [");
+                    result = new StringBuilder(hash + ": [");
                 } else {
                     result.append(", ");
                 }

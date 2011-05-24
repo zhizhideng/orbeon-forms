@@ -35,7 +35,6 @@ import org.orbeon.oxf.xforms.state.XFormsStateManager;
 import org.orbeon.oxf.xforms.state.XFormsStaticStateCache;
 import org.orbeon.oxf.xml.*;
 import org.orbeon.oxf.xml.dom4j.LocationDocumentResult;
-import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import javax.xml.transform.stream.StreamResult;
@@ -133,7 +132,7 @@ public class XFormsToXHTML extends ProcessorImpl {
 
     private void doIt(final PipelineContext pipelineContext, final XMLReceiver xmlReceiver, final URIProcessorOutputImpl processorOutput, String outputName) {
 
-        final ExternalContext externalContext = NetUtils.getExternalContext(pipelineContext);
+        final ExternalContext externalContext = NetUtils.getExternalContext();
         final IndentedLogger indentedLogger = XFormsContainingDocument.getIndentedLogger(XFormsToXHTML.logger, XFormsServer.getLogger(), LOGGING_CATEGORY);
 
         // ContainingDocument and XFormsState created below
@@ -164,10 +163,10 @@ public class XFormsToXHTML extends ProcessorImpl {
                         // NOTE: Create document here so we can do appropriate analysis of caching dependencies
                         final XFormsURIResolver uriResolver = new XFormsURIResolver(XFormsToXHTML.this, processorOutput,
                                 pipelineContext, INPUT_ANNOTATED_DOCUMENT, XMLUtils.ParserConfiguration.PLAIN);
-                        containingDocument[0] = new XFormsContainingDocument(pipelineContext, staticState[0], stage2CacheableState.getAnnotatedTemplate(), uriResolver, getResponse(xmlReceiver, externalContext));
+                        containingDocument[0] = new XFormsContainingDocument(staticState[0], stage2CacheableState.getAnnotatedTemplate(), uriResolver, getResponse(xmlReceiver, externalContext));
 
                         // Gather set caching dependencies
-                        gatherInputDependencies(pipelineContext, containingDocument[0], indentedLogger, stage1CacheableState);
+                        gatherInputDependencies(containingDocument[0], indentedLogger, stage1CacheableState);
 
                         return stage2CacheableState;
                     }
@@ -193,7 +192,7 @@ public class XFormsToXHTML extends ProcessorImpl {
 
                 final XFormsStaticState staticState;
                 {
-                    final XFormsStaticState cachedState = XFormsStaticStateCache.instance().getDocument(pipelineContext, stage2CacheableState.getStaticStateDigest());
+                    final XFormsStaticState cachedState = XFormsStaticStateCache.instance().getDocument(stage2CacheableState.getStaticStateDigest());
                     if (cachedState != null && cachedState.getMetadata().checkBindingsIncludes()) {
                         // Found static state in cache
                         indentedLogger.logDebug("", "found up-to-date static state by digest in cache");
@@ -208,15 +207,15 @@ public class XFormsToXHTML extends ProcessorImpl {
                             indentedLogger.logDebug("", "did not find static state by digest in cache");
 
                         final StaticStateBits staticStateBits = new StaticStateBits(pipelineContext, indentedLogger,  stage2CacheableState.getStaticStateDigest());
-                        staticState = new XFormsStaticState(pipelineContext, staticStateBits.staticStateDocument, stage2CacheableState.getStaticStateDigest(), staticStateBits.metadata);
+                        staticState = new XFormsStaticState(staticStateBits.staticStateDocument, stage2CacheableState.getStaticStateDigest(), staticStateBits.metadata);
 
                         // Store in cache
-                        XFormsStaticStateCache.instance().storeDocument(pipelineContext, staticState);
+                        XFormsStaticStateCache.instance().storeDocument(staticState);
                     }
                 }
 
                 final XFormsURIResolver uriResolver = new XFormsURIResolver(XFormsToXHTML.this, processorOutput, pipelineContext, INPUT_ANNOTATED_DOCUMENT, XMLUtils.ParserConfiguration.PLAIN);
-                containingDocument[0] = new XFormsContainingDocument(pipelineContext, staticState, stage2CacheableState.getAnnotatedTemplate(), uriResolver, getResponse(xmlReceiver, externalContext));
+                containingDocument[0] = new XFormsContainingDocument(staticState, stage2CacheableState.getAnnotatedTemplate(), uriResolver, getResponse(xmlReceiver, externalContext));
             } else {
                 assert !cachedStatus[0];
                 indentedLogger.logDebug("", "annotated document and static state digest not obtained from cache.");
@@ -225,15 +224,15 @@ public class XFormsToXHTML extends ProcessorImpl {
             // Output resulting document
             if (outputName.equals("document")) {
                 // Normal case where we output XHTML
-                outputResponseDocument(pipelineContext, externalContext, indentedLogger, stage2CacheableState.getAnnotatedTemplate(),
+                outputResponseDocument(externalContext, indentedLogger, stage2CacheableState.getAnnotatedTemplate(),
                         containingDocument[0], xmlReceiver);
             } else {
                 // Output in test mode
-                testOutputResponseState(pipelineContext, containingDocument[0], indentedLogger, xmlReceiver);
+                testOutputResponseState(containingDocument[0], indentedLogger, xmlReceiver);
             }
 
             // Notify state manager
-            XFormsStateManager.instance().afterInitialResponse(pipelineContext, containingDocument[0]);
+            XFormsStateManager.instance().afterInitialResponse(containingDocument[0]);
 
         } catch (Throwable e) {
             indentedLogger.logDebug("", "throwable caught during initialization.");
@@ -246,7 +245,7 @@ public class XFormsToXHTML extends ProcessorImpl {
         final StaticStateBits staticStateBits = new StaticStateBits(pipelineContext, indentedLogger, null);
 
         {
-            final XFormsStaticState cachedState = XFormsStaticStateCache.instance().getDocument(pipelineContext, staticStateBits.staticStateDigest);
+            final XFormsStaticState cachedState = XFormsStaticStateCache.instance().getDocument(staticStateBits.staticStateDigest);
             if (cachedState != null && cachedState.getMetadata().checkBindingsIncludes()) {
                 // Found static state in cache
                 indentedLogger.logDebug("", "found up-to-date static state by digest in cache");
@@ -260,10 +259,10 @@ public class XFormsToXHTML extends ProcessorImpl {
                 else
                     indentedLogger.logDebug("", "did not find static state by digest in cache");
                 
-                staticState[0] = new XFormsStaticState(pipelineContext, staticStateBits.staticStateDocument, staticStateBits.staticStateDigest, staticStateBits.metadata);
+                staticState[0] = new XFormsStaticState(staticStateBits.staticStateDocument, staticStateBits.staticStateDigest, staticStateBits.metadata);
 
                 // Store in cache
-                XFormsStaticStateCache.instance().storeDocument(pipelineContext, staticState[0]);
+                XFormsStaticStateCache.instance().storeDocument(staticState[0]);
             }
         }
 
@@ -362,7 +361,7 @@ public class XFormsToXHTML extends ProcessorImpl {
         }
     }
 
-    private void gatherInputDependencies(PipelineContext pipelineContext, XFormsContainingDocument containingDocument, IndentedLogger indentedLogger, Stage1CacheableState stage1CacheableState) {
+    private void gatherInputDependencies(XFormsContainingDocument containingDocument, IndentedLogger indentedLogger, Stage1CacheableState stage1CacheableState) {
 
         final String forwardSubmissionHeaders = XFormsProperties.getForwardSubmissionHeaders(containingDocument);
 
@@ -373,7 +372,7 @@ public class XFormsToXHTML extends ProcessorImpl {
             for (final Instance instance: model.instancesMap().values()) {
                 if (instance.dependencyURL() != null) {
 
-                    final String resolvedDependencyURL = XFormsUtils.resolveServiceURL(pipelineContext, containingDocument, instance.element(), instance.dependencyURL(),
+                    final String resolvedDependencyURL = XFormsUtils.resolveServiceURL(containingDocument, instance.element(), instance.dependencyURL(),
                         ExternalContext.Response.REWRITE_MODE_ABSOLUTE);
 
                     if (!instance.isCacheHint()) {
@@ -423,10 +422,10 @@ public class XFormsToXHTML extends ProcessorImpl {
         }
     }
 
-    public static void outputResponseDocument(final PipelineContext pipelineContext, final ExternalContext externalContext,
-                                             final IndentedLogger indentedLogger,
-                                             final SAXStore annotatedDocument, final XFormsContainingDocument containingDocument,
-                                             final XMLReceiver xmlReceiver) throws SAXException, IOException {
+    public static void outputResponseDocument(final ExternalContext externalContext,
+                                              final IndentedLogger indentedLogger,
+                                              final SAXStore annotatedDocument, final XFormsContainingDocument containingDocument,
+                                              final XMLReceiver xmlReceiver) throws SAXException, IOException {
 
         final List<XFormsContainingDocument.Load> loads = containingDocument.getLoadsToRun();
         if (containingDocument.isGotSubmissionReplaceAll()) {
@@ -476,7 +475,7 @@ public class XFormsToXHTML extends ProcessorImpl {
             // Set final output
             controller.setOutput(new DeferredXMLReceiverImpl(xmlReceiver));
             // Set handler context
-            controller.setElementHandlerContext(new HandlerContext(controller, pipelineContext, containingDocument, externalContext, null));
+            controller.setElementHandlerContext(new HandlerContext(controller, containingDocument, externalContext, null));
             // Process the entire input
             annotatedDocument.replay(new ExceptionWrapperXMLReceiver(controller, "converting XHTML+XForms document to XHTML"));
         }
@@ -484,18 +483,18 @@ public class XFormsToXHTML extends ProcessorImpl {
         containingDocument.afterInitialResponse();
     }
 
-    private void testOutputResponseState(final PipelineContext pipelineContext, final XFormsContainingDocument containingDocument,
-                                         final IndentedLogger indentedLogger, final XMLReceiver xmlReceiver) throws SAXException {
+    private void testOutputResponseState(final XFormsContainingDocument containingDocument, final IndentedLogger indentedLogger,
+                                         final XMLReceiver xmlReceiver) throws SAXException {
         // Output XML response
 
-        XFormsServer.outputAjaxResponse(containingDocument, indentedLogger, null, pipelineContext, null, xmlReceiver, false, true);
+        XFormsServer.outputAjaxResponse(containingDocument, indentedLogger, null, null, xmlReceiver, false, true);
     }
 
-    public static ExternalContext.Response getResponse(ContentHandler contentHandler, final ExternalContext externalContext) {
+    public static ExternalContext.Response getResponse(XMLReceiver xmlReceiver, final ExternalContext externalContext) {
         ExternalContext.Response response;
-        if (contentHandler != null) {
+        if (xmlReceiver != null) {
             // If a response is written, it will be through a conversion to XML first
-            final ContentHandlerOutputStream contentHandlerOutputStream = new ContentHandlerOutputStream(contentHandler);
+            final ContentHandlerOutputStream contentHandlerOutputStream = new ContentHandlerOutputStream(xmlReceiver);
             response = new ResponseAdapter() {
 
                 private String charset;
@@ -518,13 +517,18 @@ public class XFormsToXHTML extends ProcessorImpl {
 
                 @Override
                 public void setContentType(String contentType) {
-                    try {
-                        // Assume that content type is always set, otherwise this won't work
-                        charset = NetUtils.getContentTypeCharset(contentType);
-                        contentHandlerOutputStream.startDocument(contentType);
-                    } catch (SAXException e) {
-                        throw new OXFException(e);
-                    }
+                    setHeader("Content-Type", contentType);
+                }
+
+                @Override
+                public void setContentLength(int len) {
+                    // TODO: should be set on ContentHandlerOutputStream
+                    setHeader("Content-Length", Integer.toString(len));
+                }
+
+                @Override
+                public void setStatus(int status) {
+                    // TODO: should be set on ContentHandlerOutputStream
                 }
 
                 @Override
@@ -534,9 +538,18 @@ public class XFormsToXHTML extends ProcessorImpl {
 
                 @Override
                 public void setHeader(String name, String value) {
-                    // TODO: It is not sound that we output headers here as they should be passed to the
-                    // binary document in the pipeline instead.
-                    externalContext.getResponse().setHeader(name, value);
+
+                    // Handle Content-Type
+                    if (name.toLowerCase().equals("content-type")) {
+                        try {
+                            // Assume that content type is always set, otherwise this won't work
+                            charset = NetUtils.getContentTypeCharset(value);
+                            contentHandlerOutputStream.startDocument(value);
+                        } catch (SAXException e) {
+                            throw new OXFException(e);
+                        }
+                    }
+                    // Don't allow other headers
                 }
 
                 @Override

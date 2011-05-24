@@ -42,11 +42,6 @@
     <xsl:variable name="current-resources" select="$resources-instance/resource[@xml:lang = $request-language]" as="element(resource)"/>
 
     <!-- TODO: resources.xml should go through fr-resources.xpl so that overrides work -->
-    <xsl:message>
-        xxx
-        <xsl:value-of select="pipeline:rewriteServiceURI('/fr/service/i18n/fr-resources/orbeon/dmv-14', true())"/>
-        xxx
-    </xsl:message>
     <xsl:variable name="fr-resources" select="doc(pipeline:rewriteServiceURI('/fr/service/i18n/fr-resources/orbeon/dmv-14', true()))/*" as="element(resources)"/>
     <!--<xsl:variable name="fr-resources" select="doc('oxf:/apps/fr/i18n/resources.xml')/*" as="element(resources)"/>-->
     <xsl:variable name="fr-current-resources" select="($fr-resources/resource[@xml:lang = $request-language], $fr-resources/resource[1])[1]" as="element(resource)"/>
@@ -129,9 +124,11 @@
 
                                     <xsl:choose>
                                         <xsl:when test="local-name($control) = 'select' and $control/@appearance = 'full'">
-                                            <!-- Checkboxes: use control value and match export values in PDF -->
-                                            <!-- TODO: This doesn't work as Acrobat doesn't handle space-separated values -->
-                                            <field acro-field-name="'{$field-name}'" value="'{$control-value}'"/>
+                                            <!-- Checkboxes: we expect to have a PDF field for each value for a name section$control$value, with a value of 'true' -->
+                                            <xsl:for-each select="tokenize($control-value, '\s+')">
+                                                <xsl:variable name="item-value" as="xs:string" select="."/>
+                                                <field acro-field-name="'{$field-name}${$item-value}'" value="'true'"/>
+                                            </xsl:for-each>
                                         </xsl:when>
                                         <xsl:when test="local-name($control) = 'select1' and $control/@appearance = 'full'">
                                             <!-- Radio buttons: use control value and match export values in PDF -->
@@ -148,6 +145,11 @@
                                                                 return $control-resources/item[value = $v]/label, ' - ')}'"/>
                                         </xsl:otherwise>
                                     </xsl:choose>
+                                </xsl:when>
+                                <xsl:when test="local-name($control) = ('image-attachment') and normalize-space($control-value) != ''">
+                                    <!-- Image attachment -->
+                                    <image acro-field-name="'{$field-name}'"
+                                           href="{pipeline:rewriteServiceURI($control-value, true())}"/>
                                 </xsl:when>
                                 <xsl:when test="$bind/@type and substring-after($bind/@type, ':') = 'date'">
                                     <!-- Date -->

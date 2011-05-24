@@ -89,10 +89,10 @@
             <!-- Title is used later  -->
             <xsl:variable name="view-label" select="(/xhtml:html/xhtml:body//fr:view)[1]/xforms:label" as="element(xforms:label)?"/>
             <xxforms:variable name="title"
-                              select="(($source-form-metadata/title[@xml:lang = $metadata-lang],
+                              select="((xxforms:instance('fr-form-metadata')/title[@xml:lang = $metadata-lang],
+                                        xxforms:instance('fr-form-metadata')/title[1],
+                                        $source-form-metadata/title[@xml:lang = $metadata-lang],
                                         $source-form-metadata/title[1],
-                                        instance('fr-form-metadata')/title[@xml:lang = $metadata-lang],
-                                        instance('fr-form-metadata')/title[1],
                                         ({$view-label/@ref}),
                                         ({$view-label/@value}),
                                         '{replace($view-label, '''', '''''')}',
@@ -267,7 +267,7 @@
         <!-- This model handles navigation functionality -->
         <xi:include href="oxf:/apps/fr/includes/navigation-model.xml" xxi:omit-xml-base="true"/>
         <!-- This model handles import/export -->
-        <xsl:if test="$view-buttons = ('save-locally')">
+        <xsl:if test="$buttons = ('save-locally')">
             <xi:include href="oxf:/apps/fr/import-export/import-export-model.xml" xxi:omit-xml-base="true"/>
         </xsl:if>
         <xsl:if test="$has-alfresco">

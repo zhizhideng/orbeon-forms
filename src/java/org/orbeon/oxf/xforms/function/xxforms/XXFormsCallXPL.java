@@ -19,7 +19,6 @@ import org.dom4j.Node;
 import org.dom4j.QName;
 import org.orbeon.oxf.common.OXFException;
 import org.orbeon.oxf.pipeline.InitUtils;
-import org.orbeon.oxf.pipeline.StaticExternalContext;
 import org.orbeon.oxf.pipeline.api.PipelineContext;
 import org.orbeon.oxf.pipeline.api.ProcessorDefinition;
 import org.orbeon.oxf.processor.DOMSerializer;
@@ -151,25 +150,21 @@ public class XXFormsCallXPL extends XFormsFunction {
             }
 
             // Try to obtain an existing PipelineContext, otherwise create a new one
-            // PipelineContext should be found when this is called from controls. It is likely to
-            // be missing when called from the model.
-            final StaticExternalContext.StaticContext staticContext = StaticExternalContext.getStaticContext();
-            PipelineContext pipelineContext = (staticContext != null) ? staticContext.getPipelineContext() : null;
+            PipelineContext pipelineContext = PipelineContext.get();
             final boolean newPipelineContext = pipelineContext == null;
             if (newPipelineContext) {
                 XFormsContainingDocument.logWarningStatic("xxforms:call-xpl()", "Cannot find pipeline context from static context. Creating new pipeline context.");
                 pipelineContext = new PipelineContext();
             }
 
-            processor.reset(pipelineContext);
-
+            boolean success = false;
             try {
+                processor.reset(pipelineContext);
+
                 if (outputNames.size() == 0) {
                     // Just run the processor
                     processor.start(pipelineContext);
-                    if (newPipelineContext && !pipelineContext.isDestroyed())
-                        pipelineContext.destroy(true);
-
+                    success = true;
                     return EmptyIterator.getInstance();
                 } else {
                     // Create all outputs to read
@@ -194,19 +189,13 @@ public class XXFormsCallXPL extends XFormsFunction {
                         results.add(new DocumentWrapper((Document) Dom4jUtils.normalizeTextNodes(domSerializer.getDocument(pipelineContext)), null,
                                 xpathContext.getConfiguration()));
                     }
-                    if (newPipelineContext && !pipelineContext.isDestroyed())
-                        pipelineContext.destroy(true);
 
+                    success = true;
                     return new ListIterator(results);
                 }
-            } catch (Exception e) {
-                try {
-                    if (newPipelineContext && !pipelineContext.isDestroyed())
-                        pipelineContext.destroy(false);
-                } catch (Exception f) {
-                    XFormsContainingDocument.logErrorStatic("xxforms:call-xpl()", "Exception while destroying context after exception", OXFException.getRootThrowable(f));
-                }
-                throw e;
+            } finally {
+                if (newPipelineContext)
+                    pipelineContext.destroy(success);
             }
         } catch (XPathException e) {
             throw e;

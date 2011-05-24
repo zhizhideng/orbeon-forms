@@ -19,7 +19,6 @@ import org.orbeon.oxf.properties.Properties;
 import org.orbeon.oxf.properties.PropertySet;
 import org.orbeon.oxf.util.Connection;
 import org.orbeon.oxf.xml.dom4j.LocationData;
-import org.orbeon.saxon.om.FastStringBuffer;
 
 import java.util.*;
 
@@ -106,7 +105,7 @@ public class XFormsProperties {
     public static final String OFFLINE_SUPPORT_PROPERTY = "offline";
     public static final String OFFLINE_REPEAT_COUNT_PROPERTY = "offline-repeat-count";
     public static final String FORWARD_SUBMISSION_HEADERS = "forward-submission-headers";
-    public static final String DEFAULT_FORWARD_SUBMISSION_HEADERS = "Authorization";
+    public static final String DEFAULT_FORWARD_SUBMISSION_HEADERS = "";
 
     private static final String ASYNC_SUBMISSION_POLL_DELAY = "submission-poll-delay";
 
@@ -518,7 +517,7 @@ public class XFormsProperties {
      * @return                      format string, null if not found
      */
     public static String getTypeOutputFormat(XFormsContainingDocument containingDocument, String typeName, String lang) {
-        final FastStringBuffer sb = new FastStringBuffer(TYPE_OUTPUT_FORMAT_PROPERTY_PREFIX);
+        final StringBuilder sb = new StringBuilder(TYPE_OUTPUT_FORMAT_PROPERTY_PREFIX);
 
         if (lang == null) {
             sb.append("*.*.");

@@ -17,8 +17,6 @@ import org.orbeon.oxf.cache.CacheLinkedList;
 import org.orbeon.oxf.common.OXFException;
 import org.orbeon.oxf.pipeline.StaticExternalContext;
 import org.orbeon.oxf.pipeline.api.ExternalContext;
-import org.orbeon.oxf.pipeline.api.PipelineContext;
-import org.orbeon.oxf.util.PropertyContext;
 import org.orbeon.oxf.xforms.XFormsContainingDocument;
 import org.orbeon.oxf.xforms.XFormsProperties;
 import org.orbeon.oxf.xforms.XFormsStaticState;
@@ -64,12 +62,11 @@ public abstract class EXistStateStoreBase implements XFormsStateStore {
     /**
      * Store the current state of the given document.
      *
-     * @param propertyContext       current context
      * @param containingDocument    document
      * @param session               current session
      * @param isInitialState        whether this is the document's initial state
      */
-    public synchronized void storeDocumentState(PropertyContext propertyContext, XFormsContainingDocument containingDocument,
+    public synchronized void storeDocumentState(XFormsContainingDocument containingDocument,
                                                 ExternalContext.Session session, boolean isInitialState) {
 
         assert containingDocument.getStaticState().isServerStateHandling();
@@ -89,10 +86,10 @@ public abstract class EXistStateStoreBase implements XFormsStateStore {
         addOrReplaceOne(documentUUID, staticStateUUID + ":" + dynamicStateKey, session.getId());
 
         // Static state
-        addOrReplaceOne(staticStateUUID, containingDocument.getStaticState().getEncodedStaticState(propertyContext), session.getId());
+        addOrReplaceOne(staticStateUUID, containingDocument.getStaticState().getEncodedStaticState(), session.getId());
 
         // Dynamic state
-        addOrReplaceOne(dynamicStateKey, containingDocument.createEncodedDynamicState(propertyContext, XFormsProperties.isGZIPState(), false), session.getId());
+        addOrReplaceOne(dynamicStateKey, containingDocument.createEncodedDynamicState(XFormsProperties.isGZIPState(), false), session.getId());
     }
 
     private String getDynamicStateKey(String documentUUID, boolean isInitialState) {
@@ -223,14 +220,6 @@ public abstract class EXistStateStoreBase implements XFormsStateStore {
             if (expiredCount > 0 && isDebugEnabled())
                 debug("expired " + expiredCount + " entries for session " + sessionId + " (" + (storeSizeBeforeExpire - getCurrentSize()) + " bytes).");
         }
-    }
-
-    protected PipelineContext getPipelineContext() {
-        // NOTE: We may not have a StaticContext when we are called from a session listener, but that should be ok
-        // (PipelineContext is used further down the line to ensure that the db drive is registered, but it should
-        // be.)
-        final StaticExternalContext.StaticContext staticContext = StaticExternalContext.getStaticContext();
-        return (staticContext != null) ? staticContext.getPipelineContext() : null;
     }
 
     protected ExternalContext getExternalContext() {

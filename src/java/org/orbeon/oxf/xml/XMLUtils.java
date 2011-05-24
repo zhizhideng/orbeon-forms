@@ -38,6 +38,7 @@ import org.orbeon.oxf.xml.dom4j.Dom4jUtils;
 import org.orbeon.oxf.xml.dom4j.LocationData;
 import org.orbeon.oxf.xml.dom4j.LocationDocumentResult;
 import org.orbeon.oxf.xml.xerces.XercesSAXParserFactoryImpl;
+import org.orbeon.saxon.om.Name10Checker;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.*;
@@ -418,9 +419,13 @@ public class XMLUtils {
     private static void inputSourceToSAX(InputSource inputSource, XMLReceiver xmlReceiver, XMLUtils.ParserConfiguration parserConfiguration, boolean handleLexical) {
 
         // Insert XInclude processor if needed
+        final TransformerURIResolver resolver;
         if (parserConfiguration.handleXInclude) {
             parserConfiguration =  new XMLUtils.ParserConfiguration(parserConfiguration.validating, false, parserConfiguration.externalEntities, parserConfiguration.uriReferences);
-            xmlReceiver = new XIncludeProcessor.XIncludeXMLReceiver(null, xmlReceiver, parserConfiguration.uriReferences, new TransformerURIResolver(XMLUtils.ParserConfiguration.PLAIN));
+            resolver = new TransformerURIResolver(XMLUtils.ParserConfiguration.PLAIN);
+            xmlReceiver = new XIncludeProcessor.XIncludeXMLReceiver(null, xmlReceiver, parserConfiguration.uriReferences, resolver);
+        } else {
+            resolver = null;
         }
 
         try {
@@ -436,6 +441,9 @@ public class XMLUtils {
             throw new ValidationException(e.getMessage(), new LocationData(e));
         } catch (Exception e) {
             throw new OXFException(e);
+        } finally {
+            if (resolver != null)
+                resolver.destroy();
         }
     }
 
@@ -516,44 +524,6 @@ public class XMLUtils {
     public static void error(String message) {
         throw new OXFException(message);
     }
-
-//    public static Attributes stripNamespaceAttributes(Attributes attributes) {
-//        for (int i = 0; i < attributes.getLength(); i++) {
-//            if (XMLConstants.XMLNS_URI.equals(attributes.getURI(i)) || "xmlns".equals(attributes.getLocalName(i))) {
-//                // Found at least one, strip
-//                AttributesImpl newAttributes = new AttributesImpl();
-//                for (int j = 0; j < attributes.getLength(); j++) {
-//                    if (!XMLConstants.XMLNS_URI.equals(attributes.getURI(j)) && !"xmlns".equals(attributes.getLocalName(j)))
-//                        newAttributes.addAttribute(attributes.getURI(j), attributes.getLocalName(j),
-//                                attributes.getQName(j), attributes.getType(j), attributes.getValue(j));
-//                }
-//                return newAttributes;
-//            }
-//        }
-//        return attributes;
-//    }
-
-//    public static byte[] getDigest(Node node) {
-//        return getDigest(new DOMSource(node));
-//    }
-
-//    // Necessary for Saxon
-//    public static byte[] getDigest(NodeList nodeList) {
-//        if (nodeList.getLength() == 0)
-//            throw new OXFException("No node supplied");
-//        else if (nodeList.getLength() == 1)
-//            return getDigest((Node) nodeList.item(0));
-//        else {
-//            Document doc = XMLUtils.createDocument();
-//            org.w3c.dom.Element root = doc.createElement("root");
-//            for (int i = 0; i < nodeList.getLength(); i++) {
-//                Node n = nodeList.item(i);
-//                root.appendChild(n.cloneNode(true));
-//            }
-//            doc.appendChild(root);
-//            return getDigest(doc);
-//        }
-//    }
 
     /**
      * Compute a digest for a SAX source.
@@ -948,55 +918,6 @@ public class XMLUtils {
         public void endDocument() throws SAXException {}
     }
 
-//    /**
-//     * Iterator over DOM Attributes.
-//     *
-//     * The object returned is of type XMLUtils.Attribute.
-//     */
-//    public static class AttributesIterator implements Iterator {
-//
-//        private Attributes attributes;
-//        private int size;
-//        private int currentIndex;
-//
-//        public AttributesIterator(Attributes attributes) {
-//            this.attributes = attributes;
-//            size = attributes.getLength();
-//            currentIndex = 0;
-//        }
-//
-//        public boolean hasNext() {
-//            return currentIndex < size;
-//        }
-//
-//        public Object next() {
-//            if (!hasNext())
-//                throw new NoSuchElementException();
-//            final int _currentIndex = currentIndex++;
-//            return new Attribute() {
-//                public String getURI() {
-//                    return attributes.getURI(_currentIndex);
-//                }
-//
-//                public String getLocalName() {
-//                    return attributes.getLocalName(_currentIndex);
-//                }
-//
-//                public String getQName() {
-//                    return attributes.getQName(_currentIndex);
-//                }
-//
-//                public String getValue() {
-//                    return attributes.getValue(_currentIndex);
-//                }
-//            };
-//        }
-//
-//        public void remove() {
-//            throw new UnsupportedOperationException();
-//        }
-//    }
-
     /**
      * Convert an Object to a String and generate SAX characters events.
      */
@@ -1093,41 +1014,45 @@ public class XMLUtils {
     }
 
     public static org.dom4j.Document cleanXML(org.dom4j.Document doc, String stylesheetURL) {
-      try {
-        final org.dom4j.Element element = doc.getRootElement();
-        final String systemId = Dom4jUtils.makeSystemId(element);
-        // The date to clean
-        final DOMGenerator dataToClean = new DOMGenerator(doc, "clean xml", DOMGenerator.ZeroValidity, systemId);
-        // The stylesheet
-        URLGenerator stylesheetGenerator = new URLGenerator(stylesheetURL);
-        // The transformation
-        // Define the name of the processor (this is a QName)
-        final QName processorName = new QName("xslt", XMLConstants.OXF_PROCESSORS_NAMESPACE);
-        // Get a factory for this processor
-        final ProcessorFactory processorFactory = ProcessorFactoryRegistry.lookup(processorName);
-        if (processorFactory == null)
-          throw new OXFException("Cannot find processor factory with name '"
-                                 + processorName.getNamespacePrefix() + ":" + processorName.getName() + "'");
+        try {
+            final org.dom4j.Element element = doc.getRootElement();
+            final String systemId = Dom4jUtils.makeSystemId(element);
+            // The date to clean
+            final DOMGenerator dataToClean = new DOMGenerator(doc, "clean xml", DOMGenerator.ZeroValidity, systemId);
+            // The stylesheet
+            URLGenerator stylesheetGenerator = new URLGenerator(stylesheetURL);
+            // The transformation
+            // Define the name of the processor (this is a QName)
+            final QName processorName = new QName("xslt", XMLConstants.OXF_PROCESSORS_NAMESPACE);
+            // Get a factory for this processor
+            final ProcessorFactory processorFactory = ProcessorFactoryRegistry.lookup(processorName);
+            if (processorFactory == null)
+                throw new OXFException("Cannot find processor factory with name '"
+                        + processorName.getNamespacePrefix() + ":" + processorName.getName() + "'");
 
-        // Create processor
-        final Processor xsltProcessor = processorFactory.createInstance();
-        // Where the result goes
-        DOMSerializer transformationOutput = new DOMSerializer();
+            // Create processor
+            final Processor xsltProcessor = processorFactory.createInstance();
+            // Where the result goes
+            DOMSerializer transformationOutput = new DOMSerializer();
 
-        // Connect
-        PipelineUtils.connect(stylesheetGenerator, "data", xsltProcessor, "config");
-        PipelineUtils.connect(dataToClean, "data", xsltProcessor, "data");
-        PipelineUtils.connect(xsltProcessor, "data", transformationOutput, "data");
+            // Connect
+            PipelineUtils.connect(stylesheetGenerator, "data", xsltProcessor, "config");
+            PipelineUtils.connect(dataToClean, "data", xsltProcessor, "data");
+            PipelineUtils.connect(xsltProcessor, "data", transformationOutput, "data");
 
-        // Run the pipeline
-        PipelineContext pipelineContext = new PipelineContext();
-        transformationOutput.start(pipelineContext);
-        // Get the output
-        return transformationOutput.getDocument(pipelineContext);
-      }
-      catch(Exception e) {
-        throw new OXFException(e);
-      }
+            // Run the pipeline
+            final PipelineContext pipelineContext = new PipelineContext();
+            boolean success = false;
+            try {
+                transformationOutput.start(pipelineContext);
+                success = true;
+                return transformationOutput.getDocument(pipelineContext);
+            } finally {
+                pipelineContext.destroy(success);
+            }
+        } catch (Exception e) {
+            throw new OXFException(e);
+        }
     }
 
     public static String toString(final Locator loc) {
@@ -1294,42 +1219,70 @@ public class XMLUtils {
     }
 
     public interface DebugXML {
-        void toXML(PropertyContext propertyContext, ContentHandlerHelper helper);
+        void toXML(ContentHandlerHelper helper);
     }
 
-    public static org.dom4j.Document createDebugRequestDocument(final PropertyContext propertyContext, final DebugXML debugXML) {
-        return createDocument(propertyContext, new DebugXML() {
-            public void toXML(PropertyContext propertyContext, ContentHandlerHelper helper) {
-                wrapWithRequestElement(propertyContext, helper, debugXML);
+    public static org.dom4j.Document createDebugRequestDocument(final DebugXML debugXML) {
+        return createDocument(new DebugXML() {
+            public void toXML(ContentHandlerHelper helper) {
+                wrapWithRequestElement(helper, debugXML);
             }
         });
     }
 
-    public static org.dom4j.Document createDocument(PropertyContext propertyContext, DebugXML debugXML) {
+    public static org.dom4j.Document createDocument(DebugXML debugXML) {
         final TransformerXMLReceiver identity = TransformerUtils.getIdentityTransformerHandler();
         final LocationDocumentResult result = new LocationDocumentResult();
         identity.setResult(result);
 
         final ContentHandlerHelper helper = new ContentHandlerHelper(identity);
-        debugXML.toXML(propertyContext, helper);
+        debugXML.toXML(helper);
 
         return result.getDocument();
     }
 
-    public static void wrapWithRequestElement(PropertyContext propertyContext, ContentHandlerHelper helper, DebugXML debugXML) {
+    public static void wrapWithRequestElement(ContentHandlerHelper helper, DebugXML debugXML) {
         helper.startDocument();
 
-        final ExternalContext externalContext = (ExternalContext) propertyContext.getAttribute(PipelineContext.EXTERNAL_CONTEXT);
+        final ExternalContext externalContext = NetUtils.getExternalContext();
         final ExternalContext.Request request = (externalContext != null) ? externalContext.getRequest() : null;
         helper.startElement("request", new String[] { "request-uri", (request != null) ? request.getRequestURI() : null,
                 "query-string", (request != null) ? request.getQueryString() : null,
                 "method", (request != null) ? request.getMethod() : null
         });
 
-        debugXML.toXML(propertyContext, helper);
+        debugXML.toXML(helper);
 
         helper.endElement();
 
         helper.endDocument();
+    }
+
+    /**
+     * Make an NCName out of a non-blank string. Any characters that do not belong in an NCName are converted to '_'.
+     *
+     * @param name  source
+     * @return      NCName
+     */
+    public static String makeNCName(String name) {
+
+        if (StringUtils.isBlank(name))
+            throw new IllegalArgumentException("Name must not be blank or empty");
+
+        final Name10Checker name10Checker = Name10Checker.getInstance();
+        if (name10Checker.isValidNCName(name)) {
+            return name;
+        } else {
+            final StringBuilder sb = new StringBuilder();
+            final char start = name.charAt(0);
+            sb.append(name10Checker.isNCNameStartChar(start) ? start : '_');
+
+            for (int i = 1; i < name.length(); i++) {
+                final char ch = name.charAt(i);
+                sb.append(name10Checker.isNCNameChar(ch) ? ch : '_');
+            }
+
+            return sb.toString();
+        }
     }
 }

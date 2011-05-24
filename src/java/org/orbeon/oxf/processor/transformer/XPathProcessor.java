@@ -34,7 +34,6 @@ import org.orbeon.oxf.xml.XMLUtils;
 import org.orbeon.oxf.xml.dom4j.Dom4jUtils;
 import org.orbeon.oxf.xml.dom4j.LocationData;
 import org.orbeon.saxon.om.DocumentInfo;
-import org.orbeon.saxon.om.FastStringBuffer;
 import org.orbeon.saxon.om.NodeInfo;
 import org.orbeon.saxon.trans.XPathException;
 import org.xml.sax.SAXException;
@@ -84,7 +83,7 @@ public class XPathProcessor extends ProcessorImpl {
                 PooledXPathExpression xpath = null;
                 try {
                     final String baseURI = (locationData == null) ? null : locationData.getSystemID();
-                    xpath = XPathCache.getXPathExpression(context, documentInfo.getConfiguration(), documentInfo,
+                    xpath = XPathCache.getXPathExpression(documentInfo.getConfiguration(), documentInfo,
                             config.getExpression(), config.getNamespaces(), null, PipelineFunctionLibrary.instance(), baseURI, locationData);
                     List results = xpath.evaluate();
                     xmlReceiver.startDocument();
@@ -145,7 +144,7 @@ public class XPathProcessor extends ProcessorImpl {
             strVal = XMLUtils.removeScientificNotation(d);
         } else if (result instanceof Boolean) {
             strVal = ((Boolean) result).toString();
-        } else if (result instanceof FastStringBuffer) {
+        } else if (result instanceof StringBuilder) {
             strVal = result.toString();
         } else {
             String message = "Unsupported type returned by XPath expression: "

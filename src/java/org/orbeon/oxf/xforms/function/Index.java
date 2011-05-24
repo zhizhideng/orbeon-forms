@@ -14,7 +14,6 @@
 package org.orbeon.oxf.xforms.function;
 
 import org.orbeon.oxf.common.ValidationException;
-import org.orbeon.oxf.pipeline.api.PipelineContext;
 import org.orbeon.oxf.xforms.XFormsModel;
 import org.orbeon.oxf.xforms.event.events.XFormsComputeExceptionEvent;
 import org.orbeon.oxf.xforms.xbl.XBLContainer;
@@ -47,12 +46,9 @@ public class Index extends XFormsFunction {
             final String message = "Function index uses repeat id '" + repeatStaticId + "' which is not in scope";
             final RuntimeException exception = new ValidationException(message, null);
 
-            // This function is always called from controls so PipelineContext should be present
-            final PipelineContext pipelineContext = getOrCreatePipelineContext();
-
             final XFormsModel currentModel = getContextStack(xpathContext).getCurrentModel();
             final XBLContainer container = currentModel.getXBLContainer();
-            container.dispatchEvent(pipelineContext,
+            container.dispatchEvent(
                     new XFormsComputeExceptionEvent(container.getContainingDocument(), currentModel, message, exception));
 
             // TODO: stop processing!

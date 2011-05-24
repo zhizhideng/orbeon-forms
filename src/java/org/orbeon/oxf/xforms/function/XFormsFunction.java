@@ -16,7 +16,7 @@ package org.orbeon.oxf.xforms.function;
 import org.dom4j.*;
 import org.orbeon.oxf.common.OXFException;
 import org.orbeon.oxf.pipeline.StaticExternalContext;
-import org.orbeon.oxf.pipeline.api.PipelineContext;
+
 import org.orbeon.oxf.util.PooledXPathExpression;
 import org.orbeon.oxf.util.XPathCache;
 import org.orbeon.oxf.xforms.*;
@@ -93,19 +93,6 @@ abstract public class XFormsFunction extends SystemFunction {
 
     protected XFormsContextStack getContextStack(XPathContext xpathContext) {
         return getContext(xpathContext).getContextStack();
-    }
-
-    protected PipelineContext getOrCreatePipelineContext() {
-        final StaticExternalContext.StaticContext staticContext = StaticExternalContext.getStaticContext();
-        PipelineContext pipelineContext = (staticContext != null) ? staticContext.getPipelineContext() : null;
-
-        // Found existing pipeline context
-        if (pipelineContext != null)
-            return pipelineContext;
-
-        // Create new pipeline context
-        XFormsContainingDocument.logWarningStatic("", "Cannot find pipeline context from static context. Creating new pipeline context.");
-        return new PipelineContext();
     }
 
     // NOTE: This is always constructed in XFormsContextStack

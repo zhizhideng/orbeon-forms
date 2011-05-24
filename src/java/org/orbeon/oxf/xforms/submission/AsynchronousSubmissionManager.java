@@ -14,6 +14,8 @@
 package org.orbeon.oxf.xforms.submission;
 
 import org.orbeon.oxf.common.OXFException;
+import org.orbeon.oxf.pipeline.api.ExternalContext;
+import org.orbeon.oxf.pipeline.api.PipelineContext;
 import org.orbeon.oxf.util.*;
 import org.orbeon.oxf.xforms.XFormsContainingDocument;
 import org.orbeon.oxf.xforms.XFormsProperties;
@@ -50,10 +52,9 @@ public class AsynchronousSubmissionManager {
      *
      * This should be called just before sending an Ajax response.
      *
-     * @param propertyContext   current context
      */
-    public void addClientDelayEventIfNeeded(PropertyContext propertyContext) {
-        if (hasPendingAsynchronousSubmissions(propertyContext)) {
+    public void addClientDelayEventIfNeeded() {
+        if (hasPendingAsynchronousSubmissions()) {
             // NOTE: Could get isShowProgress() from submission, but default must be false
             containingDocument.addDelayedEvent(XFormsEvents.XXFORMS_POLL, containingDocument.getEffectiveId(),
                         false, false, XFormsProperties.getSubmissionPollDelay(containingDocument), true, false, null);
@@ -68,8 +69,8 @@ public class AsynchronousSubmissionManager {
         return ASYNC_SUBMISSIONS_SESSION_KEY_PREFIX + documentUUID;
     }
 
-    private static AsynchronousSubmissions getAsynchronousSubmissions(PropertyContext propertyContext, boolean create, String sessionKey) {
-        final Map<String, Object> sessionMap = NetUtils.getExternalContext(propertyContext).getSession(true).getAttributesMap();
+    private static AsynchronousSubmissions getAsynchronousSubmissions(boolean create, String sessionKey) {
+        final Map<String, Object> sessionMap = NetUtils.getExternalContext().getSession(true).getAttributesMap();
         final AsynchronousSubmissions existingAsynchronousSubmissions = (AsynchronousSubmissions) sessionMap.get(sessionKey);
         if (existingAsynchronousSubmissions != null) {
             return existingAsynchronousSubmissions;
@@ -82,18 +83,36 @@ public class AsynchronousSubmissionManager {
         }
     }
 
-    public void addAsynchronousSubmission(final PropertyContext propertyContext, final Callable<SubmissionResult> callable) {
+    public void addAsynchronousSubmission(final Callable<SubmissionResult> callable) {
 
-        final AsynchronousSubmissions asynchronousSubmissions = getAsynchronousSubmissions(propertyContext, true, getSessionKey(containingDocument));
+        final AsynchronousSubmissions asynchronousSubmissions = getAsynchronousSubmissions(true, getSessionKey(containingDocument));
 
         // NOTE: If we want to re-enable foreground async submissions, we must:
         // o do a better detection: !(xf-submit-done/xf-submit-error listener) && replace="none"
         // o OR provide an explicit hint on xf:submission
-        asynchronousSubmissions.submit(callable);
+        asynchronousSubmissions.submit(new Callable<SubmissionResult>() {
+
+            final ExternalContext externalContext = NetUtils.getExternalContext();
+            public SubmissionResult call() throws Exception {
+                // Make sure an ExternalContext is scoped for the callable. We use the same external context as the caller,
+                // even though that can be a dangerous. Should we use AsyncExternalContext here?
+                final PipelineContext pipelineContext = new PipelineContext();
+                pipelineContext.setAttribute(PipelineContext.EXTERNAL_CONTEXT, externalContext);
+                boolean success = false;
+                try {
+                    // Perform call
+                    final SubmissionResult result = callable.call();
+                    success = true;
+                    return result;
+                } finally {
+                    pipelineContext.destroy(success);
+                }
+            }
+        });
     }
 
-    public boolean hasPendingAsynchronousSubmissions(PropertyContext propertyContext) {
-        final AsynchronousSubmissions asynchronousSubmissions = getAsynchronousSubmissions(propertyContext, false, getSessionKey(containingDocument));
+    public boolean hasPendingAsynchronousSubmissions() {
+        final AsynchronousSubmissions asynchronousSubmissions = getAsynchronousSubmissions(false, getSessionKey(containingDocument));
         return asynchronousSubmissions != null && asynchronousSubmissions.getPendingCount() > 0;
     }
 
@@ -104,10 +123,9 @@ public class AsynchronousSubmissionManager {
      * Submissions are processed in the order in which they are made available upon termination by the completion
      * service.
      *
-     * @param propertyContext   current context
      */
-    public void processAllAsynchronousSubmissions(PropertyContext propertyContext) {
-        final AsynchronousSubmissions asynchronousSubmissions = getAsynchronousSubmissions(propertyContext, false, getSessionKey(containingDocument));
+    public void processAllAsynchronousSubmissions() {
+        final AsynchronousSubmissions asynchronousSubmissions = getAsynchronousSubmissions(false, getSessionKey(containingDocument));
         if (asynchronousSubmissions != null && asynchronousSubmissions.getPendingCount() > 0) {
 
             final IndentedLogger indentedLogger = containingDocument.getIndentedLogger(XFormsModelSubmission.LOGGING_CATEGORY);
@@ -124,7 +142,7 @@ public class AsynchronousSubmissionManager {
                         final XFormsModelSubmission submission = (XFormsModelSubmission) containingDocument.getObjectByEffectiveId(result.getSubmissionEffectiveId());
                         final XBLContainer container = submission.getXBLContainer(containingDocument);
                         // NOTE: not clear whether we should use an event for this as there doesn't seem to be a benefit
-                        container.dispatchEvent(propertyContext, new XXFormsSubmitReplaceEvent(containingDocument, submission, result));
+                        container.dispatchEvent(new XXFormsSubmitReplaceEvent(containingDocument, submission, result));
 
                     } catch (Throwable throwable) {
                         // Something bad happened
@@ -146,10 +164,9 @@ public class AsynchronousSubmissionManager {
      * Submissions are processed in the order in which they are made available upon termination by the completion
      * service.
      *
-     * @param propertyContext   current context
      */
-    public void processCompletedAsynchronousSubmissions(PropertyContext propertyContext) {
-        final AsynchronousSubmissions asynchronousSubmissions = getAsynchronousSubmissions(propertyContext, false, getSessionKey(containingDocument));
+    public void processCompletedAsynchronousSubmissions() {
+        final AsynchronousSubmissions asynchronousSubmissions = getAsynchronousSubmissions(false, getSessionKey(containingDocument));
         if (asynchronousSubmissions != null && asynchronousSubmissions.getPendingCount() > 0) {
             final IndentedLogger indentedLogger = containingDocument.getIndentedLogger(XFormsModelSubmission.LOGGING_CATEGORY);
             indentedLogger.startHandleOperation("", "processing completed background asynchronous submissions");
@@ -166,7 +183,7 @@ public class AsynchronousSubmissionManager {
                         final XFormsModelSubmission submission = (XFormsModelSubmission) containingDocument.getObjectByEffectiveId(result.getSubmissionEffectiveId());
                         final XBLContainer container = submission.getXBLContainer(containingDocument);
                         // NOTE: not clear whether we should use an event for this as there doesn't seem to be a benefit
-                        container.dispatchEvent(propertyContext, new XXFormsSubmitReplaceEvent(containingDocument, submission, result));
+                        container.dispatchEvent(new XXFormsSubmitReplaceEvent(containingDocument, submission, result));
                     } catch (Throwable throwable) {
                         // Something bad happened
                         throw new OXFException(throwable);

@@ -14,14 +14,11 @@
 package org.orbeon.oxf.xforms.control.controls;
 
 import org.dom4j.Element;
-import org.orbeon.oxf.pipeline.api.PipelineContext;
-import org.orbeon.oxf.util.PropertyContext;
 import org.orbeon.oxf.xforms.*;
 import org.orbeon.oxf.xforms.control.XFormsControl;
 import org.orbeon.oxf.xforms.control.XFormsNoSingleNodeContainerControl;
 import org.orbeon.oxf.xforms.event.XFormsEvent;
 import org.orbeon.oxf.xforms.event.XFormsEvents;
-import org.orbeon.oxf.xforms.event.events.XFormsFocusEvent;
 import org.orbeon.oxf.xforms.event.events.XXFormsDialogOpenEvent;
 import org.orbeon.oxf.xforms.xbl.XBLContainer;
 import org.orbeon.oxf.xml.ContentHandlerHelper;
@@ -145,8 +142,8 @@ public class XXFormsDialogControl extends XFormsNoSingleNodeContainerControl {
     }
 
     @Override
-    public void performTargetAction(PropertyContext propertyContext, XBLContainer container, XFormsEvent event) {
-        super.performTargetAction(propertyContext, container, event);
+    public void performTargetAction(XBLContainer container, XFormsEvent event) {
+        super.performTargetAction(container, event);
 
         if (XFormsEvents.XXFORMS_DIALOG_OPEN.equals(event.getName())) {
             // Open the dialog
@@ -163,17 +160,17 @@ public class XXFormsDialogControl extends XFormsNoSingleNodeContainerControl {
             // TODO: Issue here: if the dialog is non-relevant, it can't receive xxforms-dialog-open!
             if (isXForms11Switch()) {
                 // Partial refresh
-                containingDocument.getControls().doPartialRefresh(propertyContext, this);
+                containingDocument.getControls().doPartialRefresh(this);
             }
 
-            // Automatically set focus on the dialog
-            // NOTE: Form author can override this with a setfocus on xxforms-dialog-open
-            getXBLContainer().dispatchEvent(propertyContext, new XFormsFocusEvent(containingDocument, this));
+            // NOTE: Focus handling now done in XXFormsShowAction, because upon xxforms-dialog-open the user can change
+            // the visibility of controls, for example with a <toggle>, which means that the control to focus on must
+            // be determined after xxforms-dialog-open has completed.
         }
     }
 
     @Override
-    public void performDefaultAction(PropertyContext propertyContext, XFormsEvent event) {
+    public void performDefaultAction(XFormsEvent event) {
         if (XFormsEvents.XXFORMS_DIALOG_CLOSE.equals(event.getName())) {
             // Close the dialog
 
@@ -183,11 +180,11 @@ public class XXFormsDialogControl extends XFormsNoSingleNodeContainerControl {
 
             if (isXForms11Switch()) {
                 // Partial refresh
-                containingDocument.getControls().doPartialRefresh(propertyContext, this);
+                containingDocument.getControls().doPartialRefresh(this);
             }
 
         }
-        super.performDefaultAction(propertyContext, event);
+        super.performDefaultAction(event);
     }
 
     @Override
@@ -236,7 +233,7 @@ public class XXFormsDialogControl extends XFormsNoSingleNodeContainerControl {
     }
 
     @Override
-    public boolean equalsExternal(PropertyContext propertyContext, XFormsControl other) {
+    public boolean equalsExternal(XFormsControl other) {
 
         if (other == null)
             return false;
@@ -248,15 +245,15 @@ public class XXFormsDialogControl extends XFormsNoSingleNodeContainerControl {
         if (otherDialog.wasVisible() != isVisible())
             return false;
 
-        return super.equalsExternal(propertyContext, other);
+        return super.equalsExternal(other);
     }
 
     @Override
-    public void outputAjaxDiff(PipelineContext pipelineContext, ContentHandlerHelper ch, XFormsControl other,
+    public void outputAjaxDiff(ContentHandlerHelper ch, XFormsControl other,
                                AttributesImpl attributesImpl, boolean isNewlyVisibleSubtree) {
 
         // If needed, output basic diffs such as changes in class or LHHA
-        final boolean doOutputElement = addAjaxAttributes(pipelineContext, attributesImpl, isNewlyVisibleSubtree, other);
+        final boolean doOutputElement = addAjaxAttributes(attributesImpl, isNewlyVisibleSubtree, other);
         if (doOutputElement) {
             ch.element("xxf", XFormsConstants.XXFORMS_NAMESPACE_URI, "control", attributesImpl);
         }

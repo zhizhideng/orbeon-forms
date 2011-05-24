@@ -15,8 +15,6 @@ package org.orbeon.oxf.xforms.control;
 
 import org.dom4j.Element;
 import org.orbeon.oxf.common.OXFException;
-import org.orbeon.oxf.pipeline.api.PipelineContext;
-import org.orbeon.oxf.util.PropertyContext;
 import org.orbeon.oxf.xforms.XFormsProperties;
 import org.orbeon.oxf.xforms.XFormsUtils;
 import org.orbeon.oxf.xforms.action.actions.XFormsSetvalueAction;
@@ -51,8 +49,8 @@ public abstract class XFormsValueControl extends XFormsSingleNodeControl {
     }
 
     @Override
-    protected void onCreate(PropertyContext propertyContext) {
-        super.onCreate(propertyContext);
+    protected void onCreate() {
+        super.onCreate();
 
         value = null;
         previousValue = null;
@@ -61,17 +59,17 @@ public abstract class XFormsValueControl extends XFormsSingleNodeControl {
     }
 
     @Override
-    protected void evaluateImpl(PropertyContext propertyContext) {
+    protected void evaluateImpl() {
 
         // Evaluate other aspects of the control if necessary
-        super.evaluateImpl(propertyContext);
+        super.evaluateImpl();
 
         // Evaluate control values
         if (isRelevant()) {
             // Control is relevant
             if (value == null) {
                 // Only evaluate if the value is not already available
-                evaluateValue(propertyContext);
+                evaluateValue();
             }
         } else {
             // Control is not relevant
@@ -97,11 +95,11 @@ public abstract class XFormsValueControl extends XFormsSingleNodeControl {
         }
     }
 
-    protected void evaluateValue(PropertyContext propertyContext) {
+    protected void evaluateValue() {
         setValue(XFormsUtils.getBoundItemValue(getBoundItem()));
     }
 
-    protected void evaluateExternalValue(PropertyContext propertyContext) {
+    protected void evaluateExternalValue() {
         // By default, same as value
         setExternalValue(getValue());
     }
@@ -126,17 +124,16 @@ public abstract class XFormsValueControl extends XFormsSingleNodeControl {
      * Notify the control that its value has changed due to external user interaction. The value passed is a value as
      * understood by the UI layer.
      *
-     * @param propertyContext   current context
      * @param value             the new external value
      * @param type
      */
-    public void storeExternalValue(PropertyContext propertyContext, String value, String type) {
+    public void storeExternalValue(String value, String type) {
         // Set value into the instance
 
         final Item boundItem = getBoundItem();
         if (!(boundItem instanceof NodeInfo)) // this should not happen
             throw new OXFException("Control is no longer bound to a node. Cannot set external value.");
-        XFormsSetvalueAction.doSetValue(propertyContext, containingDocument, getIndentedLogger(), this, (NodeInfo) boundItem, value, type, "client", false);
+        XFormsSetvalueAction.doSetValue(containingDocument, getIndentedLogger(), this, (NodeInfo) boundItem, value, type, "client", false);
 
         // NOTE: We do *not* call evaluate() here, as that will break the difference engine. doSetValue() above marks
         // the controls as dirty, and they will be evaluated when necessary later.
@@ -150,7 +147,7 @@ public abstract class XFormsValueControl extends XFormsSingleNodeControl {
         FORMAT_NAMESPACE_MAPPING = new NamespaceMapping(mapping);
     }
 
-    protected String getValueUseFormat(PropertyContext propertyContext, String format) {
+    protected String getValueUseFormat(String format) {
 
         assert isRelevant();
         assert getValue() != null;
@@ -168,7 +165,7 @@ public abstract class XFormsValueControl extends XFormsSingleNodeControl {
             }
 
             if (format != null) {
-                result = evaluateAsString(propertyContext, StringValue.makeStringValue(getValue()), format,
+                result = evaluateAsString(StringValue.makeStringValue(getValue()), format,
                         FORMAT_NAMESPACE_MAPPING, getContextStack().getCurrentVariables());
             } else {
                 result = null;
@@ -176,7 +173,7 @@ public abstract class XFormsValueControl extends XFormsSingleNodeControl {
 
         } else {
             // Format value according to format attribute
-            result = evaluateAsString(propertyContext, format, Collections.<Item>singletonList(StringValue.makeStringValue(getValue())), 1);
+            result = evaluateAsString(format, Collections.<Item>singletonList(StringValue.makeStringValue(getValue())), 1);
         }
         return result;
     }
@@ -192,12 +189,11 @@ public abstract class XFormsValueControl extends XFormsSingleNodeControl {
     /**
      * Return the control's external value is the value as exposed to the UI layer.
      *
-     * @param propertyContext   current context
      */
-    public final String getExternalValue(PropertyContext propertyContext) {
+    public final String getExternalValue() {
         if (!isExternalValueEvaluated) {
             if (isRelevant()) {
-                evaluateExternalValue(propertyContext);
+                evaluateExternalValue();
             } else {
                 // NOTE: if the control is not relevant, nobody should ask about this in the first place
                 setExternalValue(null);
@@ -210,11 +206,10 @@ public abstract class XFormsValueControl extends XFormsSingleNodeControl {
     /**
      * Return the external value ready to be inserted into the client after an Ajax response.
      *
-     * @param pipelineContext   current PipelineContext
      * @return                  external value
      */
-    public String getEscapedExternalValue(PipelineContext pipelineContext) {
-        return getExternalValue(pipelineContext);
+    public String getEscapedExternalValue() {
+        return getExternalValue();
     }
 
     protected final void setValue(String value) {
@@ -225,21 +220,21 @@ public abstract class XFormsValueControl extends XFormsSingleNodeControl {
         this.externalValue = externalValue;
     }
 
-    public String getNonRelevantEscapedExternalValue(PropertyContext propertyContext) {
+    public String getNonRelevantEscapedExternalValue() {
         return "";
     }
 
     @Override
-    public Object getBackCopy(PropertyContext propertyContext) {
+    public Object getBackCopy() {
 
         // Evaluate lazy values
-        getExternalValue(propertyContext);
+        getExternalValue();
 
-        return super.getBackCopy(propertyContext);
+        return super.getBackCopy();
     }
 
     @Override
-    public boolean equalsExternal(PropertyContext propertyContext, XFormsControl other) {
+    public boolean equalsExternal(XFormsControl other) {
 
         if (other == null || !(other instanceof XFormsValueControl))
             return false;
@@ -250,10 +245,10 @@ public abstract class XFormsValueControl extends XFormsSingleNodeControl {
         final XFormsValueControl otherValueControl = (XFormsValueControl) other;
 
         // Compare on external value, not internal value
-        if (!XFormsUtils.compareStrings(getExternalValue(propertyContext), otherValueControl.getExternalValue(propertyContext)))
+        if (!XFormsUtils.compareStrings(getExternalValue(), otherValueControl.getExternalValue()))
             return false;
 
-        return super.equalsExternal(propertyContext, other);
+        return super.equalsExternal(other);
     }
 
     private static final Set<String> ALLOWED_EXTERNAL_EVENTS = new HashSet<String>();

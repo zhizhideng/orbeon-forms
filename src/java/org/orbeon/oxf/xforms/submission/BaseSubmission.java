@@ -16,7 +16,10 @@ package org.orbeon.oxf.xforms.submission;
 import org.orbeon.oxf.common.OXFException;
 import org.orbeon.oxf.externalcontext.ForwardExternalContextRequestWrapper;
 import org.orbeon.oxf.pipeline.api.ExternalContext;
-import org.orbeon.oxf.util.*;
+import org.orbeon.oxf.util.Connection;
+import org.orbeon.oxf.util.ConnectionResult;
+import org.orbeon.oxf.util.IndentedLogger;
+import org.orbeon.oxf.util.NetUtils;
 import org.orbeon.oxf.xforms.XFormsContainingDocument;
 import org.orbeon.oxf.xforms.XFormsContextStack;
 import org.orbeon.oxf.xforms.XFormsProperties;
@@ -40,7 +43,7 @@ public abstract class BaseSubmission implements Submission {
         this.containingDocument = submission.getContainingDocument();
     }
 
-    protected String getAbsoluteSubmissionURL(PropertyContext propertyContext, String resolvedActionOrResource, String queryString, boolean isNorewrite) {
+    protected String getAbsoluteSubmissionURL(String resolvedActionOrResource, String queryString, boolean isNorewrite) {
 
         if ("resource".equals(submission.getUrlType())) {
             // In case, for some reason, author forces a resource URL
@@ -48,7 +51,7 @@ public abstract class BaseSubmission implements Submission {
             // NOTE: Before 2009-10-08, there was some code performing custom rewriting in portlet mode. That code was
             // very unclear and was removed as it seemed like resolveResourceURL() should handle all cases.
 
-            return XFormsUtils.resolveResourceURL(propertyContext, containingDocument, submission.getSubmissionElement(),
+            return XFormsUtils.resolveResourceURL(containingDocument, submission.getSubmissionElement(),
                     NetUtils.appendQueryString(resolvedActionOrResource, queryString),
                     isNorewrite ? ExternalContext.Response.REWRITE_MODE_ABSOLUTE_NO_CONTEXT : ExternalContext.Response.REWRITE_MODE_ABSOLUTE);
         } else {
@@ -63,15 +66,15 @@ public abstract class BaseSubmission implements Submission {
             // o service base: http://services.com/myservices/
             // o resulting service URL: http://services.com/myservices/myapp/my/service
 
-            return XFormsUtils.resolveServiceURL(propertyContext, containingDocument, submission.getSubmissionElement(),
+            return XFormsUtils.resolveServiceURL(containingDocument, submission.getSubmissionElement(),
                     NetUtils.appendQueryString(resolvedActionOrResource, queryString),
                     isNorewrite ? ExternalContext.Response.REWRITE_MODE_ABSOLUTE_NO_CONTEXT : ExternalContext.Response.REWRITE_MODE_ABSOLUTE);
         }
     }
 
-    protected Map<String, String[]> evaluateHeaders(PropertyContext propertyContext, XFormsContextStack contextStack) {
+    protected Map<String, String[]> evaluateHeaders(XFormsContextStack contextStack) {
         try {
-            return Headers.evaluateHeaders(propertyContext, submission.getXBLContainer(containingDocument), contextStack,
+            return Headers.evaluateHeaders(submission.getXBLContainer(containingDocument), contextStack,
                     submission.getEffectiveId(), submission.getSubmissionElement());
         } catch (OXFException e) {
             throw new XFormsSubmissionException(submission, e, e.getMessage(), "processing <header> elements");
@@ -81,21 +84,19 @@ public abstract class BaseSubmission implements Submission {
     /**
      * Submit the Callable for synchronous or asynchronous execution.
      *
-     * @param propertyContext   current context
      * @param p                 parameters
      * @param p2                parameters
      * @param callable          callable performing the submission
      * @return ConnectionResult or null if asynchronous
      * @throws Exception
      */
-    protected SubmissionResult submitCallable(final PropertyContext propertyContext,
-                                              final XFormsModelSubmission.SubmissionParameters p,
+    protected SubmissionResult submitCallable(final XFormsModelSubmission.SubmissionParameters p,
                                               final XFormsModelSubmission.SecondPassParameters p2,
                                               final Callable<SubmissionResult> callable) throws Exception {
         if (p2.isAsynchronous) {
 
             // Tell XFCD that we have one more async submission
-            containingDocument.getAsynchronousSubmissionManager(true).addAsynchronousSubmission(propertyContext, callable);
+            containingDocument.getAsynchronousSubmissionManager(true).addAsynchronousSubmission(callable);
 
             // Tell caller he doesn't need to do anything
             return null;
@@ -129,9 +130,9 @@ public abstract class BaseSubmission implements Submission {
     /**
      * Perform a local local submission.
      */
-    protected ConnectionResult openLocalConnection(PropertyContext propertyContext, ExternalContext externalContext,
-                                                   final IndentedLogger indentedLogger,
+    protected ConnectionResult openLocalConnection(ExternalContext.Request request,
                                                    ExternalContext.Response response,
+                                                   final IndentedLogger indentedLogger,
                                                    XFormsModelSubmission xformsModelSubmission,
                                                    String httpMethod, final String resource, String mediatype,
                                                    byte[] messageBody, String queryString,
@@ -152,7 +153,7 @@ public abstract class BaseSubmission implements Submission {
                 messageBody = new byte[0];
 
             // Destination context path is the context path of the current request, or the context path implied by the new URI
-            final String destinationContextPath = isDefaultContext ? "" : isContextRelative ? externalContext.getRequest().getContextPath() : NetUtils.getFirstPathElement(resource);
+            final String destinationContextPath = isDefaultContext ? "" : isContextRelative ? request.getContextPath() : NetUtils.getFirstPathElement(resource);
 
             // Create requestAdapter depending on method
             final ForwardExternalContextRequestWrapper requestAdapter;
@@ -171,27 +172,27 @@ public abstract class BaseSubmission implements Submission {
                     if (rootAdjustedResourceURI == null)
                         throw new OXFException("Action must start with a servlet context path: " + resource);
 
-                    requestAdapter = new ForwardExternalContextRequestWrapper(externalContext.getRequest(), destinationContextPath,
+                    requestAdapter = new ForwardExternalContextRequestWrapper(request, destinationContextPath,
                             rootAdjustedResourceURI, httpMethod, (mediatype != null) ? mediatype : XMLUtils.XML_CONTENT_TYPE, messageBody, headerNames, customHeaderNameValues);
                 } else {
                     // Simulate a GET or DELETE
                     {
-                        final StringBuffer updatedActionStringBuffer = new StringBuffer(resource);
+                        final StringBuilder updatedActionStringBuilder = new StringBuilder(resource);
                         if (queryString != null) {
                             if (resource.indexOf('?') == -1)
-                                updatedActionStringBuffer.append('?');
+                                updatedActionStringBuilder.append('?');
                             else
-                                updatedActionStringBuffer.append('&');
-                            updatedActionStringBuffer.append(queryString);
+                                updatedActionStringBuilder.append('&');
+                            updatedActionStringBuilder.append(queryString);
                         }
-                        effectiveResourceURI = updatedActionStringBuffer.toString();
+                        effectiveResourceURI = updatedActionStringBuilder.toString();
                     }
 
                     rootAdjustedResourceURI = isDefaultContext || isContextRelative ? effectiveResourceURI : NetUtils.removeFirstPathElement(effectiveResourceURI);
                     if (rootAdjustedResourceURI == null)
                         throw new OXFException("Action must start with a servlet context path: " + resource);
 
-                    requestAdapter = new ForwardExternalContextRequestWrapper(externalContext.getRequest(), destinationContextPath,
+                    requestAdapter = new ForwardExternalContextRequestWrapper(request, destinationContextPath,
                             rootAdjustedResourceURI, httpMethod, headerNames, customHeaderNameValues);
                 }
             }
@@ -205,7 +206,7 @@ public abstract class BaseSubmission implements Submission {
                             "effective resource URI (relative to servlet root)", rootAdjustedResourceURI);
 
             // Reason we use a Response passed is for the case of replace="all" when XFormsContainingDocument provides a Response
-            final ExternalContext.Response effectiveResponse = !isReplaceAll ? null : response != null ? response : externalContext.getResponse();
+            final ExternalContext.Response effectiveResponse = !isReplaceAll ? null : response;
 
             final ConnectionResult connectionResult = new ConnectionResult(effectiveResourceURI) {
                 @Override
@@ -249,14 +250,14 @@ public abstract class BaseSubmission implements Submission {
             if (isReplaceAll) {
                 // "the event xforms-submit-done is dispatched"
                 if (xformsModelSubmission != null)
-                    xformsModelSubmission.getXBLContainer(containingDocument).dispatchEvent(propertyContext,
+                    xformsModelSubmission.getXBLContainer(containingDocument).dispatchEvent(
                             new XFormsSubmitDoneEvent(containingDocument, xformsModelSubmission, connectionResult.resourceURI, connectionResult.statusCode));
 
                 submissionProcess.process(requestAdapter, effectiveResponse);
                 connectionResult.dontHandleResponse = true;
             } else {
                 // We must intercept the reply
-                final ResponseAdapter responseAdapter = new ResponseAdapter(externalContext.getNativeResponse());
+                final ResponseAdapter responseAdapter = new ResponseAdapter(response.getNativeResponse(), response);
                 submissionProcess.process(requestAdapter, responseAdapter);
 
                 // Get response information that needs to be forwarded
@@ -276,5 +277,16 @@ public abstract class BaseSubmission implements Submission {
         } catch (IOException e) {
             throw new OXFException(e);
         }
+    }
+
+    public String getHeadersToForward(XFormsContainingDocument containingDocument, boolean isReplaceAll) {
+        // NOTE about headers forwarding: forward user-agent header for replace="all", since that *usually*
+        // simulates a request from the browser! Useful in particular when the target URL renders XForms
+        // in noscript mode, where some browser sniffing takes place for handling the <button> vs. <submit>
+        // element.
+        final String forwardSubmissionHeaders = XFormsProperties.getForwardSubmissionHeaders(containingDocument).trim().toLowerCase();
+        return isReplaceAll
+                ? (forwardSubmissionHeaders.length() == 0 ? "" : forwardSubmissionHeaders + " ") + "user-agent"
+                : forwardSubmissionHeaders;
     }
 }

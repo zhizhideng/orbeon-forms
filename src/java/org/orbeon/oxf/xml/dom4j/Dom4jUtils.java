@@ -793,9 +793,7 @@ public class Dom4jUtils {
         final List<Node> content = mutable ? new ArrayList<Node>(content(container)) : content(container);
 
         // Iterate over the content
-        for (Object childObject: content) {
-            final Node childNode = (Node) childObject;
-
+        for (final Node childNode : content) {
             if (childNode instanceof Element) {
                 final Element childElement = (Element) childNode;
                 visitorListener.startElement(childElement);
@@ -825,25 +823,32 @@ public class Dom4jUtils {
             sb.append('\"');
         }
 
-        // Close start tag
-        sb.append('>');
-
-        if (!element.elements().isEmpty()) {
-            // Mixed content
-            final Object firstChild = element.content().get(0);
-            if (firstChild instanceof Text) {
-                sb.append(((Text) firstChild).getText());
-            }
-            sb.append("[...]");
+        final boolean isEmptyElement = element.elements().isEmpty() && element.getText().length() == 0;
+        if (isEmptyElement) {
+            // Close empty element
+            sb.append("/>");
         } else {
-            // Not mixed content
-            sb.append(element.getText());
-        }
+            // Close start tag
+            sb.append('>');
 
-        // Close element with end tag
-        sb.append("</");
-        sb.append(element.getQualifiedName());
-        sb.append('>');
+            if (!element.elements().isEmpty()) {
+                // Mixed content
+                final Object firstChild = element.content().get(0);
+                if (firstChild instanceof Text) {
+                    sb.append(((Text) firstChild).getText());
+                }
+                sb.append("[...]");
+            } else {
+                // Not mixed content
+                final String text = element.getText();
+                sb.append(text);
+            }
+
+            // Close element with end tag
+            sb.append("</");
+            sb.append(element.getQualifiedName());
+            sb.append('>');
+        }
 
         return sb.toString();
     }
