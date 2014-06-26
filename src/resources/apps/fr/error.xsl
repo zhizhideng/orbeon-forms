@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!--
   Copyright (C) 2010 Orbeon, Inc.
 
@@ -12,21 +11,22 @@
 
   The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
   -->
-<?oxf-serializer status-code="500"?>
+<?orbeon-serializer status-code="500"?>
 <html xsl:version="2.0"
       xmlns="http://www.w3.org/1999/xhtml"
       xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
       xmlns:xs="http://www.w3.org/2001/XMLSchema"
-      xmlns:xpl="java:org.orbeon.oxf.pipeline.api.FunctionLibrary">
+      xmlns:p="http://www.orbeon.com/oxf/pipeline">
 
-    <xsl:variable name="has-version" select="xpl:property('oxf.fr.version.*.*')" as="xs:boolean?"/>
-    <xsl:variable name="css-uri" select="tokenize(normalize-space(xpl:property('oxf.fr.css.uri.*.*')), '\s+')" as="xs:string*"/>
+    <xsl:variable name="has-version" select="p:property('oxf.fr.version.*.*')" as="xs:boolean?"/>
+    <xsl:variable name="css-uri" select="p:split(normalize-space(p:property('oxf.fr.css.uri.*.*')))" as="xs:string*"/>
+    <xsl:variable name="custom-css-uri" select="p:split(normalize-space(p:property('oxf.fr.css.custom.uri.*.*')))" as="xs:string*"/>
 
     <head>
         <title>Orbeon Forms Error</title>
 
         <!-- Form Runner CSS stylesheets -->
-        <xsl:for-each select="$css-uri">
+        <xsl:for-each select="$css-uri, $custom-css-uri">
             <link rel="stylesheet" href="{.}" type="text/css" media="all"/>
         </xsl:for-each>
     </head>
@@ -39,7 +39,6 @@
                         <img src="/apps/fr/style/orbeon-logo-trimmed-transparent-30.png" alt="Logo"/>
                     </div>
                 </div>
-                <div id="hd" class="fr-shadow">&#160;</div>
                 <div id="bd" class="fr-container">
                     <div id="yui-main">
                         <div class="yui-b">

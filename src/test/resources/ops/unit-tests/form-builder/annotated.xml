@@ -1,0 +1,89 @@
+<xh:html
+        xmlns:xh="http://www.w3.org/1999/xhtml"
+        xmlns:xf="http://www.w3.org/2002/xforms"
+        xmlns:ev="http://www.w3.org/2001/xml-events"
+        xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+        xmlns:fr="http://orbeon.org/oxf/xml/form-runner">
+    <xh:head>
+        <xh:title/>
+        <xf:model id="fr-form-model" xxf:custom-mips="fb:required" xmlns:fb="http://orbeon.org/oxf/xml/form-builder">
+            <xf:instance id="fr-form-instance">
+                <form>
+                    <section-1>
+                        <control-1/>
+                    </section-1>
+                </form>
+            </xf:instance>
+            <xf:bind id="fr-form-binds" ref="instance('fr-form-instance')">
+                <xf:bind id="section-1-bind" name="section-1" ref="section-1">
+                    <xf:bind id="control-1-bind" name="control-1" ref="control-1" fb:constraint="true()" fb:default="42">
+                        <fb:constraint value="string-length() le 100"/>
+                        <fb:default value="43"/>
+                    </xf:bind>
+                </xf:bind>
+            </xf:bind>
+            <xf:instance id="fr-form-resources" xxf:readonly="false">
+                <resources>
+                    <resource xml:lang="">
+                        <section-1>
+                            <label/>
+                        </section-1>
+                        <control-1>
+                            <label/>
+                            <hint/>
+                            <alert/>
+                        </control-1>
+                    </resource>
+                </resources>
+            </xf:instance>
+            <xf:action ev:event="xforms-model-construct" ev:target="#observer" class="fb-annotation">
+                <xf:dispatch name="fb-xforms-model-construct" targetid="|fr-form-model|"/>
+            </xf:action>
+            <xf:action ev:event="xforms-recalculate" ev:target="#observer" class="fb-annotation">
+                <xf:dispatch name="fb-xforms-recalculate" targetid="|fr-form-model|"/>
+            </xf:action>
+            <xf:action ev:event="xforms-revalidate" ev:target="#observer" class="fb-annotation">
+                <xf:dispatch name="fb-xforms-revalidate" targetid="|fr-form-model|"/>
+            </xf:action>
+            <xf:action ev:event="xxforms-xpath-error" ev:target="#observer" class="fb-annotation" ev:defaultAction="cancel">
+                <xf:dispatch name="fb-xxforms-xpath-error" targetid="|fr-form-model|"/>
+            </xf:action>
+            <xf:var xmlns:ev="http://www.w3.org/2001/xml-events" name="fr-roles" value="''" class="fb-annotation"/>
+            <xf:var xmlns:ev="http://www.w3.org/2001/xml-events" name="fr-mode" value="'edit'" class="fb-annotation"/>
+        </xf:model>
+    </xh:head>
+    <xh:body>
+        <fr:view width="800px" appearance="custom">
+            <xf:group class="fb-body">
+                <xf:var name="lang" value="xxf:get-variable('fr-form-model', 'fb-lang')" as="element()" class="fb-annotation"/>
+                <xf:var name="form-resources" value="instance('fr-form-resources')/(resource[@xml:lang = $lang], resource[1])[1]" as="element(resource)?" class="fb-annotation"/>
+                <xf:var name="fr-resources" value="xxf:get-variable('fr-resources-model', 'fr-fr-resources')" as="element(resource)?" class="fb-annotation"/>
+                <xf:var name="fb-resources" value="xxf:get-variable('fr-resources-model', 'fr-form-resources')" as="element(resource)?" class="fb-annotation"/>
+                <fr:section edit-ref="" xxf:update="full" id="section-1-control" bind="section-1-bind">
+                    <xf:label ref="$form-resources/section-1/label"/>
+                    <fr:grid edit-ref="">
+                        <xh:tr>
+                            <xh:td>
+                                <xf:input id="control-1-control" bind="control-1-bind">
+                                    <xf:label ref="$form-resources/control-1/label"/>
+                                    <xf:hint ref="$form-resources/control-1/hint"/>
+                                    <xf:alert ref="$fr-resources/detail/labels/alert"/>
+                                </xf:input>
+                            </xh:td>
+                            <xh:td/>
+                        </xh:tr>
+                    </fr:grid>
+                </fr:section>
+                <xf:action ev:event="DOMActivate" xxf:phantom="true" class="fb-annotation">
+                    <xf:var name="control-element" value="xxf:control-element(event('xxf:absolute-targetid'))"/>
+                    <xf:action if="xxf:split($control-element/@class) = 'xforms-activable'">
+                        <xf:var name="th-column" value="count($control-element/preceding-sibling::*[@xxf:element = 'xh:th']) + 1"/>
+                        <xf:var name="new-selected-cell" value="if ($control-element/@xxf:element = 'xh:th') then                                     ($control-element/following-sibling::xf:repeat//*[@xxf:element = 'xh:td'])[$th-column]/@id                                     else $control-element/@id"/>
+                        <xf:setvalue ref="xxf:get-variable('fr-form-model', 'selected-cell')" value="$new-selected-cell"/>
+                    </xf:action>
+                </xf:action>
+            </xf:group>
+            <xf:group class="fr-buttons" ref="()">Custom buttons here</xf:group>
+        </fr:view>
+    </xh:body>
+</xh:html>

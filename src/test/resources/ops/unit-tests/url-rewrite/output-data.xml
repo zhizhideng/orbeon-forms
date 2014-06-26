@@ -1,0 +1,65 @@
+<!--
+  Copyright (C) 2010 Orbeon, Inc.
+
+  This program is free software; you can redistribute it and/or modify it under the terms of the
+  GNU Lesser General Public License as published by the Free Software Foundation; either version
+  2.1 of the License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+  See the GNU Lesser General Public License for more details.
+
+  The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+  -->
+<xh:html xmlns:xh="http://www.w3.org/1999/xhtml">
+    <!-- Make sure text from foreign elements is untouched.  Added because Erik noticed we were -->
+    <!-- actually dropping text in this case. -->
+    <p>
+        <a/>c
+    </p>
+    <p>
+        <a/>c
+        <a/>c
+    </p>
+    <xh:body background="/orbeon/images/body-background1.png">
+        <!-- Simple rewrites -->
+        <xh:div>
+            <xh:form action="/orbeon/my-action" method="post">
+                <xh:a href="/orbeon/path">Click Here!</xh:a>
+                <xh:img src="/orbeon/my-image1.png"/>
+                <xh:a href="path">Click Here!</xh:a>
+                <xh:img src="my-image2.png"/>
+                <xh:img src="/orbeon/doc/home-welcome?a=1&amp;b=1"/>
+                <xh:input type="image" src="/orbeon/my-image3.png"/>
+                <xh:input type="text" src="/my-image4.png"/>
+            </xh:form>
+        </xh:div>
+        <!-- Check f:url-norewrite -->
+        <xh:div>
+            <xh:form action="/my-action">
+                <xh:a href="/path">Click Here!</xh:a>
+                <xh:img src="/orbeon/my-image5.png"/>
+                <xh:a href="path">Click Here!</xh:a>
+                <xh:img src="my-image6.png"/>
+                <xh:img src="?a=1&amp;b=2"/>
+            </xh:form>
+        </xh:div>
+        <!-- Text handling -->
+        <xh:div>
+            <xh:p>123wsrp_rewrite456</xh:p>
+            <xh:script>
+                <xh:p>123wsrp_rewrite456</xh:p>
+            </xh:script>
+            <SCRIPT>
+                <xh:p>123wsrp_rewrite456</xh:p>
+            </SCRIPT>
+        </xh:div>
+        <!-- Table background -->
+        <xh:table>
+            <xh:tr>
+                <xh:td background="/orbeon/images/td-background.png">Hello</xh:td>
+            </xh:tr>
+        </xh:table>
+    </xh:body>
+    <brody background="/images/body-background2.png"/>
+</xh:html>

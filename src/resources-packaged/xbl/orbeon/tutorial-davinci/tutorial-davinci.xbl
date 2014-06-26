@@ -11,49 +11,41 @@
 
   The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
   -->
-<xbl:xbl xmlns:xhtml="http://www.w3.org/1999/xhtml"
-         xmlns:xforms="http://www.w3.org/2002/xforms"
+<xbl:xbl xmlns:xh="http://www.w3.org/1999/xhtml"
+         xmlns:xf="http://www.w3.org/2002/xforms"
          xmlns:xs="http://www.w3.org/2001/XMLSchema"
          xmlns:ev="http://www.w3.org/2001/xml-events"
-         xmlns:xxforms="http://orbeon.org/oxf/xml/xforms"
+         xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
          xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
          xmlns:xbl="http://www.w3.org/ns/xbl"
          xmlns:xxbl="http://orbeon.org/oxf/xml/xbl">
 
-    <xbl:binding element="fr|tutorial-davinci" id="fr-tutorial-davinci">
-        <xbl:implementation>
-            <!-- Local model -->
-            <xforms:model>
-                <xforms:instance>
-                    <value/>
-                </xforms:instance>
-            </xforms:model>
-        </xbl:implementation>
+    <xbl:binding element="fr|tutorial-davinci" id="fr-tutorial-davinci" xxbl:mode="lhha binding value">
+        <xbl:handlers>
+            <!-- When the control comes to life or its value changes, copy the new value to the local model after
+                 reversing it -->
+            <xbl:handler event="xforms-enabled xforms-value-changed"
+                         ref="instance()"
+                         value="codepoints-to-string(
+                                  reverse(
+                                    string-to-codepoints(
+                                      xxf:binding('fr-tutorial-davinci'))))"/>
+        </xbl:handlers>
         <xbl:template>
-            <!-- Outer group implementing the single-node binding -->
-            <xforms:group xbl:attr="model context ref bind" xxbl:scope="outer">
-                <!-- Copy LHHA elements if any -->
-                <xbl:content includes="xforms|label,xforms|help,xforms|hint,xforms|alert"/>
-                <!-- Inner group -->
-                <xforms:group xxbl:scope="inner">
-                    <!-- Variable pointing to external single-node binding -->
-                    <xxforms:variable name="binding" as="node()?">
-                        <xxforms:sequence select="." xxbl:scope="outer"/>
-                    </xxforms:variable>
-                    <!-- When the external single-node binding comes to life or its value changes, copy it to the
-                         local value after reversing it -->
-                    <xforms:group ref="$binding">
-                        <xforms:setvalue ev:event="xforms-enabled xforms-value-changed"
-                                         ref="instance()" value="codepoints-to-string(reverse(string-to-codepoints($binding)))"/>
-                    </xforms:group>
-                    <!-- Input points to the internal value -->
-                    <xforms:input ref="instance()">
-                        <!-- When the local value changes, copy it to the external single-node binding after reversing it -->
-                        <xforms:setvalue ev:event="xforms-value-changed"
-                                         ref="$binding" value="codepoints-to-string(reverse(string-to-codepoints(context())))"/>
-                    </xforms:input>
-                </xforms:group>
-            </xforms:group>
+            <!-- Local model and instance -->
+            <xf:model>
+                <xf:instance><value/></xf:instance>
+            </xf:model>
+            <!-- Input points to the internal value -->
+            <xf:input ref="instance()">
+                <!-- When the local value changes, copy it to the external single-node binding after reversing it -->
+                <xf:setvalue event="xforms-value-changed"
+                             ref="xxf:binding('fr-tutorial-davinci')"
+                             value="codepoints-to-string(
+                                      reverse(
+                                        string-to-codepoints(
+                                          instance())))"/>
+            </xf:input>
         </xbl:template>
     </xbl:binding>
 </xbl:xbl>

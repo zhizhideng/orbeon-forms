@@ -1,0 +1,717 @@
+<!--
+  Copyright (C) 2011 Orbeon, Inc.
+
+  This program is free software; you can redistribute it and/or modify it under the terms of the
+  GNU Lesser General Public License as published by the Free Software Foundation; either version
+  2.1 of the License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+  See the GNU Lesser General Public License for more details.
+
+  The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+  -->
+<group description="XForms Ajax Protocol"
+        xmlns:p="http://www.orbeon.com/oxf/pipeline"
+        xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:oxf="http://www.orbeon.com/oxf/processors"
+        xmlns:xi="http://www.w3.org/2001/XInclude"
+        xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+        xmlns:xh="http://www.w3.org/1999/xhtml"
+        xmlns:xf="http://www.w3.org/2002/xforms"
+        xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+        xmlns:ev="http://www.w3.org/2001/xml-events"
+        xmlns:xbl="http://www.w3.org/ns/xbl"
+        xmlns:fr="http://orbeon.org/oxf/xml/form-runner">
+
+    <test description="Basic retry sequence number handling: 1) resend the previous Ajax response 2) throw an exception for out of sequence number." name="oxf:pipeline"
+          request="oxf:/ops/unit-tests/xforms-server/ajax-request.xml">
+
+        <input name="config">
+            <p:config>
+                <p:param name="response" type="output"/>
+
+                <p:processor name="oxf:pipeline">
+                    <p:input name="config" href="wrap-xforms-init-nofilter.xpl"/>
+                    <p:input name="document">
+                        <xh:html>
+                            <xh:head>
+                                <xf:model id="model">
+                                    <xf:instance id="instance">
+                                        <instance>initial</instance>
+                                    </xf:instance>
+                                    <xf:setvalue ev:event="xforms-ready" ref=".">new</xf:setvalue>
+                                </xf:model>
+                            </xh:head>
+                            <xh:body>
+                                <xf:input id="input" ref="."/>
+                            </xh:body>
+                        </xh:html>
+                    </p:input>
+                    <p:output name="response" id="xhtml"/>
+                </p:processor>
+
+                <!-- Request 1: sequence == 1 -->
+                <p:processor name="oxf:xforms-server">
+                    <p:input name="request" href="#xhtml" transform="oxf:xslt">
+                        <xxf:event-request xsl:version="2.0">
+                            <xxf:uuid><xsl:value-of select="//xh:input[@name = '$uuid']/@value"/></xxf:uuid>
+                            <xxf:sequence>1</xxf:sequence>
+                            <xxf:static-state><xsl:value-of select="//xh:input[@name = '$static-state']/@value"/></xxf:static-state>
+                            <xxf:dynamic-state><xsl:value-of select="//xh:input[@name = '$dynamic-state']/@value"/></xxf:dynamic-state>
+                            <xxf:action/>
+                        </xxf:event-request>
+                    </p:input>
+                    <p:output name="response" id="response1" schema-href="/ops/xforms/xforms-server-response.rng"/>
+                </p:processor>
+
+                <!-- Request 2: sequence == 2 -->
+                <p:processor name="oxf:xforms-server">
+                    <p:input name="request" href="#xhtml" transform="oxf:xslt">
+                        <xxf:event-request xsl:version="2.0">
+                            <xxf:uuid><xsl:value-of select="//xh:input[@name = '$uuid']/@value"/></xxf:uuid>
+                            <xxf:sequence>2</xxf:sequence>
+                            <xxf:static-state><xsl:value-of select="//xh:input[@name = '$static-state']/@value"/></xxf:static-state>
+                            <xxf:dynamic-state><xsl:value-of select="//xh:input[@name = '$dynamic-state']/@value"/></xxf:dynamic-state>
+                            <xxf:action/>
+                        </xxf:event-request>
+                    </p:input>
+                    <p:output name="response" id="response2" schema-href="/ops/xforms/xforms-server-response.rng"/>
+                </p:processor>
+
+                <!-- Request 3: sequence == 2 again -->
+                <p:processor name="oxf:xforms-server">
+                    <p:input name="request" href="#xhtml" transform="oxf:xslt">
+                        <xxf:event-request xsl:version="2.0">
+                            <xxf:uuid><xsl:value-of select="//xh:input[@name = '$uuid']/@value"/></xxf:uuid>
+                            <xxf:sequence>2</xxf:sequence>
+                            <xxf:static-state><xsl:value-of select="//xh:input[@name = '$static-state']/@value"/></xxf:static-state>
+                            <xxf:dynamic-state><xsl:value-of select="//xh:input[@name = '$dynamic-state']/@value"/></xxf:dynamic-state>
+                            <xxf:action/>
+                        </xxf:event-request>
+                    </p:input>
+                    <p:output name="response" id="response3" schema-href="/ops/xforms/xforms-server-response.rng"/>
+                </p:processor>
+
+                <!-- Request 3: sequence == 1 again => must produce an exception -->
+                <p:processor name="oxf:xforms-server">
+                    <p:input name="request" href="#xhtml" transform="oxf:xslt">
+                        <xxf:event-request xsl:version="2.0">
+                            <xxf:uuid><xsl:value-of select="//xh:input[@name = '$uuid']/@value"/></xxf:uuid>
+                            <xxf:sequence>1</xxf:sequence>
+                            <xxf:static-state><xsl:value-of select="//xh:input[@name = '$static-state']/@value"/></xxf:static-state>
+                            <xxf:dynamic-state><xsl:value-of select="//xh:input[@name = '$dynamic-state']/@value"/></xxf:dynamic-state>
+                            <xxf:action/>
+                        </xxf:event-request>
+                    </p:input>
+                    <p:output name="response" id="response4" schema-href="/ops/xforms/xforms-server-response.rng"/>
+                </p:processor>
+
+                <p:processor name="oxf:exception-catcher">
+                    <p:input name="data" href="#response4"/>
+                    <p:output name="data" id="exception4"/>
+                </p:processor>
+
+                <!-- Aggregate and filter responses -->
+                <p:processor name="oxf:identity">
+                    <p:input name="data" href="aggregate('responses', #response1, #response2, #response3, #exception4)" transform="oxf:unsafe-xslt">
+                        <xsl:transform version="2.0">
+                            <xsl:import href="wrap-server-decode-nofilter.xsl"/>
+                            <xsl:template match="stack-trace-elements"/>
+                            <xsl:template match="dynamic-state[@uuid]">
+                                <xsl:copy>
+                                    <xsl:copy-of select="@* except @uuid"/>
+                                    <xsl:attribute name="uuid">4A00AF98-7464-2F85-9AF6-291447DCC6F8</xsl:attribute>
+                                    <xsl:apply-templates/>
+                                </xsl:copy>
+                            </xsl:template>
+                        </xsl:transform>
+                    </p:input>
+                    <p:output name="data" ref="response"/>
+                </p:processor>
+
+            </p:config>
+        </input>
+        <output name="response">
+            <responses>
+                <xxf:event-response xmlns:xxf="http://orbeon.org/oxf/xml/xforms"/>
+                <xxf:event-response xmlns:xxf="http://orbeon.org/oxf/xml/xforms"/>
+                <xxf:event-response xmlns:xxf="http://orbeon.org/oxf/xml/xforms"/>
+                <xxf:event-response xmlns:xxf="http://orbeon.org/oxf/xml/xforms"/>
+            </responses>
+        </output>
+    </test>
+
+    <test description="[ #315661 ] Read-only control becoming relevant a second time does not appear as read-only" name="oxf:pipeline"
+          request="oxf:/ops/unit-tests/xforms-server/ajax-request.xml">
+        <!-- See: http://forge.ow2.org/tracker/index.php?func=detail&aid=315661&group_id=168&atid=350207 -->
+
+        <input name="config">
+            <p:config>
+                <p:param name="response" type="output"/>
+
+                <p:processor name="oxf:pipeline">
+                    <p:input name="config" href="wrap-xforms-init-nofilter.xpl"/>
+                    <p:input name="document">
+                        <xh:html>
+                            <xh:head>
+                                <xf:model id="model">
+                                    <xf:instance id="instance">
+                                        <instance>
+                                            <input1></input1>
+                                            <input2></input2>
+                                        </instance>
+                                    </xf:instance>
+                                    <xf:bind ref="input2" readonly="true()" relevant="../input1 = 'true'"/>
+                                </xf:model>
+                            </xh:head>
+                            <xh:body>
+                                <xf:input id="input1" ref="input1"/>
+                                <xf:input id="input2" ref="input2"/>
+                            </xh:body>
+                        </xh:html>
+                    </p:input>
+                    <p:output name="response" id="xhtml"/>
+                </p:processor>
+
+                <!-- Make control visible -->
+                <p:processor name="oxf:xforms-server">
+                    <p:input name="request" href="#xhtml" transform="oxf:xslt">
+                        <xxf:event-request xsl:version="2.0">
+                            <xxf:uuid><xsl:value-of select="//xh:input[@name = '$uuid']/@value"/></xxf:uuid>
+                            <xxf:sequence>1</xxf:sequence>
+                            <xxf:static-state><xsl:value-of select="//xh:input[@name = '$static-state']/@value"/></xxf:static-state>
+                            <xxf:dynamic-state><xsl:value-of select="//xh:input[@name = '$dynamic-state']/@value"/></xxf:dynamic-state>
+                            <xxf:action>
+                                <xxf:event name="xxforms-value" source-control-id="input1">true</xxf:event>
+                            </xxf:action>
+                        </xxf:event-request>
+                    </p:input>
+                    <p:output name="response" id="response1" schema-href="/ops/xforms/xforms-server-response.rng"/>
+                </p:processor>
+
+                <!-- Make control invisible -->
+                <p:processor name="oxf:xforms-server">
+                    <p:input name="request" href="#xhtml" transform="oxf:xslt">
+                        <xxf:event-request xsl:version="2.0">
+                            <xxf:uuid><xsl:value-of select="//xh:input[@name = '$uuid']/@value"/></xxf:uuid>
+                            <xxf:sequence>2</xxf:sequence>
+                            <xxf:static-state><xsl:value-of select="//xh:input[@name = '$static-state']/@value"/></xxf:static-state>
+                            <xxf:dynamic-state><xsl:value-of select="//xh:input[@name = '$dynamic-state']/@value"/></xxf:dynamic-state>
+                            <xxf:action>
+                                <xxf:event name="xxforms-value" source-control-id="input1">false</xxf:event>
+                            </xxf:action>
+                        </xxf:event-request>
+                    </p:input>
+                    <p:output name="response" id="response2" schema-href="/ops/xforms/xforms-server-response.rng"/>
+                </p:processor>
+
+                <!-- Make control visible again -->
+                <p:processor name="oxf:xforms-server">
+                    <p:input name="request" href="#xhtml" transform="oxf:xslt">
+                        <xxf:event-request xsl:version="2.0">
+                            <xxf:uuid><xsl:value-of select="//xh:input[@name = '$uuid']/@value"/></xxf:uuid>
+                            <xxf:sequence>3</xxf:sequence>
+                            <xxf:static-state><xsl:value-of select="//xh:input[@name = '$static-state']/@value"/></xxf:static-state>
+                            <xxf:dynamic-state><xsl:value-of select="//xh:input[@name = '$dynamic-state']/@value"/></xxf:dynamic-state>
+                            <xxf:action>
+                                <xxf:event name="xxforms-value" source-control-id="input1">true</xxf:event>
+                            </xxf:action>
+                        </xxf:event-request>
+                    </p:input>
+                    <p:output name="response" id="response3" schema-href="/ops/xforms/xforms-server-response.rng"/>
+                </p:processor>
+
+                <!-- Aggregate and filter responses -->
+                <p:processor name="oxf:identity">
+                    <p:input name="data" href="aggregate('responses', #response1, #response2, #response3)" transform="oxf:unsafe-xslt">
+                        <xsl:transform version="2.0">
+                            <xsl:import href="wrap-server-decode-nofilter.xsl"/>
+                            <xsl:template match="xxf:dynamic-state"/>
+                        </xsl:transform>
+                    </p:input>
+                    <p:output name="data" ref="response"/>
+                </p:processor>
+
+            </p:config>
+        </input>
+        <output name="response">
+            <responses>
+                <xxf:event-response>
+                    <xxf:action>
+                        <xxf:control-values>
+                            <xxf:control id="input1">true</xxf:control>
+                            <xxf:control id="input2" readonly="true" relevant="true"/>
+                        </xxf:control-values>
+                    </xxf:action>
+                </xxf:event-response>
+                <xxf:event-response>
+                    <xxf:action>
+                        <xxf:control-values>
+                            <xxf:control id="input1">false</xxf:control>
+                            <xxf:control id="input2" readonly="false" relevant="false"/>
+                        </xxf:control-values>
+                    </xxf:action>
+                </xxf:event-response>
+                <xxf:event-response>
+                    <xxf:action>
+                        <xxf:control-values>
+                            <xxf:control id="input1">true</xxf:control>
+                            <xxf:control id="input2" readonly="true" relevant="true"/>
+                        </xxf:control-values>
+                    </xxf:action>
+                </xxf:event-response>
+            </responses>
+        </output>
+    </test>
+
+    <test description="External entity in request is ignored" name="oxf:pipeline"
+          request="oxf:/ops/unit-tests/xforms-server/ajax-request.xml">
+        <!-- See: http://forge.ow2.org/tracker/index.php?func=detail&aid=315668&group_id=168&atid=350207 -->
+
+        <input name="config">
+            <p:config>
+                <p:param name="response" type="output"/>
+
+                <p:processor name="oxf:pipeline">
+                    <p:input name="config" href="wrap-xforms-init-nofilter.xpl"/>
+                    <p:input name="document">
+                        <xh:html>
+                            <xh:head>
+                                <xf:model id="model">
+                                    <xf:instance id="instance">
+                                        <instance/>
+                                    </xf:instance>
+                                </xf:model>
+                            </xh:head>
+                            <xh:body>
+                                <xf:input id="my-input" ref="."/>
+                            </xh:body>
+                        </xh:html>
+                    </p:input>
+                    <p:output name="response" id="xhtml"/>
+                </p:processor>
+
+                <p:processor name="oxf:xslt">
+                    <p:input name="config">
+                        <xxf:event-request xsl:version="2.0">
+                            <xxf:uuid><xsl:value-of select="//xh:input[@name = '$uuid']/@value"/></xxf:uuid>
+                            <xxf:sequence>1</xxf:sequence>
+                            <xxf:static-state><xsl:value-of select="//xh:input[@name = '$static-state']/@value"/></xxf:static-state>
+                            <xxf:dynamic-state><xsl:value-of select="//xh:input[@name = '$dynamic-state']/@value"/></xxf:dynamic-state>
+                            <!-- Copy action which should not contain the external entity resolved -->
+                            <xsl:copy-of select="doc('input:request')/*/xxf:action"/>
+                        </xxf:event-request>
+                    </p:input>
+                    <p:input name="data" href="#xhtml"/>
+                    <!-- This causes the file to be parsed, with or without the external entity resolved -->
+                    <p:input name="request" href="ajax-request-with-external-entity.xml"/>
+                    <p:output name="data" id="request"/>
+                </p:processor>
+
+                <!-- Run request -->
+                <p:processor name="oxf:xforms-server">
+                    <p:input name="request" href="#request"/>
+                    <p:output name="response" id="response" schema-href="/ops/xforms/xforms-server-response.rng"/>
+                </p:processor>
+
+                <!-- Filter response -->
+                <p:processor name="oxf:identity">
+                    <p:input name="data" href="#response" transform="oxf:unsafe-xslt">
+                        <xsl:transform version="2.0">
+                            <xsl:template match="/">
+                                <xsl:copy-of select="//xxf:control-values"/>
+                            </xsl:template>
+                        </xsl:transform>
+                    </p:input>
+                    <p:output name="data" ref="response"/>
+                </p:processor>
+
+            </p:config>
+        </input>
+        <output name="response">
+            <xxf:control-values>
+                <xxf:control id="my-input">The external entity should be missing:</xxf:control>
+            </xxf:control-values>
+        </output>
+    </test>
+
+    <test description="xxforms-server-events Ajax event" name="oxf:pipeline"
+          request="oxf:/ops/unit-tests/xforms-server/ajax-request.xml">
+
+        <input name="config">
+            <p:config>
+                <p:param name="response" type="output"/>
+
+                <p:processor name="oxf:pipeline">
+                    <p:input name="config" href="wrap-xforms-init-nofilter.xpl"/>
+                    <p:input name="document">
+                        <xh:html>
+                            <xh:head>
+                                <xf:model id="model">
+                                    <xf:instance id="instance">
+                                        <instance>
+                                            <value>0</value>
+                                            <values/>
+                                            <triggers/>
+                                        </instance>
+                                    </xf:instance>
+                                </xf:model>
+                            </xh:head>
+                            <xh:body>
+                                <xf:input id="input" ref="value">
+                                    <xf:setvalue ev:event="xforms-value-changed" ref="instance()/values" value="string-join((., instance()/value), ' ')"/>
+                                </xf:input>
+                                <xf:output id="output1" ref="values"/>
+
+                                <xf:setvalue ev:event="DOMActivate" ref="instance()/triggers" value="string-join((., event('xxf:target')), ' ')"/>
+
+                                <xf:trigger id="trigger1"><xf:label/></xf:trigger>
+                                <xf:trigger id="trigger2"><xf:label/></xf:trigger>
+                                <xf:trigger id="trigger3"><xf:label/></xf:trigger>
+                                <xf:trigger id="trigger4"><xf:label/></xf:trigger>
+                                <xf:trigger id="trigger5"><xf:label/></xf:trigger>
+
+                                <xf:output id="output2" ref="triggers"/>
+                            </xh:body>
+                        </xh:html>
+                    </p:input>
+                    <p:output name="response" id="xhtml"/>
+                </p:processor>
+
+                <p:processor name="oxf:unsafe-xslt">
+                    <p:input name="config">
+                        <xxf:event-request xsl:version="2.0" xmlns:xpl="java:org.orbeon.oxf.pipeline.api.FunctionLibrary">
+                            <xxf:uuid><xsl:value-of select="//xh:input[@name = '$uuid']/@value"/></xxf:uuid>
+                            <xxf:sequence>1</xxf:sequence>
+                            <xxf:static-state><xsl:value-of select="//xh:input[@name = '$static-state']/@value"/></xxf:static-state>
+                            <xxf:dynamic-state><xsl:value-of select="//xh:input[@name = '$dynamic-state']/@value"/></xxf:dynamic-state>
+
+                            <xxf:action>
+                                <xxf:event name="xxforms-value" source-control-id="input">1</xxf:event>
+                                <xxf:event name="DOMActivate" source-control-id="trigger1"/>
+                                <xxf:event name="xxforms-server-events">
+                                    <xsl:variable name="server-events" as="document-node()">
+                                        <xsl:document>
+                                            <xxf:server-events xmlns="">
+                                                <xxf:event name="xxforms-value" source-control-id="input">2</xxf:event>
+                                                <xxf:event name="xxforms-value" source-control-id="input">3</xxf:event>
+                                                <xxf:event name="DOMActivate" source-control-id="trigger2"/>
+                                            </xxf:server-events>
+                                        </xsl:document>
+                                    </xsl:variable>
+                                    <xsl:value-of select="xpl:encodeXML($server-events)"/>
+                                </xxf:event>
+                                <xxf:event name="xxforms-value" source-control-id="input">4</xxf:event>
+                                <xxf:event name="DOMActivate" source-control-id="trigger3"/>
+                                <xxf:event name="xxforms-server-events">
+                                    <xsl:variable name="server-events" as="document-node()">
+                                        <xsl:document>
+                                            <xxf:server-events xmlns="">
+                                                <xxf:event name="xxforms-value" source-control-id="input">5</xxf:event>
+                                                <xxf:event name="xxforms-value" source-control-id="input">6</xxf:event>
+                                                <xxf:event name="DOMActivate" source-control-id="trigger4"/>
+                                            </xxf:server-events>
+                                        </xsl:document>
+                                    </xsl:variable>
+                                    <xsl:value-of select="xpl:encodeXML($server-events)"/>
+                                </xxf:event>
+                                <xxf:event name="xxforms-value" source-control-id="input">7</xxf:event>
+                                <xxf:event name="DOMActivate" source-control-id="trigger5"/>
+                            </xxf:action>
+                        </xxf:event-request>
+                    </p:input>
+                    <p:input name="data" href="#xhtml"/>
+                    <p:output name="data" id="request"/>
+                </p:processor>
+
+                <!-- Run request -->
+                <p:processor name="oxf:xforms-server">
+                    <p:input name="request" href="#request"/>
+                    <p:output name="response" id="response" schema-href="/ops/xforms/xforms-server-response.rng"/>
+                </p:processor>
+
+                <!-- Filter response -->
+                <p:processor name="oxf:identity">
+                    <p:input name="data" href="#response" transform="oxf:unsafe-xslt">
+                        <xsl:transform version="2.0">
+                            <xsl:template match="/">
+                                <xsl:copy-of select="//xxf:control-values"/>
+                            </xsl:template>
+                        </xsl:transform>
+                    </p:input>
+                    <p:output name="data" ref="response"/>
+                </p:processor>
+
+            </p:config>
+        </input>
+        <output name="response">
+            <!-- NOTE: Values 2-3 and 5-6 are compacted, which is what we expect -->
+            <xxf:control-values>
+                <xxf:control id="input">7</xxf:control>
+                <xxf:control id="output1">1 3 4 6 7</xxf:control>
+                <xxf:control id="output2">trigger1 trigger2 trigger3 trigger4 trigger5</xxf:control>
+            </xxf:control-values>
+        </output>
+    </test>
+
+    <test description="[ #316269 ] RFE: More user-friendly XForms error handling" name="oxf:pipeline"
+          request="oxf:/ops/unit-tests/xforms-server/ajax-request.xml">
+        <!-- See: http://forge.ow2.org/tracker/index.php?func=detail&aid=316269&group_id=168&atid=350207 -->
+
+        <input name="config">
+            <p:config>
+                <p:param name="response" type="output"/>
+
+                <p:processor name="oxf:pipeline">
+                    <p:input name="config" href="wrap-xforms-init-nofilter.xpl"/>
+                    <p:input name="document">
+                        <xh:html>
+                            <xh:head>
+                                <xf:model id="model" xxf:show-recoverable-errors="100">
+                                    <xf:instance id="instance">
+                                        <instance show="false">
+                                            <date>2011-11-03</date>
+                                            <select/>
+                                            <!-- Instance values so that XPath engine doesn't optimize literals (we want dynamic errors) -->
+                                            <error>error1</error>
+                                            <error>error2</error>
+                                            <error>error3</error>
+                                            <error>error4</error>
+                                            <error>error5</error>
+                                            <error>error6</error>
+                                            <error>error7</error>
+                                            <error>error8</error>
+                                            <error>error9</error>
+                                        </instance>
+                                    </xf:instance>
+                                    <xf:bind ref=".[@show = 'true']">
+                                        <xf:bind ref="date[xs:date(../error[2]) = xs:date('2011-11-04')]"/>             <!-- XPath error on ref -->
+                                        <xf:bind ref="date" calculate="xs:date(../error[3])"/>                          <!-- XPath error on calculate value -->
+                                        <xf:bind ref="date" required="xs:date(../error[4]) = current-date()"/>          <!-- XPath error on boolean MIP -->
+                                    </xf:bind>
+                                    <xf:var ref=".[@show = 'true']" name="var1" value="xs:date(error[5])"/>             <!-- XPath error on variable value -->
+                                </xf:model>
+                            </xh:head>
+                            <xh:body>
+                                <xf:trigger id="doit">
+                                    <xf:label>Try</xf:label>
+                                    <!-- 1. Run actions causing errors -->
+                                    <!-- NOTE: Invalid model ids are now caught statically -->
+                                    <xf:setvalue ev:event="DOMActivate" ref="date[xs:date(../error[1])]"/>              <!-- XPath error on ref -->
+                                    <xf:action ev:event="DOMActivate" bind="non-existing-bind"/>                        <!-- non-existing bind -->
+                                    <xf:dispatch ev:event="DOMActivate"/>                                               <!-- missing mandatory attribute -->
+                                    <xf:setvalue ev:event="DOMActivate" ref="."/>                                       <!-- setvalue on complex content -->
+
+                                    <!-- 2. Show binds and controls to cause other errors -->
+                                    <xf:action ev:event="DOMActivate">
+                                        <xf:setvalue ref="@show">true</xf:setvalue>
+                                        <xf:rebuild/>
+                                    </xf:action>
+                                </xf:trigger>
+
+                                <xf:group ref=".[@show = 'true']">
+                                    <xf:var name="var2" value="xs:date(error[6])"/>                                     <!-- XPath error on variable value -->
+                                    <xf:input ref=".[xs:date(error[7]) = current-date()]"/>                             <!-- XPath error on control binding -->
+                                    <xf:output value="xs:date(error[8])"/>                                              <!-- XPath error on control value -->
+                                    <xf:select ref="select">
+                                        <xf:itemset ref=".[1]">
+                                            <xf:label value="xs:date(../error[9])"/>                                    <!-- XPath error on itemset label -->
+                                            <xf:value/>
+                                        </xf:itemset>
+                                    </xf:select>
+                                </xf:group>
+                            </xh:body>
+                        </xh:html>
+                    </p:input>
+                    <p:output name="response" id="xhtml"/>
+                </p:processor>
+
+                <p:processor name="oxf:xslt">
+                    <p:input name="config">
+                        <xxf:event-request xsl:version="2.0">
+                            <xxf:uuid><xsl:value-of select="//xh:input[@name = '$uuid']/@value"/></xxf:uuid>
+                            <xxf:sequence>1</xxf:sequence>
+                            <xxf:static-state><xsl:value-of select="//xh:input[@name = '$static-state']/@value"/></xxf:static-state>
+                            <xxf:dynamic-state><xsl:value-of select="//xh:input[@name = '$dynamic-state']/@value"/></xxf:dynamic-state>
+                            <xxf:action>
+                                <xxf:event name="DOMActivate" source-control-id="doit"/>
+                            </xxf:action>
+                        </xxf:event-request>
+                    </p:input>
+                    <p:input name="data" href="#xhtml"/>
+                    <p:output name="data" id="request"/>
+                </p:processor>
+
+                <!-- Run request -->
+                <p:processor name="oxf:xforms-server">
+                    <p:input name="request" href="#request"/>
+                    <p:output name="response" id="response" schema-href="/ops/xforms/xforms-server-response.rng"/>
+                </p:processor>
+
+                <!-- Filter response -->
+                <p:processor name="oxf:identity">
+                    <p:input name="data" href="#response" transform="oxf:unsafe-xslt">
+                        <xsl:transform version="2.0">
+                            <xsl:template match="/">
+                                <xsl:copy-of select="//xxf:errors"/>
+                            </xsl:template>
+                        </xsl:transform>
+                    </p:input>
+                    <p:output name="data" ref="response"/>
+                </p:processor>
+
+            </p:config>
+        </input>
+        <output name="response">
+            <xxf:errors>
+                <xxf:error line="1" exception="org.orbeon.saxon.trans.XPathException">Invalid date "error1" (Non-numeric year component)</xxf:error>
+                <xxf:error exception="org.orbeon.oxf.common.ValidationException">(pushing XForms control binding: element='&lt;xf:action ev:event="DOMActivate" bind="non-existing-bind" id="xf-8"/&gt;'): Reference to non-existing bind id: non-existing-bind</xxf:error>
+                <xxf:error exception="org.orbeon.oxf.common.OXFException">Missing mandatory name attribute on xf:dispatch element.</xxf:error>
+                <xxf:error exception="org.orbeon.oxf.common.OXFException">Unable to set value on disallowed node</xxf:error>
+                <xxf:error line="1" exception="org.orbeon.saxon.trans.XPathException">Invalid date "error5" (Non-numeric year component)</xxf:error>
+                <xxf:error line="1" exception="org.orbeon.saxon.trans.XPathException">Invalid date "error2" (Non-numeric year component)</xxf:error>
+                <xxf:error line="1" exception="org.orbeon.saxon.trans.XPathException">Invalid date "error5" (Non-numeric year component)</xxf:error>
+                <xxf:error line="1" exception="org.orbeon.saxon.trans.XPathException">Invalid date "error3" (Non-numeric year component)</xxf:error>
+                <xxf:error line="1" exception="org.orbeon.saxon.trans.XPathException">Invalid date "error5" (Non-numeric year component)</xxf:error>
+                <xxf:error line="1" exception="org.orbeon.saxon.trans.XPathException">Invalid date "error4" (Non-numeric year component)</xxf:error>
+                <xxf:error line="1" exception="org.orbeon.saxon.trans.XPathException">Invalid date "error5" (Non-numeric year component)</xxf:error>
+                <xxf:error line="1" exception="org.orbeon.saxon.trans.XPathException">Invalid date "error5" (Non-numeric year component)</xxf:error>
+                <xxf:error line="1" exception="org.orbeon.saxon.trans.XPathException">Invalid date "error6" (Non-numeric year component)</xxf:error>
+                <xxf:error line="1" exception="org.orbeon.saxon.trans.XPathException">Invalid date "error7" (Non-numeric year component)</xxf:error>
+                <xxf:error line="1" exception="org.orbeon.saxon.trans.XPathException">Invalid date "error8" (Non-numeric year component)</xxf:error>
+                <xxf:error line="1" exception="org.orbeon.saxon.trans.XPathException">Invalid date "error9" (Non-numeric year component)</xxf:error>
+            </xxf:errors>
+        </output>
+    </test>
+
+    <test description="#54: Browser back causes server exception" name="oxf:pipeline"
+          request="oxf:/ops/unit-tests/xforms-server/ajax-request.xml">
+
+        <input name="config">
+            <p:config>
+                <p:param name="response" type="output"/>
+
+                <p:processor name="oxf:pipeline">
+                    <p:input name="config" href="wrap-xforms-init-nofilter.xpl"/>
+                    <p:input name="document">
+                        <xh:html>
+                            <xh:head>
+                                <xf:model id="model1">
+                                    <xf:instance id="instance1">
+                                        <instance>initial</instance>
+                                    </xf:instance>
+                                    <xf:var name="other" value="xxf:instance('instance2')"/>
+                                </xf:model>
+                                <xf:model id="model2">
+                                    <xf:instance id="instance2">
+                                        <instance>initial</instance>
+                                    </xf:instance>
+                                </xf:model>
+                            </xh:head>
+                            <xh:body>
+                                <xf:output id="output1" model="model1" value="$other"/>
+                                <xf:input id="input1" model="model1" ref="."/>
+                                <xf:input id="input2" model="model2" ref="."/>
+                            </xh:body>
+                        </xh:html>
+                    </p:input>
+                    <p:output name="response" id="xhtml"/>
+                </p:processor>
+
+                <!-- Request 1: sequence == 1 -->
+                <p:processor name="oxf:xforms-server">
+                    <p:input name="request" href="#xhtml" transform="oxf:xslt">
+                        <xxf:event-request xsl:version="2.0">
+                            <xxf:uuid><xsl:value-of select="//xh:input[@name = '$uuid']/@value"/></xxf:uuid>
+                            <xxf:sequence>1</xxf:sequence>
+                            <xxf:static-state><xsl:value-of select="//xh:input[@name = '$static-state']/@value"/></xxf:static-state>
+                            <xxf:dynamic-state><xsl:value-of select="//xh:input[@name = '$dynamic-state']/@value"/></xxf:dynamic-state>
+                            <xxf:action>
+                                <xxf:event name="xxforms-value" source-control-id="input2">42</xxf:event>
+                            </xxf:action>
+                        </xxf:event-request>
+                    </p:input>
+                    <p:output name="response" id="response1" schema-href="/ops/xforms/xforms-server-response.rng"/>
+                </p:processor>
+
+                <!-- Request 2: sequence == 2 -->
+                <p:processor name="oxf:xforms-server">
+                    <p:input name="request" href="aggregate('root', #xhtml, #response1)" transform="oxf:xslt">
+                        <xxf:event-request xsl:version="2.0">
+                            <xxf:uuid><xsl:value-of select="//xh:input[@name = '$uuid']/@value"/></xxf:uuid>
+                            <xxf:sequence>2</xxf:sequence>
+                            <xxf:static-state><xsl:value-of select="//xh:input[@name = '$static-state']/@value"/></xxf:static-state>
+                            <xsl:copy-of select="/*/*[2]//xxf:dynamic-state"/>
+                            <xxf:action>
+                                <!-- Just to force re-evaluation of the model1 variable  -->
+                                <xxf:event name="xxforms-value" source-control-id="input1">cat</xxf:event>
+                            </xxf:action>
+                        </xxf:event-request>
+                    </p:input>
+                    <p:output name="response" id="response2" schema-href="/ops/xforms/xforms-server-response.rng"/>
+                </p:processor>
+
+                <!-- Request 3: sequence == 3 simulates a browser back -->
+                <p:processor name="oxf:xforms-server">
+                    <p:input name="request" href="aggregate('root', #xhtml, #response1, #response2)" transform="oxf:xslt">
+                        <xxf:event-request xsl:version="2.0">
+                            <xxf:uuid><xsl:value-of select="//xh:input[@name = '$uuid']/@value"/></xxf:uuid>
+                            <xxf:sequence>3</xxf:sequence>
+                            <xxf:static-state><xsl:value-of select="//xh:input[@name = '$static-state']/@value"/></xxf:static-state>
+                            <xsl:copy-of select="/*/*[3]//xxf:dynamic-state"/>
+                            <xxf:initial-dynamic-state><xsl:value-of select="/*/*[1]//xh:input[@name = '$dynamic-state']/@value"/></xxf:initial-dynamic-state>
+                            <xxf:action>
+                                <xxf:event name="xxforms-all-events-required"/>
+                            </xxf:action>
+                        </xxf:event-request>
+                    </p:input>
+                    <p:output name="response" id="response3" schema-href="/ops/xforms/xforms-server-response.rng"/>
+                </p:processor>
+
+                <!-- Aggregate and filter responses -->
+                <p:processor name="oxf:identity">
+                    <p:input name="data" href="aggregate('responses', #response1, #response2, #response3)" transform="oxf:unsafe-xslt">
+                        <xsl:transform version="2.0">
+                            <xsl:import href="wrap-server-decode-nofilter.xsl"/>
+                            <xsl:template match="xxf:dynamic-state"/>
+                        </xsl:transform>
+                    </p:input>
+                    <p:output name="data" ref="response"/>
+                </p:processor>
+
+            </p:config>
+        </input>
+        <output name="response">
+            <responses>
+                <xxf:event-response>
+                    <xxf:action>
+                        <xxf:control-values>
+                            <xxf:control id="output1">42</xxf:control>
+                            <xxf:control id="input2">42</xxf:control>
+                        </xxf:control-values>
+                    </xxf:action>
+                </xxf:event-response>
+                <xxf:event-response>
+                    <xxf:action>
+                        <xxf:control-values>
+                            <xxf:control id="input1">cat</xxf:control>
+                        </xxf:control-values>
+                    </xxf:action>
+                </xxf:event-response>
+                <xxf:event-response>
+                    <xxf:action>
+                        <xxf:control-values>
+                            <xxf:control id="output1">42</xxf:control>
+                            <xxf:control id="input1">cat</xxf:control>
+                            <xxf:control id="input2">42</xxf:control>
+                        </xxf:control-values>
+                    </xxf:action>
+                </xxf:event-response>
+            </responses>
+        </output>
+    </test>
+
+</group>

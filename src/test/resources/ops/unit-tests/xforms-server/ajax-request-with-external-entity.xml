@@ -1,0 +1,21 @@
+<!--
+  Copyright (C) 2010 Orbeon, Inc.
+
+  This program is free software; you can redistribute it and/or modify it under the terms of the
+  GNU Lesser General Public License as published by the Free Software Foundation; either version
+  2.1 of the License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+  See the GNU Lesser General Public License for more details.
+
+  The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+  -->
+<!DOCTYPE xxf:event-request [<!ENTITY nbsp "&#160;"><!ENTITY foobar SYSTEM "external-entity.txt">]>
+<xxf:event-request xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
+    <xxf:uuid>9C5314A6-4AFD-2889-C972-EFDBBB4C30E5</xxf:uuid>
+    <xxf:sequence>2</xxf:sequence>
+    <xxf:action>
+        <xxf:event name="xxforms-value" source-control-id="my-input">The external entity should be missing: &foobar;</xxf:event>
+    </xxf:action>
+</xxf:event-request>

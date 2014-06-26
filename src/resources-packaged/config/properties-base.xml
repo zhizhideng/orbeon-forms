@@ -15,23 +15,32 @@
             xmlns:oxf="http://www.orbeon.com/oxf/processors"
             xmlns:xi="http://www.w3.org/2001/XInclude">
 
+    <!-- Encryption properties -->
+    <property as="xs:string"  name="oxf.crypto.password"                             value="CHANGE THIS PASSWORD"/>
+    <property as="xs:integer" name="oxf.crypto.key-length"                           value="128"/>
+    <property as="xs:string"  name="oxf.crypto.hash-algorithm"                       value="SHA1"/>
+    <property as="xs:string"  name="oxf.crypto.preferred-provider"                   value="SunJCE"/>
+
     <!-- Global properties -->
     <property as="xs:anyURI"  name="oxf.log4j-config"                                value="oxf:/config/log4j.xml"/>
     <property as="xs:integer" name="oxf.cache.size"                                  value="1000"/>
-    <property as="xs:integer" name="oxf.cache.xpath.size"                            value="2000"/>
+    <property as="xs:integer" name="oxf.cache.xpath.size"                            value="5000"/>
     <property as="xs:boolean" name="oxf.sax.inspection"                              value="false"/>
     <property as="xs:boolean" name="oxf.resources.versioned"                         value="false"/>
     <property as="xs:string"  name="oxf.resources.version-number"                    value="3.1415"/>
 
     <!-- URL rewriting -->
-    <property as="xs:string"  name="oxf.url-rewriting.platform-paths"                value="^/(ops/|config/|xbl/orbeon/|forms/orbeon/|apps/fr/|xforms-server).*$"/>
-    <property as="xs:string"  name="oxf.url-rewriting.app-paths"                     value="^/(apps|xbl|forms)/.*$"/>
+    <property as="xs:string"  name="oxf.url-rewriting.platform-paths">
+        ^/(ops/|config/|xbl/orbeon/|forms/orbeon/|apps/fr/|xforms-server).*$
+    </property>
+    <property as="xs:string"  name="oxf.url-rewriting.app-paths">
+        ^/(apps|xbl|forms)/.*$
+    </property>
     <property as="xs:string"  name="oxf.url-rewriting.app-prefix"                    value="/apps"/>
 
     <property as="xs:anyURI"  name="oxf.url-rewriting.service.base-uri"              value=""/>
     <!-- Support "servlet" or "wsrp" (or "portlet2" for backward compatibility") -->
     <property as="xs:string"  name="oxf.url-rewriting.strategy.servlet"              value="servlet"/>
-    <!-- TODO: support for base context for servlet rewriting strategy -->
     <!--<property as="xs:string"  name="oxf.url-rewriting.portlet.context"               value=""/>-->
     <property as="xs:string"  name="oxf.url-rewriting.wsrp.context"                  value=""/>
     <property as="xs:boolean" name="oxf.url-rewriting.wsrp.encode-resources"         value="false"/>
@@ -52,6 +61,7 @@
     <!--<property as="xs:integer" name="oxf.http.proxy.port"                             value="8090"/>-->
     <!--<property as="xs:string"  name="oxf.http.proxy.ntlm.host"                        value=""/>-->
     <!--<property as="xs:string"  name="oxf.http.proxy.ntlm.domain"                      value=""/>-->
+    <!--<property as="xs:string"  name="oxf.http.proxy.exclude"                          value=""/>-->
 
     <!-- HTTP response -->
     <property as="xs:boolean" name="oxf.http.exceptions"                             value="false"/>
@@ -74,8 +84,15 @@
         Tomcat adds "Pragma", "Expires" and "Cache-Control" headers when resources are constrained,disabling caching if
         they are not set. We must re-set them to allow caching.
     -->
-    <property as="xs:string"  name="oxf.http.page.cache-headers"                     value="Cache-Control: private, max-age=0; Pragma:"/>
-    <property as="xs:string"  name="oxf.http.resource.cache-headers"                 value="Cache-Control: public; Pragma:"/>
+    <property as="xs:string"  name="oxf.http.page.cache-headers">
+        Cache-Control: private, max-age=0; Pragma:
+    </property>
+    <property as="xs:string"  name="oxf.http.resource.cache-headers">
+        Cache-Control: public; Pragma:
+    </property>
+    <property as="xs:string"  name="oxf.http.nocache.cache-headers">
+        Cache-Control: no-cache, no-store, must-revalidate; Pragma: no-cache; Expires: 0
+    </property>
 
     <!-- Epilogue configuration -->
     <property as="xs:anyURI"  name="oxf.epilogue.theme"                              value="oxf:/config/theme-examples.xsl"/>
@@ -88,13 +105,17 @@
     <property as="xs:boolean" name="oxf.epilogue.process-xslfo"                      value="true"/>
     <property as="xs:boolean" name="oxf.epilogue.process-svg"                        value="true"/>
     <property as="xs:boolean" name="oxf.epilogue.embeddable"                         value="false"/>
+    <property as="xs:boolean" name="oxf.epilogue.show-feedback"                      value="false"/>
 
     <!-- Processor-specific properties -->
     <property as="xs:integer" processor-name="oxf:request"   name="max-upload-size"          value="100000000"/>
     <property as="xs:integer" processor-name="oxf:request"   name="max-upload-memory-size"   value="10240"/>
     <property as="xs:string"  processor-name="oxf:page-flow" name="instance-passing"         value="redirect"/>
-    <property as="xs:string"  processor-name="oxf:page-flow" name="xforms-submission-path"   value="/xforms-server-submit"/>
-    <property as="xs:anyURI"  processor-name="oxf:page-flow" name="xforms-submission-model"  value="oxf:/ops/xforms/xforms-server-submit.xpl"/>
+    <property as="xs:string"  processor-name="oxf:page-flow" name="submission-path"          value="/xforms-server-submit"/>
+    <property as="xs:anyURI"  processor-name="oxf:page-flow" name="submission-model"         value="oxf:/ops/xforms/xforms-server-submit.xpl"/>
+    <property as="xs:anyURI"  processor-name="oxf:page-flow" name="authorizer"               value=""/><!-- e.g. /orbeon-auth -->
+    <property as="xs:string"  processor-name="oxf:page-flow" name="page-public-methods"      value="GET HEAD"/>
+    <property as="xs:string"  processor-name="oxf:page-flow" name="service-public-methods"   value=""/>
     <property as="xs:boolean" processor-name="oxf:sql"       name="legacy-implicit-prefixes" value="false"/>
 
     <property as="xs:QName"   processor-name="oxf:xml-converter"  name="default-method" value="oxf:org.orbeon.saxon.event.XML1252Emitter"/>

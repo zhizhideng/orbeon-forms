@@ -98,7 +98,7 @@
                 if (doAssert) {
                     var value = ORBEON.xforms.Document.getValue(staticDynamicResource + "-output-" + key);
                     YAHOO.util.Assert.areEqual(expected[key], value, staticDynamicResource + " " + key + " " +
-                        (YAHOO.lang.isUndefined(message) ? "" : " - " + message));
+                        (_.isUndefined(message) ? "" : " - " + message));
                 }
             });
         },
@@ -109,7 +109,7 @@
         checkSearchValue: function(staticDynamicResource, expectedValue, message) {
             var searchValue = ORBEON.xforms.Document.getValue(staticDynamicResource + "-autocomplete$search");
             YAHOO.util.Assert.areEqual(expectedValue, searchValue, staticDynamicResource +
-                (YAHOO.lang.isUndefined(message) ? "" : " - " + message));
+                (_.isUndefined(message) ? "" : " - " + message));
         },
 
         /**
@@ -212,8 +212,8 @@
                     var container = YAHOO.util.Dom.getElementsByClassName("fr-autocomplete-container", null, control)[0];
                     YAHOO.util.Assert.isTrue(YAHOO.util.Dom.hasClass(container, "xforms-invalid"));
                     var alert = YAHOO.util.Dom.getElementsByClassName("xforms-alert", null, control)[0];
-                    YAHOO.util.Assert.isTrue(YAHOO.util.Dom.hasClass(alert, "xforms-alert-active"),
-                        "initially should have xforms-alert-active for " + staticDynamicResource);
+                    YAHOO.util.Assert.isTrue($(alert).is(".xforms-alert.xforms-active"),
+                        "initially should have xforms-alert and xforms-active for " + staticDynamicResource);
                     ORBEON.util.Test.executeCausingAjaxRequest(this, function() {
                         // Set value to something that will start with the letter "s"
                         this.simulateTypeInField(staticDynamicResource, "Switzerland");
@@ -222,8 +222,8 @@
                         // Check the alert in inactive
                         YAHOO.util.Assert.isFalse(YAHOO.util.Dom.hasClass(container, "xforms-invalid"),
                             "after setting value, should not have xforms-invalid class for " + staticDynamicResource);
-                        YAHOO.util.Assert.isFalse(YAHOO.util.Dom.hasClass(alert, "xforms-alert-active"),
-                            "after setting value, should not have xforms-alert-active for " + staticDynamicResource);
+                        YAHOO.util.Assert.isFalse($(alert).is(".xforms-alert.xforms-active"),
+                            "after setting value, should not have xforms-alert and xforms-active for " + staticDynamicResource);
                         continuation.call(this);
                     });
                 });

@@ -26,7 +26,7 @@ YAHOO.xbl.fr.Date.prototype = {
         var calendarDivElement = YAHOO.util.Dom.getElementsByClassName("xbl-fr-date-calendar-div", null, this.container)[0];
 
         // Only worry about initialization of inline calendar
-        if (! YAHOO.lang.isUndefined(calendarDivElement)) {
+        if (! _.isUndefined(calendarDivElement)) {
             this.inputElement = YAHOO.util.Dom.getElementsByClassName("xbl-fr-date-input", null, this.container)[0];
             this.mindateElement = YAHOO.util.Dom.getElementsByClassName("xbl-fr-date-mindate", null, this.container)[0];
             this.maxdateElement = YAHOO.util.Dom.getElementsByClassName("xbl-fr-date-maxdate", null, this.container)[0];
@@ -64,7 +64,7 @@ YAHOO.xbl.fr.Date.prototype = {
     },
 
     parameterMindateChanged: function() {
-        if (! YAHOO.lang.isUndefined(this.yuiCalendar)) {
+        if (! _.isUndefined(this.yuiCalendar)) {
             this.yuiCalendar.cfg.setProperty("mindate", this.mindateElement == null ? null :
                 ORBEON.util.DateTime.magicDateToJSDate(ORBEON.xforms.Document.getValue(this.mindateElement.id)));
             this.yuiCalendar.render();
@@ -72,7 +72,7 @@ YAHOO.xbl.fr.Date.prototype = {
     },
 
     parameterMaxdateChanged: function() {
-        if (! YAHOO.lang.isUndefined(this.yuiCalendar)) {
+        if (! _.isUndefined(this.yuiCalendar)) {
             this.yuiCalendar.cfg.setProperty("maxdate", this.maxdateElement == null ? null :
                 ORBEON.util.DateTime.magicDateToJSDate(ORBEON.xforms.Document.getValue(this.maxdateElement.id)));
             this.yuiCalendar.render();
@@ -80,7 +80,7 @@ YAHOO.xbl.fr.Date.prototype = {
     },
 
     parameterPagedateChanged: function() {
-        if (! YAHOO.lang.isUndefined(this.yuiCalendar)) {
+        if (! _.isUndefined(this.yuiCalendar)) {
             this.yuiCalendar.cfg.setProperty("pagedate", this.maxdateElement == null ? null :
                 ORBEON.util.DateTime.magicDateToJSDate(ORBEON.xforms.Document.getValue(this.pagedateElement.id)));
             this.yuiCalendar.render();
@@ -94,6 +94,11 @@ YAHOO.xbl.fr.Date.prototype = {
                                  "August",  "September",  "October",  "November",  "December" ],
                 "WEEKDAYS_SHORT": ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"],
                 "START_WEEKDAY": 0
+            },
+	        "it": {
+                "MONTHS_LONG": [ "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto",  "Settembre",  "Ottobre",  "Novembre",  "Dicembre" ],
+                "WEEKDAYS_SHORT": ["Do", "Lu", "Ma", "Me", "Gi", "Ve", "Sa"],
+                "START_WEEKDAY": 1
             },
             "fr": {
                 "MONTHS_LONG": [ "Janvier", "F\xe9vrier", "Mars", "Avril", "Mai", "Juin", "Juillet",

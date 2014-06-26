@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!--
   Copyright (C) 2010 Orbeon, Inc.
 
@@ -23,6 +22,16 @@
         <add>Add</add>
         <remove>Remove</remove>
     </resource>
+    <resource xml:lang="fi">
+        <select>...</select>
+        <title>Valinta</title>
+        <available>Vapaa</available>
+        <selected>Valittu</selected>
+        <confirm>Vahvista</confirm>
+        <cancel>Keskeytä</cancel>
+        <add>Lisää</add>
+        <remove>Poista</remove>
+    </resource>
     <resource xml:lang="fr">
         <select>...</select>
         <title>Sélection</title>
@@ -42,5 +51,45 @@
         <cancel>Отменить</cancel>
         <add>Добавить</add>
         <remove>Удалить</remove>
+    </resource>
+    <resource xml:lang="de">
+        <select>...</select>
+        <title>Auswahl</title>
+        <available>Verfügbar</available>
+        <selected>Ausgewählt</selected>
+        <confirm>Bestätigen</confirm>
+        <cancel>Abbrechen</cancel>
+        <add>Hinzufügen</add>
+        <remove>Löschen</remove>
+    </resource>
+    <resource xml:lang="it">
+        <select>...</select>
+        <title>Selezione</title>
+        <available>Disponibile</available>
+        <selected>Selezionato</selected>
+        <confirm>Conferma</confirm>
+        <cancel>Cancella</cancel>
+        <add>Aggiungere</add>
+        <remove>Elimina</remove>
+    </resource>
+    <resource xml:lang="sv">
+        <select>...</select>
+        <title>Val</title>
+        <available>Tillgängligt</available>
+        <selected>Vald</selected>
+        <confirm>Bekräfta</confirm>
+        <cancel>Avbryt</cancel>
+        <add>Lägg till</add>
+        <remove>Ta bort</remove>
+    </resource>
+    <resource xml:lang="pt">
+        <select>...</select>
+        <title>Selecção</title>
+        <available>Disponível</available>
+        <selected>Seleccionado</selected>
+        <confirm>Confirmar</confirm>
+        <cancel>Cancelar</cancel>
+        <add>Adicionar</add>
+        <remove>Remover</remove>
     </resource>
 </resources>

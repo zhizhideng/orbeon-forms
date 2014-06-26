@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!--
   Copyright (C) 2009 Orbeon, Inc.
 
@@ -12,52 +11,60 @@
 
   The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
   -->
-<xbl:xbl xmlns:xhtml="http://www.w3.org/1999/xhtml"
-         xmlns:xforms="http://www.w3.org/2002/xforms"
+<xbl:xbl xmlns:xh="http://www.w3.org/1999/xhtml"
+         xmlns:xf="http://www.w3.org/2002/xforms"
          xmlns:xs="http://www.w3.org/2001/XMLSchema"
          xmlns:ev="http://www.w3.org/2001/xml-events"
          xmlns:xi="http://www.w3.org/2001/XInclude"
          xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
-         xmlns:xxforms="http://orbeon.org/oxf/xml/xforms"
+         xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
          xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
          xmlns:saxon="http://saxon.sf.net/"
          xmlns:xbl="http://www.w3.org/ns/xbl"
-         xmlns:exforms="http://www.exforms.org/exf/1-0"
+         xmlns:exf="http://www.exforms.org/exf/1-0"
          xmlns:xxbl="http://orbeon.org/oxf/xml/xbl"
          script-type="application/xhtml+xml">
 
-    <xbl:binding id="fr-image-attachment" element="fr|image-attachment">
+    <xbl:binding id="fr-image-attachment" element="fr|image-attachment" xxbl:mode="binding lhha" xxbl:container="span">
 
         <!-- Orbeon Form Builder Component Metadata -->
         <metadata xmlns="http://orbeon.org/oxf/xml/form-builder">
             <display-name lang="en">Image Attachment</display-name>
+            <display-name lang="es">Adjuntar Imagen</display-name>
+            <display-name lang="fi">Kuvan liittäminen</display-name>
             <display-name lang="fr">Image jointe</display-name>
             <display-name lang="ru">Загрузка изображения</display-name>
+            <display-name lang="de">Bild Anhang</display-name>
+            <display-name lang="it">Immagine allegata</display-name>
+            <display-name lang="sv">Bild som bilaga</display-name>
+            <display-name lang="nl">Afbeeldingbijlage</display-name>
+            <display-name lang="pt">Anexar imagem</display-name>
             <icon lang="en">
                 <small-icon>/apps/fr/style/images/silk/picture.png</small-icon>
                 <large-icon>/apps/fr/style/images/silk/picture.png</large-icon>
             </icon>
-            <datatype>xs:anyURI</datatype>
-            <template>
-                 <fr:image-attachment id="" ref="" class="fr-attachment">
-                    <xforms:label ref=""/>
-                    <xforms:hint ref=""/>
-                    <xforms:help ref=""/>
-                    <xforms:alert ref="$fr-resources/detail/labels/alert"/>
-                    <xforms:filename ref="@filename"/>
-                    <xforms:mediatype ref="@mediatype"/>
-                    <xxforms:size ref="@size"/>
-                </fr:image-attachment>
-            </template>
+            <templates>
+                <bind type="xf:anyURI"/>
+                <instance filename="" mediatype="" size=""/>
+                <view>
+                     <fr:image-attachment id="" ref="" class="fr-attachment">
+                        <xf:label ref=""/>
+                        <xf:hint ref=""/>
+                        <xf:help ref=""/>
+                        <xf:alert ref=""/>
+                        <xf:filename ref="@filename"/>
+                        <xf:mediatype ref="@mediatype"/>
+                        <xxf:size ref="@size"/>
+                    </fr:image-attachment>
+                </view>
+            </templates>
         </metadata>
 
         <xbl:template>
-            <xforms:group appearance="xxforms:internal" xbl:attr="model context ref bind" xxbl:scope="outer">
-                <xforms:upload ref=".">
-                    <xbl:content includes="xforms|label,xforms|help,xforms|hint,xforms|alert,xforms|filename,xforms|mediatype,xxforms:size"/>
-                </xforms:upload>
-                <xforms:output mediatype="image/*" ref=".[normalize-space()]"/>
-            </xforms:group>
+            <xf:upload ref="xxf:binding('fr-image-attachment')" accept="image/*">
+                <xbl:content includes=":root > xf|filename, :root > xf|mediatype, :root > xxf|size"/>
+            </xf:upload>
+            <xf:output mediatype="image/*" ref="xxf:binding('fr-image-attachment')[normalize-space()]"/>
         </xbl:template>
     </xbl:binding>
 </xbl:xbl>

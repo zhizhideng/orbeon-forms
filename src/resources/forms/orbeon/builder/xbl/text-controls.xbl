@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!--
   Copyright (C) 2009 Orbeon, Inc.
 
@@ -15,132 +14,138 @@
 <!--
     This is the standard Form Builder standard controls library.
  -->
-<xbl:xbl xmlns:xhtml="http://www.w3.org/1999/xhtml"
-         xmlns:xforms="http://www.w3.org/2002/xforms"
+<xbl:xbl xmlns:xh="http://www.w3.org/1999/xhtml"
+         xmlns:xf="http://www.w3.org/2002/xforms"
          xmlns:xs="http://www.w3.org/2001/XMLSchema"
          xmlns:ev="http://www.w3.org/2001/xml-events"
          xmlns:xi="http://www.w3.org/2001/XInclude"
          xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
-         xmlns:xxforms="http://orbeon.org/oxf/xml/xforms"
+         xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
          xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
          xmlns:saxon="http://saxon.sf.net/"
          xmlns:xbl="http://www.w3.org/ns/xbl">
 
     <metadata xmlns="http://orbeon.org/oxf/xml/form-builder">
         <display-name lang="en">Text Controls</display-name>
+        <display-name lang="es">Controles de Texto</display-name>
+        <display-name lang="fi">Tekstikontrollit</display-name>
         <display-name lang="fr">Contrôles texte</display-name>
         <display-name lang="ru">Элементы ввода текста</display-name>
-        <!--<icon lang="en">-->
-            <!--<small-icon>/forms/orbeon/builder/images/input.png</small-icon>-->
-            <!--<large-icon>/forms/orbeon/builder/images/input.png</large-icon>-->
-        <!--</icon>-->
+        <display-name lang="de">Text-Bedienelemente</display-name>
+        <display-name lang="it">Controlli di testo</display-name>
+        <display-name lang="nl">Tekst-elementen</display-name>
+        <display-name lang="pt">Controlos de Texto</display-name>
     </metadata>
 
-    <xbl:binding id="fb-input" element="xforms|input">
+    <xbl:binding id="fb-input" element="xf|input">
         <metadata xmlns="http://orbeon.org/oxf/xml/form-builder">
-            <display-name lang="en">Single-Line Text</display-name>
-            <display-name lang="fr">Ligne de texte</display-name>
+            <display-name lang="en">Input Field</display-name>
+            <display-name lang="es">Campo de Texto</display-name>
+            <display-name lang="fi">Tekstikenttä</display-name>
+            <display-name lang="fr">Champ de texte</display-name>
             <display-name lang="ru">Однострочное поле</display-name>
+            <display-name lang="de">Textfeld</display-name>
+            <display-name lang="it">Campo di testo</display-name>
+            <display-name lang="nl">Invoerveld</display-name>
+            <display-name lang="pt">Campo de Texto</display-name>
             <icon lang="en">
                 <small-icon>/forms/orbeon/builder/images/input.png</small-icon>
                 <large-icon>/forms/orbeon/builder/images/input.png</large-icon>
             </icon>
-            <datatype>xs:string</datatype>
-            <template>
-                <xforms:input id="" ref="" xmlns="">
-                    <xforms:label ref=""/>
-                    <xforms:hint ref=""/>
-                    <xforms:help ref=""/>
-                    <xforms:alert ref="$fr-resources/detail/labels/alert"/>
-                </xforms:input>
-            </template>
+            <templates>
+                <view>
+                    <xf:input id="" ref="" xmlns="">
+                        <xf:label ref=""/>
+                        <xf:hint ref=""/>
+                        <xf:help ref=""/>
+                        <xf:alert ref=""/>
+                    </xf:input>
+                </view>
+            </templates>
         </metadata>
     </xbl:binding>
 
-    <xbl:binding id="fb-secret" element="xforms|secret">
+    <xbl:binding id="fb-textarea" element="xf|textarea">
         <metadata xmlns="http://orbeon.org/oxf/xml/form-builder">
-            <display-name lang="en">Password Field</display-name>
-            <display-name lang="fr">Champ mot de passe</display-name>
-            <display-name lang="ru">Пароль</display-name>
-            <icon lang="en">
-                <small-icon>/forms/orbeon/builder/images/input.png</small-icon>
-                <large-icon>/forms/orbeon/builder/images/input.png</large-icon>
-            </icon>
-            <datatype>xs:string</datatype>
-            <template>
-                <xforms:secret id="" ref="" xmlns="">
-                    <xforms:label ref=""/>
-                    <xforms:hint ref=""/>
-                    <xforms:help ref=""/>
-                    <xforms:alert ref="$fr-resources/detail/labels/alert"/>
-                </xforms:secret>
-            </template>
-        </metadata>
-    </xbl:binding>
-
-    <xbl:binding id="fb-textarea" element="xforms|textarea">
-        <metadata xmlns="http://orbeon.org/oxf/xml/form-builder">
-            <display-name lang="en">Multi-Line Text</display-name>
+            <display-name lang="en">Text Area</display-name>
+            <display-name lang="es">Texto Extendido</display-name>
+            <display-name lang="fi">Tekstialue</display-name>
             <display-name lang="fr">Zone de texte</display-name>
             <display-name lang="ru">Многострочное поле</display-name>
+            <display-name lang="de">Textbereich</display-name>
+            <display-name lang="it">Area di testo</display-name>
+            <display-name lang="nl">Tekstveld</display-name>
+            <display-name lang="pt">Área de Texto</display-name>
             <icon lang="en">
                 <small-icon>/forms/orbeon/builder/images/textarea.png</small-icon>
                 <large-icon>/forms/orbeon/builder/images/textarea.png</large-icon>
             </icon>
-            <datatype>xs:string</datatype>
-            <template>
-                <xforms:textarea id="" ref="" xmlns="">
-                    <xforms:label ref=""/>
-                    <xforms:hint ref=""/>
-                    <xforms:help ref=""/>
-                    <xforms:alert ref="$fr-resources/detail/labels/alert"/>
-                </xforms:textarea>
-            </template>
+            <templates>
+                <view>
+                    <xf:textarea id="" ref="" xmlns="">
+                        <xf:label ref=""/>
+                        <xf:hint ref=""/>
+                        <xf:help ref=""/>
+                        <xf:alert ref=""/>
+                    </xf:textarea>
+                </view>
+            </templates>
         </metadata>
     </xbl:binding>
 
-    <!--
-    <xbl:binding id="fb-textarea" element="xforms|textarea">
-        <metadata xmlns="http://orbeon.org/oxf/xml/form-builder">
-            <display-name lang="en">Autosize Text</display-name>
-            BETTER LABEL
-            <display-name lang="fr">Texte "autosize"</display-name>
-            <icon lang="en">
-                ICONS
-                <small-icon>/forms/orbeon/builder/images/textarea.png</small-icon>
-                <large-icon>/forms/orbeon/builder/images/textarea.png</large-icon>
-            </icon>
-            <datatype>xs:string</datatype>
-            <template>
-                <xforms:textarea id="" ref="" appearance="xxforms:autosize" xmlns="">
-                    <xforms:label ref=""/>
-                    <xforms:hint ref=""/>
-                    <xforms:help ref=""/>
-                    <xforms:alert ref="$fr-resources/detail/labels/alert"/>
-                </xforms:textarea>
-            </template>
-        </metadata>
-    </xbl:binding>
-    -->
-
-    <xbl:binding id="fb-output" element="xforms|output">
+    <xbl:binding id="fb-output" element="xf|output">
         <metadata xmlns="http://orbeon.org/oxf/xml/form-builder">
             <display-name lang="en">Text Output</display-name>
+            <display-name lang="es">Salida de Texto</display-name>
+            <display-name lang="fi">Tekstituotos</display-name>
             <display-name lang="fr">Sortie texte</display-name>
             <display-name lang="ru">Неизменяемый текст</display-name>
+            <display-name lang="de">Textausgabe</display-name>
+            <display-name lang="it">Testo statico</display-name>
+            <display-name lang="nl">Tekstuitvoer</display-name>
+            <display-name lang="pt">Saída de Texto</display-name>
             <icon lang="en">
                 <small-icon>/apps/fr/style/images/silk/text_align_left.png</small-icon>
                 <large-icon>/apps/fr/style/images/silk/text_align_left.png</large-icon>
             </icon>
-            <datatype>xs:string</datatype>
-            <template>
-                <xforms:output id="" ref="" xmlns="">
-                    <xforms:label ref=""/>
-                    <xforms:hint ref=""/>
-                    <xforms:help ref=""/>
-                    <xforms:alert ref="$fr-resources/detail/labels/alert"/>
-                </xforms:output>
-            </template>
+            <templates>
+                <view>
+                    <xf:output id="" ref="" xmlns="">
+                        <xf:label ref=""/>
+                        <xf:hint ref=""/>
+                        <xf:help ref=""/>
+                        <xf:alert ref=""/>
+                    </xf:output>
+                </view>
+            </templates>
+        </metadata>
+    </xbl:binding>
+
+    <xbl:binding id="fb-secret" element="xf|secret">
+        <metadata xmlns="http://orbeon.org/oxf/xml/form-builder">
+            <display-name lang="en">Password Field</display-name>
+            <display-name lang="es">Campo de Contraseña</display-name>
+            <display-name lang="fi">Salasanakenttä</display-name>
+            <display-name lang="fr">Mot de passe</display-name>
+            <display-name lang="ru">Пароль</display-name>
+            <display-name lang="de">Passwortfeld</display-name>
+            <display-name lang="it">Campo password</display-name>
+            <display-name lang="nl">Wachtwoordveld</display-name>
+            <display-name lang="pt">Campo de Senha</display-name>
+            <icon lang="en">
+                <small-icon>/apps/fr/style/images/silk/key.png</small-icon>
+                <large-icon>/apps/fr/style/images/silk/key.png</large-icon>
+            </icon>
+            <templates>
+                <view>
+                    <xf:secret id="" ref="" xmlns="">
+                        <xf:label ref=""/>
+                        <xf:hint ref=""/>
+                        <xf:help ref=""/>
+                        <xf:alert ref=""/>
+                    </xf:secret>
+                </view>
+            </templates>
         </metadata>
     </xbl:binding>
 

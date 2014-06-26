@@ -1,0 +1,122 @@
+// Copyright (C) 2009 Orbeon, Inc.
+//
+// This program is free software; you can redistribute it and/or modify it under the terms of the
+// GNU Lesser General Public License as published by the Free Software Foundation; either version
+// 2.1 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+// without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+
+@import (reference) "bootstrap-src/less/variables";
+@import (reference) "form-runner-common";
+
+@spacing: 10px; // same as .fr-border
+
+.orbeon {
+    .fr-summary-search, .fr-summary-table-div, .fr-summary-search-count {
+        display: block;
+        margin: @spacing 0;   // use margin so we have margin collapsing
+    }
+
+    .fr-summary-search {
+
+        .fr-search-free {
+            display: inline-block;
+
+            input {
+                width: 25em;
+            }
+        }
+
+        .fr-search-options {
+            display: block; // so that search buttons will always be underneath
+
+            .fr-summary-search-item {
+                display: inline-block;
+                margin-bottom: @spacing;
+
+                input, select {
+                    width: 12em;
+                }
+            }
+        }
+
+        .fr-search-buttons {
+            display: inline-block;  // will be next to free search, but under search items
+        }
+    }
+
+    .fr-summary-table-div {
+
+        overflow: auto;
+        background: white;
+
+        .alert  {
+            display: block;
+            margin: 0;
+        }
+
+        table {
+            margin-bottom: 0;
+            max-width: none;                                        // Because table can scrolls beyond size of container
+        }
+
+        tbody {
+            a, a:hover { text-decoration: none; color: black; outline: 0 }   // Links in table must appear as normal text
+        }
+
+        td {
+            > span {
+                white-space: nowrap;                                // Mainly to prevent dates from wrapping; within span for IE7
+            }
+            a {                                                     // Link to take as much space as possible in the cell
+                width: 100%;
+                display: inline-block;
+                *zoom: 1;
+                *display: inline;
+                vertical-align: middle;
+            }
+        }
+
+        th {
+            white-space: nowrap;
+        }
+
+        .fr-summary-repeat-labels, .fr-summary-created, .fr-summary-modified {
+            .narrow-td();
+        }
+
+        .fr-summary-repeat-selection-checkbox {
+            .fr-plain-checkbox-container();
+        }
+    }
+
+    // With IE 6/7, legend and overflow don't behave
+    .xforms-noscript .fr-summary-table-div td  {
+        legend { display: none }
+        .datatable-cell-content { overflow: visible }
+    }
+
+    .pagination {
+        margin-top: 0;
+        margin-bottom: 0;
+        float: left;
+
+        .fr-paging-numbers > span {
+            min-width: 125px; // try to allow at least 3 times 3 digits so the size doesn't change too much when paging
+            text-align: center;
+        }
+    }
+
+    .fr-buttons {
+        display: block;
+        float: right;
+        margin-top: 7px;
+        margin-bottom: 0;
+    }
+
+    .xforms-readonly input { background-color: white; background-image: none; border: 0 solid white }
+}

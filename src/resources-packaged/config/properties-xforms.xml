@@ -13,14 +13,16 @@
   -->
 <properties xmlns:xs="http://www.w3.org/2001/XMLSchema"
             xmlns:oxf="http://www.orbeon.com/oxf/processors"
-            xmlns:xi="http://www.w3.org/2001/XInclude"
+            xmlns:xh="http://www.w3.org/1999/xhtml"
+            xmlns:xf="http://www.w3.org/2002/xforms"
+            xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+            xmlns:exf="http://www.exforms.org/exf/1-0"
+            xmlns:xbl="http://www.w3.org/ns/xbl"
+            xmlns:xxbl="http://orbeon.org/oxf/xml/xbl"
             xmlns:fr="http://orbeon.org/oxf/xml/form-runner">
 
-    <!-- Encryption of XForms hidden fields and field names -->
-    <property as="xs:string"  name="oxf.xforms.password"                                value="CHANGE THIS PASSWORD"/>
+    <!-- Whether to encrypt (encode) item values by default -->
     <property as="xs:boolean" name="oxf.xforms.encrypt-item-values"                     value="true"/>
-    <property as="xs:boolean" name="oxf.xforms.encrypt-hidden"                          value="true"/>
-    <property as="xs:boolean" name="oxf.xforms.encrypt-names"                           value="true"/>
 
     <!--
         Debug logging:
@@ -29,7 +31,9 @@
         * Global:   analysis server html resources state resolver utils
         * Data:     analysis-xbl-tree submission-body model-serialized-instance server-body html-static-state
      -->
-    <property as="xs:NMTOKENS" name="oxf.xforms.logging.debug"                          value="document model submission control event action analysis server html"/>
+    <property as="xs:NMTOKENS" name="oxf.xforms.logging.debug">
+        document model submission control event action analysis server html process
+    </property>
     <!--
         Error logging:
 
@@ -37,37 +41,47 @@
     -->
     <property as="xs:NMTOKENS" name="oxf.xforms.logging.error"                          value="submission-error-body"/>
 
-    <!-- Log XPath analysis -->
+    <!-- Debug properties -->
     <property as="xs:boolean" name="oxf.xforms.debug.log-xpath-analysis"                value="false"/>
+    <property as="xs:boolean" name="oxf.xforms.debug.log-request-stats"                 value="false"/>
 
     <!-- XPath analysis (PE) -->
     <property as="xs:boolean" name="oxf.xforms.xpath-analysis"                          value="false"/>
 
-    <!-- TODO: new output formats depending on language; also support short/medium/long/full? -->
-    <property as="xs:string"  name="oxf.xforms.format.output.*.*.date"                  value="if (. castable as xs:date) then format-date(xs:date(.), '[FNn] [MNn] [D], [Y] [ZN]', 'en', (), ()) else ."/>
-    <property as="xs:string"  name="oxf.xforms.format.output.*.*.dateTime"              value="if (. castable as xs:dateTime) then format-dateTime(xs:dateTime(.), '[FNn] [MNn] [D], [Y] [H01]:[m01]:[s01] [ZN]', 'en', (), ()) else ."/>
-    <property as="xs:string"  name="oxf.xforms.format.output.*.*.time"                  value="if (. castable as xs:time) then format-time(xs:time(.), '[H01]:[m01]:[s01] [ZN]', 'en', (), ()) else ."/>
-    <property as="xs:string"  name="oxf.xforms.format.output.*.*.decimal"               value="if (. castable as xs:decimal) then format-number(xs:decimal(.),'###,###,###,##0.00') else ."/>
-    <property as="xs:string"  name="oxf.xforms.format.output.*.*.integer"               value="if (. castable as xs:integer) then format-number(xs:integer(.),'###,###,###,##0') else ."/>
-    <property as="xs:string"  name="oxf.xforms.format.output.*.*.float"                 value="if (. castable as xs:float) then format-number(xs:float(.),'#,##0.000') else ."/>
-    <property as="xs:string"  name="oxf.xforms.format.output.*.*.double"                value="if (. castable as xs:double) then format-number(xs:double(.),'#,##0.000') else ."/>
+    <!-- XForms cache configuration -->
+    <property as="xs:string"  name="oxf.xforms.state-handling"                          value="server"/>
+    <property as="xs:boolean" name="oxf.xforms.cache.document"                          value="true"/>
+    <property as="xs:integer" name="oxf.xforms.cache.documents.size"                    value="50"/>
+    <property as="xs:integer" name="oxf.xforms.cache.static-state.size"                 value="50"/>
+    <property as="xs:integer" name="oxf.xforms.cache.shared-instances.size"             value="50"/>
 
-    <property as="xs:string"  name="oxf.xforms.format.output.fr.*.date"                 value="if (. castable as xs:date) then format-date(xs:date(.), '[FNn] [D] [Mn] [Y]', 'fr', (), ()) else ."/>
-    <property as="xs:string"  name="oxf.xforms.format.output.fr.*.dateTime"             value="if (. castable as xs:dateTime) then format-dateTime(xs:dateTime(.), '[FNn] [D] [Mn] [Y] [H01]:[m01]:[s01]', 'fr', (), ()) else ."/>
-    <property as="xs:string"  name="oxf.xforms.format.output.fr.*.time"                 value="if (. castable as xs:time) then format-time(xs:time(.), '[H01]:[m01]:[s01]', 'fr', (), ()) else ."/>
+    <!-- Formats -->
+    <property as="xs:string"  name="oxf.xforms.format.output.date">
+        if (. castable as xs:date) then format-date(xs:date(.), '[FNn] [MNn] [D], [Y]', xxf:lang(), (), ()) else .
+    </property>
+    <property as="xs:string"  name="oxf.xforms.format.output.dateTime">
+        if (. castable as xs:dateTime) then format-dateTime(xs:dateTime(.), '[FNn] [MNn] [D], [Y] [H01]:[m01]:[s01]', xxf:lang(), (), ()) else .
+    </property>
+    <property as="xs:string"  name="oxf.xforms.format.output.time">
+        if (. castable as xs:time) then format-time(xs:time(.), '[H01]:[m01]:[s01]', xxf:lang(), (), ()) else .
+    </property>
+    <property as="xs:string"  name="oxf.xforms.format.output.decimal">
+        if (. castable as xs:decimal) then format-number(xs:decimal(.),'###,###,###,##0.00') else .
+    </property>
+    <property as="xs:string"  name="oxf.xforms.format.output.integer">
+        if (. castable as xs:integer) then format-number(xs:integer(.),'###,###,###,##0') else .
+    </property>
+    <property as="xs:string"  name="oxf.xforms.format.output.float">
+        if (. castable as xs:float) then format-number(xs:float(.),'#,##0.000') else .
+    </property>
+    <property as="xs:string"  name="oxf.xforms.format.output.double">
+        if (. castable as xs:double) then format-number(xs:double(.),'#,##0.000') else .
+    </property>
 
-    <!-- TODO: remove these older formats when new formats above are supported -->
-    <property as="xs:string"  name="oxf.xforms.format.output.date"                      value="if (. castable as xs:date) then format-date(xs:date(.), '[FNn] [MNn] [D], [Y] [ZN]', 'en', (), ()) else ."/>
-    <property as="xs:string"  name="oxf.xforms.format.output.dateTime"                  value="if (. castable as xs:dateTime) then format-dateTime(xs:dateTime(.), '[FNn] [MNn] [D], [Y] [H01]:[m01]:[s01] [ZN]', 'en', (), ()) else ."/>
-    <property as="xs:string"  name="oxf.xforms.format.output.time"                      value="if (. castable as xs:time) then format-time(xs:time(.), '[H01]:[m01]:[s01] [ZN]', 'en', (), ()) else ."/>
-    <property as="xs:string"  name="oxf.xforms.format.output.decimal"                   value="if (. castable as xs:decimal) then format-number(xs:decimal(.),'###,###,###,##0.00') else ."/>
-    <property as="xs:string"  name="oxf.xforms.format.output.integer"                   value="if (. castable as xs:integer) then format-number(xs:integer(.),'###,###,###,##0') else ."/>
-    <property as="xs:string"  name="oxf.xforms.format.output.float"                     value="if (. castable as xs:float) then format-number(xs:float(.),'#,##0.000') else ."/>
-    <property as="xs:string"  name="oxf.xforms.format.output.double"                    value="if (. castable as xs:double) then format-number(xs:double(.),'#,##0.000') else ."/>
-
-
-    <property as="xs:string"  name="oxf.xforms.format.input.date"                       value="[M]/[D]/[Y]"/> <!-- [M]/[D]/[Y]  or [D]/[M]/[Y] or [D].[M].[Y]-->
-    <property as="xs:string"  name="oxf.xforms.format.input.time"                       value="[h]:[m]:[s] [P]"/> <!-- [h]:[m]:[s] [P]  or  [h]:[m]:[s] [P,2-2]  or  [H]:[m]:[s] -->
+    <!-- [M]/[D]/[Y]  or [D]/[M]/[Y] or [D].[M].[Y]-->
+    <property as="xs:string"  name="oxf.xforms.format.input.date"                           value="[M]/[D]/[Y]"/>
+    <!-- [h]:[m]:[s] [P,*-2]  or  [h]:[m]:[s] [P,2-2]  or  [H]:[m]:[s] -->
+    <property as="xs:string"  name="oxf.xforms.format.input.time"                           value="[h]:[m]:[s] [P,*-2]"/>
 
     <!-- Other XForms options -->
     <property as="xs:string"  name="oxf.xforms.order"                                       value="label control help alert hint"/>
@@ -80,30 +94,38 @@
     <property as="xs:boolean" name="oxf.xforms.local-submission-include"                    value="false"/>
     <property as="xs:boolean" name="oxf.xforms.local-instance-include"                      value="false"/>
     <property as="xs:string"  name="oxf.xforms.forward-submission-headers"                  value="Orbeon-Client"/>
-    <property as="xs:integer" name="oxf.xforms.submission-poll-delay"                       value="10000"/>
+    <property as="xs:integer" name="oxf.xforms.submission-poll-delay"                       value="2000"/>
     <property as="xs:boolean" name="oxf.xforms.ajax.show-loading-icon"                      value="true"/>
     <property as="xs:integer" name="oxf.xforms.ajax.update.full.threshold"                  value="20"/>
     <property as="xs:boolean" name="oxf.xforms.gzip-state"                                  value="true"/>
+    <property as="xs:string"  name="oxf.xforms.hint.appearance"                             value="inline"/>
+    <property as="xs:string"  name="oxf.xforms.help.appearance"                             value="dialog"/>
 
-    <property as="xs:boolean"  name="oxf.xforms.minimal-resources"                          value="true"/>
-    <property as="xs:boolean"  name="oxf.xforms.combine-resources"                          value="true"/>
-    <property as="xs:boolean"  name="oxf.xforms.cache-combined-resources"                   value="false"/>
-    <property as="xs:boolean"  name="oxf.xforms.resources.javascript-at-bottom"             value="true"/>
-    <property as="xs:string"   name="oxf.xforms.resources.baseline"                         value="fr:button fr:tabview fr:autocomplete"/>
+    <property as="xs:boolean" name="oxf.xforms.minimal-resources"                          value="true"/>
+    <property as="xs:boolean" name="oxf.xforms.combine-resources"                          value="true"/>
+    <property as="xs:boolean" name="oxf.xforms.cache-combined-resources"                   value="false"/>
+    <property as="xs:boolean" name="oxf.xforms.resources.javascript-at-bottom"             value="true"/>
+    <property as="xs:boolean" name="oxf.xforms.resources.encode-version"                   value="true"/>
+    <property as="xs:string"  name="oxf.xforms.resources.baseline">
+        fr:button fr:tabview fr:autocomplete
+    </property>
 
     <property as="xs:boolean" name="oxf.xforms.expose-xpath-types"                          value="false"/>
     <property as="xs:boolean" name="oxf.xforms.session-heartbeat"                           value="true"/>
     <property as="xs:boolean" name="oxf.xforms.host-language-avts"                          value="true"/>
-    <property as="xs:string"  name="oxf.xforms.additional-avt-element-namespaces"           value=""/> <!-- space separated list of element namespaces that can contain avts in their attributes1 -->
-    <property as="xs:string"  name="oxf.xforms.additional-ref-id-attribute-names"           value=""/> <!-- space separated list of attribute names that contain references to id's -->
+    <!-- Space-separated list of element namespaces that can contain avts in their attributes1 -->
+    <property as="xs:string"  name="oxf.xforms.additional-avt-element-namespaces"           value=""/>
+    <!-- Space-separated list of attribute names that contain references to id's -->
+    <property as="xs:string"  name="oxf.xforms.additional-ref-id-attribute-names"           value=""/>
     <property as="xs:boolean" name="oxf.xforms.noscript"                                    value="false"/>
-    <property as="xs:boolean" name="oxf.xforms.noscript-support"                            value="true"/>
+    <property as="xs:boolean" name="oxf.xforms.noscript-support"                            value="false"/>
+    <property as="xs:string"  name="oxf.xforms.noscript-template"                           value="static"/>
     <property as="xs:boolean" name="oxf.xforms.async-portlet-load"                          value="false"/>
     <property as="xs:boolean" name="oxf.xforms.datepicker.navigator"                        value="true"/>
     <property as="xs:boolean" name="oxf.xforms.datepicker.two-months"                       value="false"/>
     <property as="xs:boolean" name="oxf.xforms.show-error-dialog"                           value="true"/>
     <property as="xs:integer" name="oxf.xforms.show-recoverable-errors"                     value="0"/>
-    <property as="xs:boolean" name="oxf.xforms.ignore-dynamic-mip-xpath-errors"             value="false"/>
+    <property as="xs:boolean" name="oxf.xforms.fatal-errors-during-initialization"          value="true"/>
 
     <property as="xs:integer" name="oxf.xforms.internal-short-delay"                        value="100"/>
     <property as="xs:integer" name="oxf.xforms.delay-before-incremental-request"            value="500"/>
@@ -112,13 +134,64 @@
     <property as="xs:integer" name="oxf.xforms.delay-before-ajax-timeout"                   value="30000"/>
     <property as="xs:integer" name="oxf.xforms.delay-before-upload-progress-refresh"        value="2000"/>
 
-    <property as="xs:string"  name="oxf.xforms.client.events.mode"                          value="default"/>   <!-- default | deferred -->
+    <property as="xs:string"  name="oxf.xforms.login-page-detection-regexp"                 value=""/>
+    <!-- default | deferred -->
+    <property as="xs:string"  name="oxf.xforms.client.events.mode"                          value="default"/>
     <property as="xs:string"  name="oxf.xforms.client.events.filter"                        value=""/>
-    <property as="xs:string"  name="oxf.xforms.xhtml-layout"                                value="span"/>      <!-- span | nospan (nospan is deprecated since 2012-03-30) -->
     <property as="xs:integer" name="oxf.xforms.retry.delay-increment"                       value="5000"/>
     <property as="xs:integer" name="oxf.xforms.retry.max-delay"                             value="30000"/>
     <property as="xs:boolean" name="oxf.xforms.use-aria"                                    value="false"/>
-    <property as="xs:boolean" name="oxf.xforms.xforms11-switch"                             value="false"/>     <!-- default will switch to true at some point -->
+    <property as="xs:boolean" name="oxf.xforms.xforms11-switch"                             value="false"/>
+
+    <property as="xs:string"  name="oxf.xforms.location-mode"                               value="none"/>
+
+    <property as="xs:string"  name="oxf.xforms.readonly-appearance.static.select"           value="full"/>
+    <property as="xs:string"  name="oxf.xforms.readonly-appearance.static.select1"          value="full"/>
+
+    <!-- Whitespace handling for XForms documents -->
+    <property as="xs:string"  name="oxf.xforms.whitespace.base.default"                     value="normalize"/>
+    <property as="xs:string"  name="oxf.xforms.whitespace.base.normalize">
+        xf|model,
+        xbl|xbl
+    </property>
+    <property as="xs:string"  name="oxf.xforms.whitespace.base.preserve">
+        xf|instance > *,
+        xf|var,
+        xxf|var,
+        xf|variable,
+        xxf|variable,
+        exf|variable,
+        xf|setvalue,
+        xf|value,
+        xxf|sequence,
+        xxf|script,
+        xf|action[type=xpath],
+        xs|schema
+    </property>
+    <property as="xs:string"  name="oxf.xforms.whitespace.base.collapse">
+        xf|label,
+        xf|help,
+        xf|hint,
+        xf|alert,
+        xf|message,
+        xbl|template,
+        xxbl|global
+    </property>
+    <property as="xs:string"  name="oxf.xforms.whitespace.html.default"                     value="normalize"/>
+    <property as="xs:string"  name="oxf.xforms.whitespace.html.normalize">
+        xh|html
+    </property>
+    <property as="xs:string"  name="oxf.xforms.whitespace.html.preserve">
+        xh|pre,
+        xh|textarea,
+        xh|script,
+        xh|style,
+        xh|template
+    </property>
+    <property as="xs:string"  name="oxf.xforms.whitespace.html.collapse">
+        xh|title,
+        xh|body
+    </property>
 
     <!-- Properties for XBL components which will eventually be moved inside the component to keep encapsulation -->
     <property as="xs:string"  name="oxf.xforms.xbl.fr.map.key"                              value=""/>
@@ -128,11 +201,13 @@
     <property as="xs:integer" name="oxf.xforms.xbl.fr.autocomplete.max-results-displayed"   value="10"/>
 
     <property as="xs:string"  name="oxf.xforms.xbl.fr.currency.prefix"                      value="$"/>
+    <property as="xs:string"  name="oxf.xforms.xbl.fr.currency.suffix"                      value=""/>
     <property as="xs:string"  name="oxf.xforms.xbl.fr.currency.digits-after-decimal"        value="2"/>
     <property as="xs:string"  name="oxf.xforms.xbl.fr.currency.decimal-separator"           value="."/>
     <property as="xs:string"  name="oxf.xforms.xbl.fr.currency.grouping-separator"          value=","/>
 
     <property as="xs:string"  name="oxf.xforms.xbl.fr.number.prefix"                        value=""/>
+    <property as="xs:string"  name="oxf.xforms.xbl.fr.number.suffix"                        value=""/>
     <property as="xs:string"  name="oxf.xforms.xbl.fr.number.digits-after-decimal"          value="0"/>
     <property as="xs:string"  name="oxf.xforms.xbl.fr.number.decimal-separator"             value="."/>
     <property as="xs:string"  name="oxf.xforms.xbl.fr.number.grouping-separator"            value=","/>
@@ -141,18 +216,24 @@
 
     <property as="xs:boolean" name="oxf.xforms.xbl.fr.accordion.open-closes-others"         value="false"/>
 
-    <property as="xs:boolean" name="oxf.xforms.xbl.fr.tabview.tab-changes-context"          value="true"/>
-
     <property as="xs:integer" name="oxf.xforms.xbl.fr.expandable-output.max-characters"     value="60"/>
     <property as="xs:integer" name="oxf.xforms.xbl.fr.expandable-output.tolerance"          value="20"/>
+    <property as="xs:string"  name="oxf.xforms.xbl.fr.dropdown-date.start-year"             value="1970"/>
+    <property as="xs:string"  name="oxf.xforms.xbl.fr.dropdown-date.end-year">
+        year-from-date(current-date())
+    </property>
 
     <!-- Automatically search for XBL components in fr:* namespace -->
-    <property as="xs:string"  name="oxf.xforms.xbl.mapping.orbeon"                          value="http://orbeon.org/oxf/xml/form-runner"/>
+    <property as="xs:string"  name="oxf.xforms.xbl.mapping.orbeon">
+        http://orbeon.org/oxf/xml/form-runner
+    </property>
 
     <property as="xs:boolean" name="oxf.epilogue.xforms.preprocessing"                      value="false"/>
     <property as="xs:anyURI"  name="oxf.epilogue.xforms.preprocessing.uri"                  value=""/>
     <property as="xs:boolean" name="oxf.epilogue.xforms.inspector"                          value="false"/>
-    <property as="xs:string"  name="oxf.xforms.xbl.fr.spell-checker.service"                value="https://www.google.com/tbproxy/spell?lang=en&amp;hl=en"/>
+    <property as="xs:string"  name="oxf.xforms.xbl.fr.spell-checker.service">
+        https://www.google.com/tbproxy/spell?lang=en&amp;hl=en
+    </property>
     <property as="xs:boolean" name="oxf.xforms.xbl.fr.datatable.init-in-viewport"           value="false"/>
 
     <!--<property as="xs:NCName"  name="oxf.xforms.pipeline.trace.class"                        value="org.orbeon.oxf.processor.trace.StdOutTrace"/>-->

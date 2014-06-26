@@ -1,0 +1,481 @@
+// Copyright (C) 2012 Orbeon, Inc.
+//
+// This program is free software; you can redistribute it and/or modify it under the terms of the
+// GNU Lesser General Public License as published by the Free Software Foundation; either version
+// 2.1 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+// without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+
+@error: #B94A48;
+@warning: lighten(@orange, 15%);
+@info: @textColor;
+
+@import (reference) "bootstrap-src/less/variables";
+@import (reference) "bootstrap-src/less/mixins";
+@import (reference) "form-runner-common";
+
+body.orbeon { background-color: @frBackground }
+
+.orbeon {
+
+    // ***** Headings (titles and sections) ****************************************************************************
+    h2, h3 {
+        #gradient > .vertical(#fff, #eee);
+        margin: 0;
+    }
+
+    h2, h3, h4, h5, h6 {
+        text-align: left;
+        font-weight: normal;
+        padding: 0;
+        color: @frHeaderColor;
+    }
+
+    h2 {
+        font-size: @frSectionTitleHeight;
+        line-height: @frSectionTitleLineHeight;
+    }
+
+    h3, h4 {
+        font-size: 110%;
+        line-height: 135%;
+    }
+
+    // ***** Controls***************************************************************************************************
+
+    // Copied over Bootstrap styles as we can't reuse them simply as mixins
+    // Ideally this would be in box-select.less
+    .fr-view .xbl-fr-box-select .xforms-select-appearance-full .xforms-items {
+        .border-radius(@inputBorderRadius);
+        background-color: @inputBackground;
+        border: 1px solid @inputBorder;
+        .box-shadow(inset 0 1px 1px rgba(0,0,0,.075));
+        padding: 4px 6px;
+        &:focus {
+            border-color: rgba(82, 168, 236, .8);
+            outline: 0;
+            outline: thin dotted  \9; // IE6-9
+            .box-shadow(~"inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(82,168,236,.6)");
+        }
+    }
+
+    .xforms-noscript {
+        button.btn-link {
+            text-shadow: none;
+            margin-top: 0;
+            button { height: auto; }
+        }
+
+        .xforms-help-panel .xforms-help-group { list-style-type: square }
+    }
+
+    // ***** Other *****************************************************************************************************
+
+    .fr-orbeon-version {
+        text-align: center;
+        font-size: smaller;
+        padding: 10px;
+        color: #6E6E6E;
+    }
+
+    .fr-explanation .xforms-output {
+        display: block;
+        font-style: italic;
+        padding: 1em;
+        background-color: #f8f8f8
+    }
+
+    .xforms-alert.xforms-active {
+        font-size: 13px;
+        .border-radius(3px);
+    }
+
+    .xforms-invalid > .xforms-alert.xforms-active, .xforms-alert.xforms-active.xforms-invalid {
+        color: @error;
+    }
+
+    .xforms-warning > .xforms-alert.xforms-active, .xforms-alert.xforms-active.xforms-warning {
+        color: @warning;
+    }
+
+    .xforms-info > .xforms-alert.xforms-active, .xforms-alert.xforms-active.xforms-info {
+        color: @info;
+    }
+
+    .xforms-hint-appearance-inline .xforms-hint {
+        display: block;
+        clear: both;
+        font-size: smaller;
+        margin-top: .2em;
+        margin-left: 0;// used to have margin here but with new colors no margin seems better
+        width: 100%;
+        color: #6E6E6E;
+    }
+
+    // Navbar
+    .navbar {
+        .fr-language-choice, .fr-noscript-choice, .fr-goto-content {
+            color: @navbarLinkColorActive;
+            font-size: 85%;
+            text-align: right;
+            a, button.btn-link { color: @navbarLinkColor }
+        }
+
+        .fr-language-choice, .fr-noscript-choice, .fr-status-icons {
+            float: right;
+        }
+
+        .fr-goto-content {
+            float: left;
+        }
+
+        // IE7: https://github.com/orbeon/orbeon-forms/issues/1042
+        .fr-status-icons {
+            *margin-top: (@navbarHeight - @frIconHeight) / 2;
+        }
+
+        &.navbar-inverse {
+            .fr-language-choice, .fr-noscript-choice, .fr-goto-content {
+                color: @frNavBarTextColor;
+                a, button.btn-link { color: @navbarInverseLinkColor }
+            }
+        }
+    }
+
+    // Add a star before the label of required fields, but only in new/edit modes
+    // NOTE: Also cover Form Builder classes here instead of form-builder.css, so we don't miss changes done here
+    .fr-mode-new, .fr-mode-edit, .fr-mode-test, .xforms-dialog {
+        .xforms-required, .fb-required-true {           // also for Form Builder at edit time
+            .xforms-label {
+                background-position: 0 2px;             // lower the star, so it doesn't sit "too high" relative to the text of the label
+                background-repeat: no-repeat;
+                padding-left: 12px;
+            }
+        }
+
+        .xforms-required .xforms-label {
+            background-image: url(asterisk-bw.png);     // black and white when filled
+        }
+
+        .xforms-required.xforms-empty, .fb-required-true {
+            .xforms-label {
+                background-image: url(asterisk.png);    // red when empty
+            }
+        }
+    }
+
+    // Colored border for invalid fields
+    // NOTE: We don't use this style for required fields, as we are now using an asterisk next to the label
+    .xforms-invalid.xforms-visited .xforms-input-input,
+        .xforms-invalid.xforms-visited input[type = 'password'],
+        textarea.xforms-invalid.xforms-visited {
+        border-color: @error
+    }
+
+    // Upload control information
+    .xforms-upload-info { background-color: transparent }
+
+    // Table of contents
+    .fr-toc a { text-decoration: none }
+
+    // Error summary
+    .fr-view .xbl-fr-error-summary {
+        .fr-error-title {
+            padding: 5px 10px;
+            color: white;
+            .border-top-left-radius(4px);
+            .border-top-right-radius(4px);
+
+            // Slightly less ugly with IE7
+            *padding: 0 5px;
+            *margin: 0;
+        }
+
+        // Multiple levels can be mixed so make sure the strongest wins
+        .fr-level-info    .fr-error-title { background-color: @info; }
+        .fr-level-warning .fr-error-title { background-color: @warning; }
+        .fr-level-error   .fr-error-title { background-color: @error; }
+
+         // Override defaults of XBL component
+        .fr-error-alert-error   { color: @error }
+        .fr-error-alert-warning { color: @warning }
+        .fr-error-alert-info    { color: @info }
+
+        .fr-error-alert .xforms-output-output {
+            display: inline-block;
+            vertical-align: top;
+            ul { list-style-type: square }
+        }
+
+        table {
+            margin: 2px;
+
+            td {
+                padding: 2px 10px;
+                vertical-align: top;
+
+                ul {
+                    margin-bottom: 0;
+                }
+            }
+            .fr-error-number {
+                text-align: right;
+                .xforms-output-output:after { content: "." }
+            }
+        }
+
+        // Mix-in a border into the error summary body
+        .fr-error-summary-body {
+            .fr-border;
+        }
+    }
+
+    // Section
+    .xbl-fr-section {
+
+        background-color: white;
+
+        .fr-section-title {
+
+            .fr-section-label {
+                display: block;                                 // So the line expands all the way to the right
+                padding-left: @frSectionTitleLeftPadding;
+                // NOTE: Was meant to make title take space even when empty, but this doesn't seem to work. However,
+                // removing this breaks multi-line titles. Need a better solution probably.
+                height: 100%;
+                overflow: hidden;           // Avoid wrapping under help image for long title
+                font-size: @frSectionTitleHeight;
+
+                // Case of collapsable section
+                a {
+                    text-decoration: none;
+                    color: @frHeaderColor;      // Don't use the default styling for anchors
+                                                // For positioning of the .fb-section-label-editor-click-interceptor, positioned relative to the anchor:
+                    display: block;             // - So it extends all the way to the right
+                    min-height: @frSectionTitleLineHeight;
+                    overflow: hidden;           // For correct positioning of click interceptor; see issue #636
+                }
+
+                // Override default label styles
+                label {
+                    font-size: @frSectionTitleHeight;
+                    line-height: @frSectionTitleLineHeight;
+                    margin-bottom: 0;
+                }
+
+                &.fr-section-open, &.fr-section-closed {
+                    background-repeat: no-repeat;
+                    background-position: 5px (@frSectionTitleLineHeight + 1 - @frSectionTitleIconWidth) / 2; // To vertically align on the middle of the first line of the section title
+                                                                                                             // We use an offset in pixels, instead of 50%, for multi-line titles, for which we want the open/close
+                                                                                                             // to be aligned on the first line, not the middle of the section area
+                    cursor: pointer;            // So the "hand" cursor shows wherever the mouse is on the line, not just on the text of the title
+                }
+                &.fr-section-open {
+                    background-image: url(arrow-down.png);
+                }
+                &.fr-section-closed {
+                    background-image: url(arrow-right.png);
+                }
+            }
+        }
+    }
+
+    // Add background to static read-only fields and special output fields
+    .xforms-static, .fr-static { min-height: 1em }
+    .fr-mode-view {
+        .fr-grid-content { margin-bottom: 1em }
+        .fr-repeat .fr-grid-content {
+            background-color: transparent;
+            margin-bottom: 0;
+        }
+    }
+
+    .table th { text-align: center }
+
+    // If there is a group with a label in a grid th, remove the border added by Bootstrap
+    .fr-grid {
+        th legend.xforms-label {
+            border-bottom: none;
+            margin: 0;
+        }
+    }
+
+    .fr-mode-view, .fr-mode-pdf, .fr-mode-email {
+
+        .xforms-static > label {
+            cursor: default;
+        }
+
+        .xforms-textarea.xforms-static pre, .xforms-mediatype-text-html.xforms-static {
+            cursor: not-allowed;
+        }
+        .xforms-select-appearance-full, .xforms-select1-appearance-full, .xforms-input.xforms-type-boolean {
+            &.xforms-static {
+                .xforms-selected, .xforms-deselected {
+                    display: block;
+                    min-height: @baseLineHeight;
+                    background-size: 14px;
+                    background-repeat: no-repeat;
+                    background-position: 0 3px;
+                    cursor: not-allowed;
+
+                    label {
+                        cursor: not-allowed;
+                    }
+                }
+                .xforms-selected {
+                    background-image: url("images/glyphicons/checkbox-selected.png");
+                }
+                .xforms-deselected {
+                    background-image: url("images/glyphicons/checkbox-deselected.png");
+                }
+            }
+        }
+
+        .xbl-fr-box-select .xforms-static.xforms-select-appearance-full .xforms-items {
+            border: none;
+            height: auto; // https://github.com/orbeon/orbeon-forms/issues/1597
+            overflow-y: visible; // shouldn't overflow with above height: auto
+            .box-shadow(none);
+            padding: 0;
+        }
+    }
+}
+
+// ***** Retina displays ***********************************************************************************************
+
+@media only screen and (-webkit-min-device-pixel-ratio: 2),
+       only screen and (min--moz-device-pixel-ratio: 2),
+       only screen and (min-resolution: 2dppx),
+       only screen and (min-resolution: 192dpi) {
+    .orbeon {
+        .fr-mode-view, .fr-mode-pdf, .fr-mode-email {
+            .xforms-select-appearance-full, .xforms-select1-appearance-full, .xforms-input.xforms-type-boolean {
+                &.xforms-static {
+                    .xforms-selected {
+                        background-image: url("images/glyphicons/checkbox-selected-2x.png");
+                    }
+                    .xforms-deselected {
+                        background-image: url("images/glyphicons/checkbox-deselected-2x.png");
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ***** Print and PDF *************************************************************************************************
+
+@media print {
+
+    html {
+        &, body.orbeon { background-color: white; background-image: none }
+        font-family: @baseFontFamily;
+        body.orbeon { padding-top: 0 } // no need for padding because navbar is position: static
+    }
+
+    .orbeon {
+
+        .fr-mode-view, .fr-mode-pdf, .fr-mode-email {
+            .xforms-select-appearance-full, .xforms-select1-appearance-full, .xforms-input.xforms-type-boolean {
+                &.xforms-static {
+                    // NOTE: The !important seems needed with Flying Saucer, who knows why.
+                    .xforms-selected, .xforms-deselected {
+                        background-size: 14px;
+                        background-repeat: no-repeat !important;
+                        background-position: 0 3px !important;
+                    }
+
+                    .xforms-selected {
+                        background-image: url("images/glyphicons/checkbox-selected-hd.png") !important;
+                    }
+                    .xforms-deselected {
+                        background-image: url("images/glyphicons/checkbox-deselected-hd.png") !important;
+                    }
+                }
+            }
+        }
+
+        // All regular links with href
+        a[href] {
+            text-decoration: underline;
+            &:link, &:visited {
+                color: @linkColor !important;
+            }
+        }
+
+        // In particular section titles have hyperlinks like this
+        a[href="#"] {
+            text-decoration: none;
+            &:link, &:visited {
+                color: @textColor !important;
+            }
+        }
+
+        a, button.btn-link { color: black; text-decoration: none }
+
+        .container {
+            width: 100%;
+        }
+
+        .fr-body {
+            border: none;
+            .box-shadow(0 1px 3px rgba(0,0,0,.055));
+        }
+
+        h2 {
+            border-bottom: 1px solid darken(@wellBackground, 7%);
+            color: black;
+        }
+
+        // Sections
+        .xbl-fr-section {
+            .fr-section-title {
+                background: none;
+                .fr-section-label {
+                    padding-left: 0;            // remove padding as we don't have section arrows
+                    &.fr-section-open, &.fr-section-closed {
+                        background-image: none; // remove section arrows
+                    }
+
+                    a {
+                        color: black;
+                    }
+                }
+            }
+        }
+
+        // Navbar
+        .navbar {
+            position: static; // override Bootstrap otherwise navbar appears on all pages
+
+            .navbar-inner {
+                background-color: white;
+                border-bottom: 1px solid darken(@wellBackground, 7%);
+                padding-left: 0;
+
+                .container h1 {
+                    font-size: 24px;
+                    color: black;
+                }
+
+                .fr-language-choice {
+                    display: none;
+                }
+
+                .brand {
+                    color: @frHeaderColor;
+                    font-size: 25px;
+                }
+            }
+        }
+
+        .fr-form-description {
+            display: none;
+        }
+    }
+}

@@ -31,22 +31,8 @@ class RTE extends Control
     init: (container) ->
         super container
 
-        if Utils.isNewXHTMLLayout()
-            # In span mode, get textarea under container and keep current structure
-            textarea = @container.getElementsByTagName("textarea")[0]
-        else
-            # In nospan mode, insert newly created container
-            textarea = @container
-            @container = document.createElement "span"
-            YD.insertAfter @container, textarea
-            @container.appendChild textarea
-            # Move classes on the container created by YUI
-            @container.className = textarea.className
-            textarea.className = ""
-            # Move the id to the container, and add -textarea to the id of the textarea
-            containerId = textarea.id
-            textarea.id = textarea.id + "-textarea"
-            @container.id = containerId
+        # In span mode, get textarea under container and keep current structure
+        textarea = @container.getElementsByTagName("textarea")[0]
         # Make sure that textarea is not disabled unless readonly, otherwise RTE renders it in read-only mode
         textarea.disabled = YD.hasClass @container, "xforms-readonly"
         # Create RTE object
@@ -98,6 +84,9 @@ class RTE extends Control
         @onRendered () =>
             if (not YD.hasClass(@container, "xforms-incremental") || ORBEON.xforms.Globals.currentFocusControlId != @container.id)
                 @yuiRTE.setEditorHTML(newValue)
+                # Set new server value; if we don't value server value for new controls will be empty as it wasn't
+                # available at the time the control was created
+                ServerValueStore.set(@container.id, @yuiRTE.getEditorHTML())
 
     getValue: () ->
         value = @yuiRTE.getEditorHTML()

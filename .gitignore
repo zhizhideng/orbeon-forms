@@ -1,3 +1,6 @@
-/build
-/doc
-src/resources-packaged/config/license.xml
+build/
+tmp/
+target/
+build-local.properties
+src/resources-local/
+tmp

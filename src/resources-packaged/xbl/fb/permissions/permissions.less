@@ -1,0 +1,41 @@
+// Copyright (C) 2011 Orbeon, Inc.
+//
+// This program is free software; you can redistribute it and/or modify it under the terms of the
+// GNU Lesser General Public License as published by the Free Software Foundation; either version
+// 2.1 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+// without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+
+@import (reference) "../../../../resources/apps/fr/style/bootstrap-src/less/variables";
+@import (reference) "../../../../resources/apps/fr/style/bootstrap-src/less/mixins";
+@import (reference) "../../../../resources/apps/fr/style/bootstrap-src/less/forms";
+@import (reference) "../../../../resources/apps/fr/style/form-runner-bootstrap-override";
+
+.orbeon {
+    .xforms-dialog.fb-permissions-dialog {
+        width: 450px;                                   // Large dialog, to have space for editing roles
+        .xforms-select-appearance-full {
+            label {
+                .checkbox.inline();                     // Re-use Bootstrap style for inline checkboxes
+                white-space: nowrap;                    // Not sure why, but browser splits text in inline-block over multiple lines even if not needed
+                padding-top: 0;
+            }
+        }
+        .fb-permissions-repeat {
+            margin-top: 1em;                            // Spacing before the roles table
+            width: 100%;                                // Table to use the whole width of the dialog
+            .fb-role { width: 100% }                    // First column with the input fields to use all the remaining space
+            .xforms-input input { width: 100% }         // Input field to use all the space in the column
+            th { font-weight: bold }
+            th, td {
+                padding-right: 10px;                    // Padding in cells of table
+                height: @controlsHeight;                // So the lines all have the same height
+            }
+            i.disabled { .opacity(40) }
+        }
+    }
+}

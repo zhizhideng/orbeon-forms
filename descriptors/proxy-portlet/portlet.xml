@@ -1,19 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <portlet-app version="2.0" xmlns="http://java.sun.com/xml/ns/portlet/portlet-app_2_0.xsd">
 
     <!-- Orbeon Forms proxy portlet (to access a remote Form Runner instance) -->
     <portlet>
         <portlet-name>orbeon-forms-proxy-portlet</portlet-name>
         <portlet-class>org.orbeon.oxf.portlet.OrbeonProxyPortlet</portlet-class>
-        <supports>
-            <mime-type>text/html</mime-type>
-            <portlet-mode>view</portlet-mode>
-            <portlet-mode>edit</portlet-mode>
-        </supports>
-
-        <portlet-info>
-            <title>Form Runner</title>
-        </portlet-info>
-
         <!-- Initialization parameters -->
         <init-param>
             <name>form-runner-url</name>
@@ -35,6 +26,61 @@
             <name>read-only</name>
             <value>false</value>
         </init-param>
+        <init-param>
+            <name>send-liferay-language</name>
+            <value>false</value>
+        </init-param>
+        <init-param>
+            <name>send-liferay-user</name>
+            <value>false</value>
+        </init-param>
+        
+        <supports>
+            <mime-type>text/html</mime-type>
+            <portlet-mode>view</portlet-mode>
+            <portlet-mode>edit</portlet-mode>
+        </supports>
+
+        <portlet-info>
+            <title>Form Runner</title>
+        </portlet-info>
+        
     </portlet>
+
+    <!-- Define the Orbeon portlet XForms filter (for handling XForms within your own portlets) -->
+    <filter>
+        <filter-name>orbeon-forms-portlet-xforms-filter</filter-name>
+        <filter-class>org.orbeon.oxf.portlet.OrbeonPortletXFormsFilter</filter-class>
+        <lifecycle>RENDER_PHASE</lifecycle>
+        <lifecycle>ACTION_PHASE</lifecycle>
+        <lifecycle>RESOURCE_PHASE</lifecycle>
+        <init-param>
+            <name>oxf.xforms.renderer.context</name>
+            <value>/orbeon</value>
+        </init-param>
+    </filter>
+
+    <!-- Uncomment and configure this to map the Orbeon portlet XForms filter -->
+    <!--
+    <filter-mapping>
+        <filter-name>orbeon-forms-portlet-xforms-filter</filter-name>
+        <portlet-name>orbeon-sample-xforms-portlet</portlet-name>
+    </filter-mapping>
+    -->
+
+    <!-- Sample separate deployment portlet (for Orbeon Forms running directly within a portlet) -->
+    <!--
+    <portlet>
+        <portlet-name>orbeon-sample-xforms-portlet</portlet-name>
+        <portlet-class>org.orbeon.oxf.portlet.OrbeonPortletFilterSample</portlet-class>
+        <supports>
+            <mime-type>text/html</mime-type>
+            <portlet-mode>view</portlet-mode>
+        </supports>
+        <portlet-info>
+            <title>Orbeon Forms Sample XForms Portlet</title>
+        </portlet-info>
+    </portlet>
+    -->
 
 </portlet-app>

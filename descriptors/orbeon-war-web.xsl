@@ -7,13 +7,14 @@
     <xsl:param name="target"/>
     <xsl:param name="build-root"/>
     <xsl:param name="version"/>
+    <xsl:param name="edition"/>
 
     <xsl:output method="xml" indent="yes" xslt:indent-amount="4"/>
 
     <xsl:template match="/">
         <web-app xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                  version="2.4" xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
-            <display-name>Orbeon Forms <xsl:value-of select="$version"/></display-name>
+            <display-name>Orbeon Forms</display-name>
             <description>
         Orbeon Forms is an open source, standard-based web forms solution, which
         includes Form Builder, a WYSIWYG browser-based authoring tool, and Form
@@ -34,22 +35,38 @@
                 <xsl:with-param name="content">
                     <xsl:comment>Filesystem resource managers</xsl:comment>
                     <context-param>
+                        <param-name>oxf.resources.priority.0</param-name>
+                        <param-value>org.orbeon.oxf.resources.FilesystemResourceManagerFactory</param-value>
+                    </context-param>
+                    <context-param>
+                        <param-name>oxf.resources.priority.0.oxf.resources.filesystem.sandbox-directory</param-name>
+                        <param-value><xsl:value-of select="$build-root"/>/src/resources-local</param-value>
+                    </context-param>
+                    <context-param>
                         <param-name>oxf.resources.priority.1</param-name>
                         <param-value>org.orbeon.oxf.resources.FilesystemResourceManagerFactory</param-value>
                     </context-param>
                     <context-param>
                         <param-name>oxf.resources.priority.1.oxf.resources.filesystem.sandbox-directory</param-name>
+                        <param-value><xsl:value-of select="$build-root"/>/src/test/resources</param-value>
+                    </context-param>
+                    <context-param>
+                        <param-name>oxf.resources.priority.2</param-name>
+                        <param-value>org.orbeon.oxf.resources.FilesystemResourceManagerFactory</param-value>
+                    </context-param>
+                    <context-param>
+                        <param-name>oxf.resources.priority.2.oxf.resources.filesystem.sandbox-directory</param-name>
                         <param-value><xsl:value-of select="$build-root"/>/src/resources</param-value>
                     </context-param>
                 </xsl:with-param>
             </xsl:call-template>
             <xsl:comment>Web application resource manager for resources</xsl:comment>
             <context-param>
-                <param-name>oxf.resources.priority.2</param-name>
+                <param-name>oxf.resources.priority.3</param-name>
                 <param-value>org.orbeon.oxf.resources.WebAppResourceManagerFactory</param-value>
             </context-param>
             <context-param>
-                <param-name>oxf.resources.priority.2.oxf.resources.webapp.rootdir</param-name>
+                <param-name>oxf.resources.priority.3.oxf.resources.webapp.rootdir</param-name>
                 <param-value>/WEB-INF/resources</param-value>
             </context-param>
             <xsl:call-template name="comment">
@@ -58,25 +75,30 @@
                 <xsl:with-param name="content">
                     <xsl:comment>Web application resource manager for packaged resources</xsl:comment>
                     <context-param>
-                        <param-name>oxf.resources.priority.3</param-name>
+                        <param-name>oxf.resources.priority.4</param-name>
                         <param-value>org.orbeon.oxf.resources.FilesystemResourceManagerFactory</param-value>
                     </context-param>
                     <context-param>
-                        <param-name>oxf.resources.priority.3.oxf.resources.filesystem.sandbox-directory</param-name>
+                        <param-name>oxf.resources.priority.4.oxf.resources.filesystem.sandbox-directory</param-name>
                         <param-value><xsl:value-of select="$build-root"/>/src/resources-packaged</param-value>
                     </context-param>
                 </xsl:with-param>
             </xsl:call-template>
             <xsl:comment>Classloader resource manager</xsl:comment>
             <context-param>
-                <param-name>oxf.resources.priority.4</param-name>
+                <param-name>oxf.resources.priority.5</param-name>
                 <param-value>org.orbeon.oxf.resources.ClassLoaderResourceManagerFactory</param-value>
             </context-param>
 
             <xsl:comment>Set run mode ("dev" or "prod")</xsl:comment>
             <context-param>
                 <param-name>oxf.run-mode</param-name>
-                <param-value>prod</param-value>
+                <param-value>
+                    <xsl:choose>
+                        <xsl:when test="$target = 'devel'">dev</xsl:when>
+                        <xsl:otherwise>prod</xsl:otherwise>
+                    </xsl:choose>
+                </param-value>
             </context-param>
 
             <xsl:comment>Set location of properties.xml</xsl:comment>
@@ -94,7 +116,7 @@
             <xsl:comment>Set context listener processors</xsl:comment>
             <xsl:call-template name="comment">
                 <xsl:with-param name="caption" select="'context listener processors'"/>
-                <xsl:with-param name="commented" select="$target = 'war'"/>
+                <xsl:with-param name="commented" select="$target != 'devel'"/>
                 <xsl:with-param name="content">
                     <context-param>
                         <param-name>oxf.context-initialized-processor.name</param-name>
@@ -118,7 +140,7 @@
             <xsl:comment>Set session listener processors</xsl:comment>
             <xsl:call-template name="comment">
                 <xsl:with-param name="caption" select="'session listener processors'"/>
-                <xsl:with-param name="commented" select="$target = 'war'"/>
+                <xsl:with-param name="commented" select="$target != 'devel'"/>
                 <xsl:with-param name="content">
                     <context-param>
                         <param-name>oxf.session-created-processor.name</param-name>
@@ -151,6 +173,10 @@
                             <param-name>oxf.xforms.renderer.context</param-name>
                             <param-value>/orbeon</param-value>
                         </init-param>
+                        <init-param>
+                            <param-name>oxf.xforms.renderer.default-encoding</param-name>
+                            <param-value>UTF-8</param-value>
+                        </init-param>
                     </xsl:with-param>
                 </xsl:call-template>
             </filter>
@@ -161,6 +187,24 @@
                 <dispatcher>REQUEST</dispatcher>
                 <dispatcher>FORWARD</dispatcher>
             </filter-mapping>
+
+            <xsl:call-template name="comment">
+                <xsl:with-param name="caption" select="'eXist security filter'"/>
+                <xsl:with-param name="commented" select="$target = 'devel'"/>
+                <xsl:with-param name="content">
+                    <filter>
+                        <filter-name>orbeon-exist-filter</filter-name>
+                        <filter-class>org.orbeon.oxf.servlet.TokenSecurityFilter</filter-class>
+                    </filter>
+                    <filter-mapping>
+                        <filter-name>orbeon-exist-filter</filter-name>
+                        <url-pattern>/exist/*</url-pattern>
+                        <xsl:comment>Security filter for eXist</xsl:comment>
+                        <dispatcher>REQUEST</dispatcher>
+                        <dispatcher>FORWARD</dispatcher>
+                    </filter-mapping>
+                </xsl:with-param>
+            </xsl:call-template>
 
             <xsl:comment>Orbeon context listener</xsl:comment>
             <listener>
@@ -209,7 +253,7 @@
                 <xsl:comment>Set servlet initialization and destruction listeners</xsl:comment>
                 <xsl:call-template name="comment">
                     <xsl:with-param name="caption" select="'servlet listener processors'"/>
-                    <xsl:with-param name="commented" select="$target = 'war'"/>
+                    <xsl:with-param name="commented" select="$target != 'devel'"/>
                     <xsl:with-param name="content">
                         <init-param>
                             <param-name>oxf.servlet-initialized-processor.name</param-name>
@@ -279,15 +323,32 @@
                 </init-param>
             </servlet>
 
+            <xsl:call-template name="comment">
+                <xsl:with-param name="caption" select="'Experimental MongoDB Form Runner persistence implementation'"/>
+                <xsl:with-param name="commented" select="$target != 'devel'"/>
+                <xsl:with-param name="content">
+                    <servlet>
+                        <servlet-name>form-runner-mongodb-servlet</servlet-name>
+                        <servlet-class>org.orbeon.oxf.fr.mongodb.MongoDBPersistence</servlet-class>
+                    </servlet>
+                </xsl:with-param>
+            </xsl:call-template>
+
             <servlet>
                 <servlet-name>display-chart-servlet</servlet-name>
                 <servlet-class>org.jfree.chart.servlet.DisplayChart</servlet-class>
             </servlet>
 
-            <servlet>
-                <servlet-name>exist-xmlrpc-servlet</servlet-name>
-                <servlet-class>org.exist.xmlrpc.RpcServlet</servlet-class>
-            </servlet>
+            <xsl:call-template name="comment">
+                <xsl:with-param name="caption" select="'eXist XMLRPC support'"/>
+                <xsl:with-param name="commented" select="$target != 'devel'"/>
+                <xsl:with-param name="content">
+                    <servlet>
+                        <servlet-name>exist-xmlrpc-servlet</servlet-name>
+                        <servlet-class>org.exist.xmlrpc.RpcServlet</servlet-class>
+                    </servlet>
+                </xsl:with-param>
+            </xsl:call-template>
 
             <servlet>
                 <servlet-name>exist-rest-servlet</servlet-name>
@@ -306,34 +367,16 @@
                 </init-param>
             </servlet>
 
-            <servlet>
-                <servlet-name>exist-webdav-servlet</servlet-name>
-                <servlet-class>org.exist.http.servlets.WebDAVServlet</servlet-class>
-                <init-param>
-                    <param-name>authentication</param-name>
-                    <param-value>basic</param-value>
-                </init-param>
-            </servlet>
-
-            <servlet>
-                <servlet-name>exist-atom-servlet</servlet-name>
-                <servlet-class>org.exist.atom.http.AtomServlet</servlet-class>
-                <init-param>
-                    <param-name>authentication</param-name>
-                    <param-value>basic</param-value>
-                </init-param>
-            </servlet>
-
             <xsl:call-template name="comment">
-                <xsl:with-param name="caption" select="'SQL examples'"/>
-                <xsl:with-param name="commented" select="$target = 'war'"/>
+                <xsl:with-param name="caption" select="'eXist WebDAV support'"/>
+                <xsl:with-param name="commented" select="$target != 'devel'"/>
                 <xsl:with-param name="content">
                     <servlet>
-                        <servlet-name>hsqldb-servlet</servlet-name>
-                        <servlet-class>org.hsqldb.Servlet</servlet-class>
+                        <servlet-name>exist-webdav-servlet</servlet-name>
+                        <servlet-class>org.exist.http.servlets.WebDAVServlet</servlet-class>
                         <init-param>
-                            <param-name>hsqldb.server.database</param-name>
-                            <param-value>orbeondb</param-value>
+                            <param-name>authentication</param-name>
+                            <param-value>basic</param-value>
                         </init-param>
                     </servlet>
                 </xsl:with-param>
@@ -355,33 +398,39 @@
             </servlet-mapping>
 
             <servlet-mapping>
-                <servlet-name>exist-xmlrpc-servlet</servlet-name>
-                <url-pattern>/exist/xmlrpc</url-pattern>
-            </servlet-mapping>
-
-            <servlet-mapping>
                 <servlet-name>exist-rest-servlet</servlet-name>
                 <url-pattern>/exist/rest/*</url-pattern>
             </servlet-mapping>
 
             <xsl:call-template name="comment">
-                <xsl:with-param name="caption" select="'eXist WebDAV support'"/>
-                <xsl:with-param name="commented" select="$target = 'war'"/>
+                <xsl:with-param name="caption" select="'Experimental MongoDB Form Runner persistence implementation'"/>
+                <xsl:with-param name="commented" select="$target != 'devel'"/>
                 <xsl:with-param name="content">
                     <servlet-mapping>
-                        <servlet-name>exist-webdav-servlet</servlet-name>
-                        <url-pattern>/exist/webdav/*</url-pattern>
+                        <servlet-name>form-runner-mongodb-servlet</servlet-name>
+                        <url-pattern>/fr/service/mongo/*</url-pattern>
                     </servlet-mapping>
                 </xsl:with-param>
             </xsl:call-template>
 
             <xsl:call-template name="comment">
-                <xsl:with-param name="caption" select="'SQL examples'"/>
-                <xsl:with-param name="commented" select="$target = 'war'"/>
+                <xsl:with-param name="caption" select="'eXist XMLRPC support'"/>
+                <xsl:with-param name="commented" select="$target != 'devel'"/>
                 <xsl:with-param name="content">
                     <servlet-mapping>
-                        <servlet-name>hsqldb-servlet</servlet-name>
-                        <url-pattern>/db</url-pattern>
+                        <servlet-name>exist-xmlrpc-servlet</servlet-name>
+                        <url-pattern>/exist/xmlrpc</url-pattern>
+                    </servlet-mapping>
+                </xsl:with-param>
+            </xsl:call-template>
+
+            <xsl:call-template name="comment">
+                <xsl:with-param name="caption" select="'eXist WebDAV support'"/>
+                <xsl:with-param name="commented" select="$target != 'devel'"/>
+                <xsl:with-param name="content">
+                    <servlet-mapping>
+                        <servlet-name>exist-webdav-servlet</servlet-name>
+                        <url-pattern>/exist/webdav/*</url-pattern>
                     </servlet-mapping>
                 </xsl:with-param>
             </xsl:call-template>
@@ -392,40 +441,40 @@
             </servlet-mapping>
 
             <xsl:call-template name="comment">
-                <xsl:with-param name="caption" select="'SQL examples'"/>
-                <xsl:with-param name="commented" select="$target = 'war'"/>
-                <xsl:with-param name="content">
-                    <resource-ref>
-                        <description>DataSource</description>
-                        <res-ref-name>jdbc/db</res-ref-name>
-                        <res-type>javax.sql.DataSource</res-type>
-                        <res-auth>Container</res-auth>
-                    </resource-ref>
-                </xsl:with-param>
-            </xsl:call-template>
-
-            <xsl:call-template name="comment">
-                <xsl:with-param name="caption" select="'authentication example'"/>
-                <xsl:with-param name="commented" select="$target = 'war'"/>
+                <xsl:with-param name="caption" select="'Form Runner authentication'"/>
+                <xsl:with-param name="commented" select="true()"/>
                 <xsl:with-param name="content">
                     <security-constraint>
                         <web-resource-collection>
-                            <web-resource-name>Authentication example</web-resource-name>
-                            <url-pattern>/java-authentication/</url-pattern>
+                            <web-resource-name>Form Runner pages</web-resource-name>
+                            <url-pattern>/fr/*</url-pattern>
                         </web-resource-collection>
                         <auth-constraint>
-                            <role-name>orbeon-admin</role-name>
+                            <role-name>orbeon-user</role-name>
                         </auth-constraint>
+                    </security-constraint>
+                    <security-constraint>
+                        <web-resource-collection>
+                            <web-resource-name>Form Runner services and public pages and resources</web-resource-name>
+                            <url-pattern>/fr/service/*</url-pattern>
+                            <url-pattern>/fr/style/*</url-pattern>
+                            <url-pattern>/fr/not-found</url-pattern>
+                            <url-pattern>/fr/unauthorized</url-pattern>
+                            <url-pattern>/fr/error</url-pattern>
+                            <url-pattern>/fr/login</url-pattern>
+                            <url-pattern>/fr/login-error</url-pattern>
+                        </web-resource-collection>
+                        <!-- No auth-constraint -->
                     </security-constraint>
                     <login-config>
                         <auth-method>FORM</auth-method>
                         <form-login-config>
-                            <form-login-page>/java-authentication/login</form-login-page>
-                            <form-error-page>/java-authentication/login-error</form-error-page>
+                            <form-login-page>/fr/login</form-login-page>
+                            <form-error-page>/fr/login-error</form-error-page>
                         </form-login-config>
                     </login-config>
                     <security-role>
-                        <role-name>orbeon-admin</role-name>
+                        <role-name>orbeon-user</role-name>
                     </security-role>
                 </xsl:with-param>
             </xsl:call-template>

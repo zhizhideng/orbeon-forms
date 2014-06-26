@@ -13,38 +13,39 @@
 -->
 <project name="orbeon" default="orbeon-war" basedir="." xmlns:xdb="http://exist-db.org/ant">
 
-    <!--<echoproperties/>-->
-
+    <property file="build-local.properties"/>
     <property name="project.name" value="orbeon"/>
 
     <!-- set global build.root to be dir containing this file. -->
     <dirname property="build.root" file="${ant.file}"/>
-    <property name="lib.dir" location="lib"/>
     <property name="build.dir" location="build"/>
     <property name="war.dir" value="${build.dir}/${project.name}-war"/>
     <property name="war.inf" value="${war.dir}/WEB-INF"/>
     <property name="war.classes" value="${war.inf}/classes"/>
     <property name="war.lib" value="${war.inf}/lib"/>
     <property name="rsync.dir" value="${build.dir}/rsync"/>
-
     <property name="src.dir" location="src"/>
+    <property name="saxon.jar" value="saxon-9-1-0-8_orbeon_20131113.jar"/>
+    <property name="catalina.home" value=""/>
 
-    <property name="saxon.jar" value="saxon-9-1-0-8_orbeon_20110613.jar"/>
+    <!-- Expose environment variables -->
+    <property environment="env"/>
 
     <!-- Scala tasks -->
     <!-- http://www.scala-lang.org/node/98 -->
     <taskdef resource="scala/tools/ant/antlib.xml">
         <classpath>
-            <pathelement location="${lib.dir}/scala-compiler-2.9.2.jar"/>
-            <pathelement location="${lib.dir}/scala-library-2.9.2.jar"/>
+            <pathelement location="lib/scala-compiler-2.10.3.jar"/>
+            <pathelement location="lib/scala-library-2.10.3.jar"/>
+            <pathelement location="lib/scala-reflect-2.10.3.jar"/>
         </classpath>
     </taskdef>
 
     <!-- JUnit tasks -->
     <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask">
         <classpath>
-            <pathelement location="${lib.dir}/junit-4.11-SNAPSHOT.jar"/>
-            <pathelement location="${lib.dir}/ant-junit-1.7.1.jar"/>
+            <pathelement location="lib/junit-4.11-SNAPSHOT.jar"/>
+            <pathelement location="lib/ant-junit-1.7.1.jar"/>
         </classpath>
     </taskdef>
 
@@ -52,40 +53,55 @@
     <!-- http://code.google.com/p/javaflight-code/wiki/YuiCompressorAntTask -->
     <taskdef name="yui-compressor" classname="net.noha.tools.ant.yuicompressor.tasks.YuiCompressorTask">
         <classpath>
-            <pathelement location="${lib.dir}/yui-compressor-ant-task-0.5.jar"/>
-            <pathelement location="${lib.dir}/jargs-1.0.jar"/>
-            <pathelement location="${lib.dir}/yuicompressor-2.4.2.jar"/>
+            <pathelement location="lib/yui-compressor-ant-task-0.5.jar"/>
+            <pathelement location="lib/jargs-1.0.jar"/>
+            <pathelement location="lib/yuicompressor-2.4.7.jar"/>
         </classpath>
     </taskdef>
 
-    <fileset id="war.libs" dir="${lib.dir}">
+    <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask">
+        <classpath>
+            <pathelement location="lib/jarjar-1.3.jar"/>
+        </classpath>
+    </taskdef>
+
+    <!-- ant-contrib, for tasks like <if> -->
+    <taskdef resource="net/sf/antcontrib/antcontrib.properties">
+        <classpath>
+            <pathelement location="lib/ant-contrib-1.0b3.jar"/>
+        </classpath>
+    </taskdef>
+
+    <fileset id="war.libs" dir="lib">
+
+        <include name="orbeon-errorified-20130923.jar"/>
+
+        <!-- These JARs are checked in. They can be rebuilt with the jarjar target -->
+        <include name="xerces-2.11-orbeon.jar"/>
+        <include name="msv-20081113-orbeon.jar"/>
+
         <include name="dom4j-1_6_1.jar"/>
         <include name="log4j-1_2_15.jar"/>
         <include name="jaxen-1_1_beta_9.jar"/>
         <include name="saxpath-dev_orbeon.jar"/>
 
-        <include name="xerces-resolver-2_9_orbeon_20070711.jar"/>
-        <include name="xerces-serializer-2_9_orbeon_20070711.jar"/>
-        <include name="xerces-xercesImpl-2_9_orbeon_20070711.jar"/>
-
         <include name="commons-beanutils-1_5.jar"/>
         <include name="commons-cli-1_0.jar"/>
-        <include name="commons-codec-1.4.jar"/>
+        <include name="commons-codec-1.6.jar"/>
         <include name="commons-collections-3.2.1.jar"/>
         <include name="commons-digester-1_5.jar"/>
         <include name="commons-discovery-0.4.jar"/>
         <include name="commons-fileupload-1.2.2.jar"/>
         <include name="commons-io-2.0.1.jar"/>
-        <include name="commons-lang-2_3.jar"/>
+        <include name="commons-lang3-3.1.jar"/>
         <include name="commons-logging-1.1.1.jar"/>
-        <include name="commons-pool-1.5.4.jar"/>
+        <include name="commons-pool-1.6.jar"/>
         <include name="commons-validator-1_0_2.jar"/>
-
-        <include name="httpclient-4.1.jar"/>
+        <include name="joda-time-2.1.jar"/> <!--We don't include joda-convert-1.2.jar; it is only a compile-time dependency for Scala -->
+        <include name="httpclient-4.2.3.jar"/>
         <!--<include name="httpclient-cache-4.1.jar"/>-->
-        <include name="httpcore-4.1.jar"/>
-        <include name="httpcore-nio-4.1.jar"/>
-        <include name="httpmime-4.1.jar"/>
+        <include name="httpcore-4.2.2.jar"/>
+        <include name="httpmime-4.2.3.jar"/>
 
         <include name="apache-mime4j-0.6.jar"/>
         <include name="jcifs-1.3.14.jar"/>
@@ -94,14 +110,7 @@
         <include name="axis_1_2_1-jaxrpc.jar"/>
         <include name="axis_1_2_1-saaj.jar"/>
         <include name="axis_1_2_1-wsdl4j-1.5.1.jar"/>
-        <include name="jakarta-oro-2_0_8_orbeon.jar"/>
 
-        <include name="msv-20081113_orbeon_20081209.jar"/>
-        <include name="msv-isorelax-20070407.jar"/>
-        <include name="msv-xsdlib-20070407_orbeon_20100309.jar"/>
-        <include name="msv-relaxngDatatype-20070407.jar"/>
-
-        <include name="hsqldb-1_8_0_7.jar"/>
         <include name="jfreechart-1.0.9.jar"/>
         <include name="jfreechart-dependency-jcommon-1.0.12.jar"/>
         <include name="activation-1.1.1.jar"/>
@@ -113,9 +122,9 @@
         <include name="avalon-framework-4_2_0.jar"/>
         <include name="fop-1_0.jar"/>
         <include name="jakarta-poi*"/>
-        <include name="metadata-extractor-2_1.jar"/>
+        <include name="metadata-extractor-2.7.0.SNAPSHOT.jar"/>
+        <include name="metadata-extractor-dependency-xmpcore-5.1.2.jar"/>
         <include name="castor-0_9_4_3-xml.jar"/>
-        <include name="antlr-2_7_4_orbeon.jar"/>
 
         <include name="exist-1_4_1_dev_orbeon_20110104.jar"/>
         <include name="exist-optional-1_4_1_dev_orbeon_20110104.jar"/>
@@ -137,17 +146,18 @@
         <include name="exist-dependency-lucene-regex-2.9.2.jar"/>
         <include name="exist-dependency-resolver-1.2.jar"/>
 
-        <include name="ehcache-core-2.4.4.jar"/>
+        <include name="ehcache-core-2.6.3.jar"/>
         <include name="ehcache-dependency-slf4j-api-1.6.1.jar"/>
         <include name="ehcache-dependency-slf4j-log4j12-1.6.1.jar"/>
 
-        <include name="scala-library-2.9.2.jar"/>
-        <include name="sbinary-2.9.1-0.4.0.jar"/>
+        <include name="scala-library-2.10.3.jar"/>
+        <include name="sbinary_2.10-0.4.1.jar"/>
 
         <include name="rhino-1.7R2.jar"/>
 
-        <include name="flyingsaucer-core-renderer_orbeon_20100512.jar"/>
-        <include name="flyingsaucer-20100212-itext-2_1_7.jar"/>
+        <include name="flying-saucer-core-9.0.2-20140523.jar"/>
+        <include name="flying-saucer-pdf-9.0.2-20140523.jar"/>
+        <include name="flying-saucer-dependency-itext-2.1.7.jar"/>
         <include name="itext-bcmail-jdk14-138.jar"/>
         <include name="itext-bcprov-jdk14-138.jar"/>
 
@@ -170,7 +180,12 @@
         <include name="xqjapi.jar"/>
         <include name="xqj2-0.0.1.jar"/>
         <include name="exist-xqj-1.0.1.jar"/>
-        
+
+        <!-- JSON -->
+        <include name="parboiled-core-1.1.4.jar"/>
+        <include name="parboiled-scala_2.10-1.1.4.jar"/>
+        <include name="spray-json_2.10-1.2.3.jar"/>
+
     </fileset>
 
     <target name="init">
@@ -200,7 +215,7 @@
 
             Suffix CE or PE is separate from the version number.
          -->
-        <property name="version.number" value="3.9.0.post"/>
+        <property name="version.number" value="4.6.0.pre"/>
         <property name="edition" value="CE"/>
         <property name="version.suffix" value=""/>
         <tstamp>
@@ -214,32 +229,16 @@
 
         <!-- User-friendly message -->
         <echo message="Building Orbeon Forms ${release.number}"/>
-
-        <!-- dump version string with dots in into a file, then read that file convert -->
-        <!-- the dots to underscores while reading.   i.e. convert 2.5.4-3234 to      -->
-        <!-- 2_5_4_3234                                                                -->
-        <tempfile property="ops-temp-version-file"/>
-        <echo message="${project.name}-version=${release.number}" file="${ops-temp-version-file}"/>
-
-        <loadproperties srcFile="${ops-temp-version-file}">
-            <filterchain>
-                <tokenfilter>
-                    <!-- Cannot seem to be able to tell ant to replace "-" here! -->
-                    <replacestring from="." to="_"/>
-                </tokenfilter>
-            </filterchain>
-        </loadproperties>
-        <delete file="${ops-temp-version-file}"/>
+        <echo message="Using Ant ${ant.version}"/>
 
         <!-- Provide custom version number to TeamCity -->
-        <echo message="##teamcity[buildNumber '${orbeon-version}']"/>
+        <!-- http://confluence.jetbrains.com/display/TCD4/Build+Script+Interaction+with+TeamCity#BuildScriptInteractionwithTeamCity-ReportingBuildNumber-->
+        <propertyregex property="teamcity.release.number" input="${release.number}" regexp="\." replace="_"/>
+        <echo message="##teamcity[buildNumber '${teamcity.release.number}']"/>
 
-        <property name="java-src.dir" value="${src.dir}/java"/>
-        <property name="scala-src.dir" value="${src.dir}/scala"/>
         <property name="examples-cli-src.dir" value="${src.dir}/examples-cli"/>
         <property name="resources.dir" value="${src.dir}/resources"/>
         <property name="resources-packaged.dir" value="${src.dir}/resources-packaged"/>
-        <property name="test-src.dir" location="test/src"/>
 
         <property name="build.classes.dir" value="${build.dir}/classes"/>
         <property name="build.test-classes.dir" value="${build.dir}/test-classes"/>
@@ -248,7 +247,6 @@
         <property name="build.temp.dir" value="${build.dir}/temp"/>
         <property name="build.doc.dir" value="${build.dir}/doc"/>
 
-        <property name="test.tmp.dir" location="${build.temp.dir}/test"/>
         <property name="test.exist-db.dir" location="${src.dir}/resources-packaged/ops/unit-tests/exist-data"/>
 
         <property name="jar.file" value="${build.lib.dir}/${project.name}.jar"/>
@@ -273,15 +271,43 @@
     <target name="prepare" depends="init">
         <mkdir dir="${build.classes.dir}"/>
         <mkdir dir="${build.lib.dir}"/>
-        <condition property="is.debug">
-            <equals arg1="${debug.enabled}" arg2="true"/>
-        </condition>
+    </target>
+
+    <target name="jarjar" depends="prepare">
+        <!-- Xerces fat JAR -->
+        <jarjar jarfile="lib/xerces-2.11-orbeon.jar">
+            <zipfileset src="lib/src/xerces-resolver-2.11.jar">
+                <!-- Don't expose any services -->
+                <exclude name="META-INF/services/**"/>
+            </zipfileset>
+            <zipfileset src="lib/src/xerces-resolver-2.11.jar">
+                <!-- Don't expose any services -->
+                <exclude name="META-INF/services/**"/>
+            </zipfileset>
+            <zipfileset src="lib/src/xerces-xercesImpl-2.11.jar">
+                <!-- Don't expose any services -->
+                <exclude name="META-INF/services/**"/>
+            </zipfileset>
+            <rule pattern="org.apache.**" result="orbeon.apache.@1"/>
+        </jarjar>
+        <!-- MSV fat JAR -->
+        <jarjar jarfile="lib/msv-20081113-orbeon.jar">
+            <zipfileset src="lib/src/msv-20081113_orbeon_20081209.jar"/>
+            <zipfileset src="lib/src/msv-isorelax-20070407.jar"/>
+            <zipfileset src="lib/src/msv-relaxngDatatype-20070407.jar"/>
+            <zipfileset src="lib/src/msv-xsdlib-20070407_orbeon_20120712.jar"/>
+            <rule pattern="com.sun.msv.**"          result="org.orbeon.msv.@1"/>
+            <rule pattern="com.sun.xml.**"          result="org.orbeon.msv.xml.@1"/>
+            <rule pattern="org.iso_relax.**"        result="org.orbeon.msv.iso_relax.@1"/>
+            <rule pattern="jp.gr.xml.relax.**"      result="org.orbeon.msv.gr.xml.relax.@1"/>
+            <rule pattern="org.relaxng.datatype.**" result="org.orbeon.msv.relaxng.datatype.@1"/>
+        </jarjar>
     </target>
 
     <!-- Set classpath to compile and run the application -->
     <target name="classpath" depends="prepare">
         <path id="class.path">
-            <fileset dir="${lib.dir}">
+            <fileset dir="lib">
                 <include name="**/*.jar"/>
             </fileset>
         </path>
@@ -289,18 +315,18 @@
 
     <target name="test-classpath" depends="classpath">
         <path id="test.class.path">
-            <pathelement location="${jar.file}"/>
+            <pathelement location="${build.classes.dir}"/>
             <pathelement location="${xforms-filter.jar.file}"/>
-            <fileset dir="${lib.dir}">
+            <fileset dir="lib">
                 <include name="**/*.jar"/>
             </fileset>
         </path>
     </target>
 
-    <!-- Perform string replacement in Version.java to set version and edition  -->
+    <!-- Perform string replacement in Version.scala to set version and edition  -->
     <target name="set-version" depends="init">
         <mkdir dir="${build.dir}/src"/>
-        <copy todir="${build.dir}/src" file="${java-src.dir}/org/orbeon/oxf/common/Version.java" overwrite="true">
+        <copy todir="${build.dir}/src" file="src/main/scala/org/orbeon/oxf/common/Version.scala" overwrite="true" encoding="UTF-8">
             <filterset>
                 <filter token="RELEASE" value="${release.number}"/>
                 <filter token="EDITION" value="${edition}"/>
@@ -308,10 +334,11 @@
         </copy>
     </target>
 
-    <!-- A task we use only from IntelliJ before running tests that sets the version in place in Version.java.
+    <!-- A task we use only from IntelliJ before running tests that sets the version in place in Version.scala.
          The task is executed automatically by IntelliJ, which saves us from having to edit that file by hand. -->
-    <target name="intellij-set-version" depends="set-version">
-        <copy file="${build.dir}/src/Version.java" tofile="${java-src.dir}/org/orbeon/oxf/common/Version.java" overwrite="true"/>
+    <target name="intellij-before-make" depends="set-version">
+        <mkdir dir="test/src/config"/>
+        <copy file="build/src/Version.scala" tofile="src/main/scala/org/orbeon/oxf/common/Version.scala" overwrite="true"/>
     </target>
 
     <!-- Compile source -->
@@ -319,15 +346,15 @@
 
         <scalac destdir="${build.classes.dir}"
                 classpathref="class.path"
-                fork="true" encoding="utf-8" jvmargs="-Xmx400m"
-                addparams="-Xfatal-warnings">
-            <src path="${build.dir}/src"/> <!-- Location of the copy of Version.java with the release/edition set -->
-            <src path="${java-src.dir}"/>
-            <src path="${scala-src.dir}"/>
+                fork="true" encoding="utf-8" jvmargs="-Xmx700m"
+                addparams="-Xfatal-warnings -feature -language:postfixOps -language:reflectiveCalls -language:implicitConversions -language:higherKinds -language:existentials" deprecation="yes">
+            <src path="${build.dir}/src"/> <!-- Location of the copy of Version.scala with the release/edition set -->
+            <src path="src/main/java"/>
+            <src path="src/main/scala"/>
             <!-- Scala code bundled with XBL components -->
             <!-- NOTE: Ideally we'd like to use a pattern instead of multiple lines, but src doesn't support patterns, and scalac doesn't support fileset child elements, only include/exclude -->
             <src path="src/resources-packaged/xbl/orbeon/simple-captcha/src/scala"/>
-            <exclude name="org/orbeon/oxf/common/Version.java"/>
+            <exclude name="org/orbeon/oxf/common/Version.scala"/>
         </scalac>
 
         <javac destdir="${build.classes.dir}"
@@ -335,47 +362,39 @@
                 debug="${build.debug}" optimize="off" target="1.5" source="1.5"
                 fork="true" memoryInitialSize="128m" memoryMaximumSize="400m" encoding="utf-8">
             <src path="${build.dir}/src"/>
-            <src path="${java-src.dir}"/>
+            <src path="src/main/java"/>
             <exclude name="org/orbeon/oxf/common/Version.java"/>
             <exclude name="org/orbeon/oxf/xforms/analysis/PathMapUIDependencies.java"/>
         </javac>
     </target>
 
     <!-- Compile test source -->
-    <target name="test-classes" depends="classes, test-classpath">
+    <target name="test-classes" depends="classes, test-classpath" unless="skip.compilation">
         <mkdir dir="${build.test-classes.dir}"/>
 
         <scalac destdir="${build.test-classes.dir}"
                 classpathref="test.class.path"
-                fork="true" encoding="utf-8" jvmargs="-Xmx300m"
-                addparams="-Xfatal-warnings">
-            <src path="${test-src.dir}"/>
+                fork="true" encoding="utf-8" jvmargs="-Xmx700m"
+                addparams="-Xfatal-warnings -feature -language:postfixOps -language:reflectiveCalls -language:implicitConversions -language:higherKinds -language:existentials" deprecation="yes">
+            <src path="src/test/scala"/>
+            <src path="src/test/java"/>
         </scalac>
 
-        <javac srcdir="${test-src.dir}" destdir="${build.test-classes.dir}"
+        <javac srcdir="src/test/java" destdir="${build.test-classes.dir}"
                 classpathref="test.class.path" debug="on" optimize="off" target="1.5" source="1.5"
                 includes="**/*.java" encoding="utf-8">
         </javac>
     </target>
 
-    <target name="transform" depends="prepare">
-        <property name="xsd-prefix" value="/org/orbeon/oxf/xml/schemas/page-flow-controller"/>
-        <xslt style="src/xslt/page-flow-controller-xsd.xslt"
-              in="${java-src.dir}${xsd-prefix}.xsd"
-              out="${build.classes.dir}${xsd-prefix}-runtime.xsd"/>
-    </target>
-
     <!-- JARs -->
-    <target name="jars" depends="classes, transform, orbeon-minify-js">
+    <target name="jars" depends="classes, orbeon-minify-js">
         <jar destfile="${jar.file}" compress="false">
-            <fileset dir="${java-src.dir}">
+            <fileset dir="src/main/resources">
                 <include name="**/*.xml"/>
                 <include name="**/*.rng"/>
                 <include name="**/*.css"/>
                 <include name="**/*.xsd"/>
                 <include name="**/*.properties"/>
-            </fileset>
-            <fileset dir="${scala-src.dir}">
                 <include name="**/*.js"/>
             </fileset>
             <fileset dir="${build.classes.dir}">
@@ -404,8 +423,9 @@
           </fileset>
         </jar>
 
+        <property name="cli.jar.lib.dir" location="lib"/>
         <pathconvert dirsep="/" pathsep=" " property="cli.jar.mf.cp" refid="war.libs">
-          <map from="${lib.dir}" to="lib"/>
+          <map from="${cli.jar.lib.dir}" to="lib"/>
         </pathconvert>
 
         <basename file="${jar.file}" property="jar.name"/>
@@ -433,23 +453,8 @@
                 <exclude name="ops/**/*.ico"/>
                 <exclude name="ops/**/*.jpg"/>
                 <exclude name="ops/**/*.html"/>
+                <exclude name="ops/**/*.htm"/>
                 <exclude name="ops/**/*.htc"/>
-                <exclude name="ops/fckeditor/_samples"/>
-                <exclude name="ops/fckeditor/_samples/**"/>
-                <exclude name="ops/fckeditor/editor/_source"/>
-                <exclude name="ops/fckeditor/editor/_source/**"/>
-                <exclude name="ops/fckeditor/_testcases"/>
-                <exclude name="ops/fckeditor/_testcases/**"/>
-                <exclude name="ops/fckeditor/**/*.cfm"/>
-                <exclude name="ops/fckeditor/**/*.cfc"/>
-                <exclude name="ops/fckeditor/**/*.asp"/>
-                <exclude name="ops/fckeditor/**/*.afp"/>
-                <exclude name="ops/fckeditor/**/*.cgi"/>
-                <exclude name="ops/fckeditor/**/*.py"/>
-                <exclude name="ops/fckeditor/**/*.aspx"/>
-                <exclude name="ops/fckeditor/**/*.php"/>
-                <exclude name="ops/fckeditor/**/*.pl"/>
-                <exclude name="ops/fckeditor/**/*.lasso"/>
                 <include name="oxf/**"/>
                 <include name="config/**"/>
                 <exclude name="config/theme"/>
@@ -468,6 +473,7 @@
                 <include name="xbl/**/*.png"/>
                 <include name="xbl/**/*.jpg"/>
                 <include name="xbl/**/*.html"/>
+                <include name="xbl/**/*.htm"/>
                 <include name="xbl/**/*.xhtml"/>
                 <include name="xbl/**/*.htc"/>
                 <include name="ops/**/*.css"/>
@@ -477,17 +483,13 @@
                 <include name="ops/**/*.ico"/>
                 <include name="ops/**/*.jpg"/>
                 <include name="ops/**/*.html"/>
+                <include name="ops/**/*.htm"/>
                 <include name="ops/**/*.htc"/>
-                <exclude name="ops/fckeditor/_samples"/>
-                <exclude name="ops/fckeditor/_samples/**"/>
-                <exclude name="ops/fckeditor/editor/_source"/>
-                <exclude name="ops/fckeditor/editor/_source/**"/>
-                <exclude name="ops/fckeditor/_testcases"/>
-                <exclude name="ops/fckeditor/_testcases/**"/>
                 <include name="config/theme/**/*.*"/>
             </fileset>
             <zipfileset dir="${war.dir}/WEB-INF/resources">
                 <include name="**/*.js"/>
+                <exclude name="apps/fr/style/bootstrap-src/**/*.*"/>
             </zipfileset>
         </jar>
 
@@ -496,8 +498,10 @@
             <fileset dir="${resources.dir}">
                 <include name="apps/fr/**/*.*"/>
                 <exclude name="apps/fr/persistence/oracle/**/*.*"/>
+                <exclude name="apps/fr/persistence/db2/**/*.*"/>
                 <exclude name="apps/fr/alfresco/**/*.*"/>
                 <exclude name="apps/fr/print/print-pdf-template.xpl"/>
+                <exclude name="apps/fr/style/bootstrap-src/**/*.*"/>
             </fileset>
         </jar>
 
@@ -515,12 +519,12 @@
         <echo message="war.dir: ${war.dir}"/>
 
         <copy todir="${war.lib}">
-          <fileset refid="war.libs"/>
+            <fileset refid="war.libs"/>
         </copy>
         <!-- Make sure we remove PathMap from Saxon as we have our own implementation -->
         <delete file="${war.lib}/${saxon.jar}"/>
         <jar destfile="${war.lib}/${saxon.jar}">
-            <zipfileset src="${lib.dir}/${saxon.jar}" excludes="org/orbeon/saxon/expr/PathMap*.class"/>
+            <zipfileset src="lib/${saxon.jar}" excludes="org/orbeon/saxon/expr/PathMap*.class"/>
         </jar>
 
         <copy file="${jar.file}" todir="${war.lib}"/>
@@ -531,7 +535,7 @@
         <copy file="${form-builder.jar.file}" todir="${war.lib}"/>
 
         <copy todir="${war.inf}">
-            <fileset dir="${lib.dir}">
+            <fileset dir="lib">
                 <include name="commons-cli-1_0.jar"/>
             </fileset>
         </copy>
@@ -559,28 +563,45 @@
     </target>
 
     <!-- WAR file -->
-    <target name="orbeon-war" depends="classes" description="Create exploded WAR file">
-        <antcall target="war"/>
+    <target name="orbeon-war" depends="classes" description="Create exploded WAR">
+        <antcall target="war">
+            <param name="skip.compilation" value="true"/>
+        </antcall>
         <antcall target="war-copy-descriptors">
+            <param name="skip.compilation" value="true"/>
             <param name="target" value="devel"/>
             <param name="build.root" value="${build.root}"/>
         </antcall>
     </target>
 
-    <target name="proxy-portlet-war" depends="jars" description="Create proxy portlet WAR file">
+    <target name="proxy-portlet-war" depends="jars" description="Create proxy portlet WAR">
+    	<mkdir dir="${build.distrib.dir}"/>
         <war destfile="${build.distrib.dir}/${versioned-proxy-portlet-name}.war">
             <webinf dir="descriptors/proxy-portlet"/>
             <lib dir="${build.lib.dir}">
                 <include name="orbeon.jar"/>
                 <include name="orbeon-xforms-filter.jar"/>
             </lib>
-            <lib dir="${lib.dir}">
+            <lib dir="lib">
+                <include name="xerces-2.11-orbeon.jar"/>
+                <include name="orbeon-errorified-20130923.jar"/>
                 <include name="scala-library-*.jar"/>
                 <include name="commons-fileupload-*.jar"/>
-                <include name="commons-lang-*.jar"/>
+                <include name="commons-lang3-*.jar"/>
                 <include name="log4j-*.jar"/>
-                <include name="xerces-xercesImpl-2_9_orbeon_20070711.jar"/>
+                <include name="httpclient-4.2.3.jar"/>
+                <include name="httpcore-4.2.2.jar"/>
+                <include name="httpmime-4.2.3.jar"/>
             </lib>
+        </war>
+    </target>
+
+    <target name="orbeon-auth-war" depends="classes" description="Creates Orbeon Forms orbeon-auth.war">
+        <mkdir dir="${build.distrib.dir}"/>
+        <war destfile="${build.distrib.dir}/orbeon-auth.war" webxml="descriptors/orbeon-auth-war/web.xml">
+            <zipfileset dir="${build.dir}/classes" prefix="WEB-INF/classes">
+                <include name="org/orbeon/oxf/controller/AuthorizerServlet*.class"/>
+            </zipfileset>
         </war>
     </target>
 
@@ -603,31 +624,6 @@
         </zip>
     </target>
 
-    <target name="orbeon-javadoc" depends="classpath">
-        <!-- packagenames="org.orbeon.*" sourcepath="${src.dir}" -->
-        <mkdir dir="${build.doc.dir}/javadoc"/>
-        <javadoc destdir="${build.doc.dir}/javadoc" classpathref="class.path">
-            <link href="http://java.sun.com/j2se/1.3/docs/api/"/>
-            <link href="http://xml.apache.org/xerces2-j/javadocs/api/"/>
-            <link href="http://jakarta.apache.org/tomcat/tomcat-4.0-doc/servletapi/"/>
-            <link href="http://dom4j.org/apidocs/"/>
-            <fileset dir="${java-src.dir}">
-                <include name="org/orbeon/oxf/processor/SimpleProcessor.java"/>
-                <include name="org/orbeon/oxf/processor/ProcessorInputOutputInfo.java"/>
-                <include name="org/orbeon/oxf/processor/Processor.java"/>
-                <include name="org/orbeon/oxf/processor/ProcessorImpl.java"/>
-                <include name="org/orbeon/oxf/common/*.java"/>
-                <include name="org/orbeon/oxf/pipeline/api/*.java"/>
-                <include name="org/orbeon/oxf/resources/ResourceManager.java"/>
-                <include name="org/orbeon/oxf/resources/*ResourceManagerImpl.java"/>
-                <exclude name="org/orbeon/oxf/resources/CacheResourceManagerImpl.java"/>
-                <include name="org/orbeon/oxf/resources/OXFProperties.java"/>
-                <include name="org/orbeon/oxf/xml/NamingConvention.java"/>
-                <include name="org/orbeon/oxf/xml/dom4j/LocationData.java"/>
-            </fileset>
-        </javadoc>
-    </target>
-
     <target name="orbeon-minify-js" depends="init, classes">
         <!-- Store those under ${war.dir}/WEB-INF/resources so they can be used in dev mode -->
         <mkdir dir="${war.dir}/WEB-INF/resources/ops"/>
@@ -639,11 +635,12 @@
             <classpath>
                 <pathelement location="build/classes"/>
                 <pathelement location="build/orbeon-war/WEB-INF/classes"/><!-- where classes are when compiling from IntelliJ -->
-                <pathelement location="src/scala"/>
+                <pathelement location="src/main/resources"/>
                 <pathelement location="lib/rhino-1.7R2.jar"/>
                 <pathelement location="lib/commons-fileupload-1.2.2.jar"/>
                 <pathelement location="lib/log4j-1_2_15.jar"/>
-                <pathelement location="lib/scala-library-2.9.2.jar"/>
+                <pathelement location="lib/scala-library-2.10.3.jar"/>
+                <pathelement location="lib/orbeon-errorified-20130923.jar"/>
             </classpath>
         </taskdef>
 
@@ -682,111 +679,199 @@
             <include name="yui/examples/treeview/assets/js/TaskNode.js"/>
             <include name="yui/examples/treeview/assets/js/CheckOnClickNode.js"/>
 
-            <!-- JSCalendar -->
-            <include name="javascript/jscalendar/calendar.js"/>
-            <include name="javascript/jscalendar/lang/calendar-en.js"/>
-            <include name="javascript/jscalendar/calendar-setup.js"/>
-
-            <!-- Autocomplete -->
-            <include name="javascript/suggest-common.js"/>
-            <include name="javascript/suggest-actb.js"/>
-
-            <!-- AJAXXSLT -->
-            <include name="javascript/ajaxxslt/util.js"/>
-            <include name="javascript/ajaxxslt/xmltoken.js"/>
-            <include name="javascript/ajaxxslt/dom.js"/>
-            <include name="javascript/ajaxxslt/xpath.js"/>
-
-            <!-- Encryption -->
-            <include name="javascript/encryption/encryption.js"/>
-            <include name="javascript/encryption/md5.js"/>
-            <include name="javascript/encryption/utf-8.js"/>
-
         </yui-compressor>
 
+    </target>
+
+    <target name="test-expand-war" depends="orbeon-dist-war">
+        <!-- Uncompress WAR -->
+        <unzip src="${build.distrib.dir}/${versioned-name}.war" dest="${build.dir}/${project.name}-war-tomcat"/>
+        <!-- Copy test resources -->
+        <!-- TODO: We're mixing here the resources used by standalone tests and tests running in Tomcat -->
+        <mkdir dir="${build.dir}/${project.name}-war-tomcat/WEB-INF/resources/apps/unit-tests"/>
+        <copy todir="${build.dir}/${project.name}-war-tomcat/WEB-INF/resources">
+            <fileset dir="${src.dir}/test/resources/">
+                <include name="apps/unit-tests/**"/>
+                <include name="config/**"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="test" depends="test-expand-war, test-classes, test-classpath">
+
+        <property name="tomcat-version" value="6.0.36"/>
+        <parallel failonany="true">
+
+            <property name="oracle.driver"    value="oracle.jdbc.OracleDriver"/>
+            <property name="oracle.jar"       value="lib/oracle/ojdbc6_g.jar"/>
+            <property name="mysql.driver"     value="com.mysql.jdbc.Driver"/>
+            <property name="mysql.jar"        value="lib/mysql-connector-java-5.1.26-bin.jar"/>
+            <property name="sqlserver.driver" value="com.microsoft.sqlserver.jdbc.SQLServerDriver"/>
+            <property name="sqlserver.jar"    value="lib/sqljdbc4.jar"/>
+
+            <!-- Run Tomcat -->
+            <sequential>
+                <if>
+                    <not><isset property="skip.selenium"/></not>
+                    <then>
+
+                        <!-- Create schemas -->
+                        <sql driver="${oracle.driver}" url="${env.ORACLE_URL}" userid="orbeon" password="${env.RDS_PASSWORD}" expandProperties="true">
+                            <classpath><pathelement location="${oracle.jar}"/></classpath>
+                            CREATE USER              orbeon_${env.TRAVIS_BUILD_NUMBER}_tomcat IDENTIFIED BY ${env.RDS_PASSWORD};
+                            ALTER  USER              orbeon_${env.TRAVIS_BUILD_NUMBER}_tomcat QUOTA UNLIMITED ON users;
+                            GRANT  CREATE SESSION TO orbeon_${env.TRAVIS_BUILD_NUMBER}_tomcat;
+                            GRANT  CREATE TABLE   TO orbeon_${env.TRAVIS_BUILD_NUMBER}_tomcat;
+                            GRANT  CREATE TRIGGER TO orbeon_${env.TRAVIS_BUILD_NUMBER}_tomcat;
+                        </sql>
+                        <sql driver="${mysql.driver}" url="${env.MYSQL_URL}" userid="orbeon" password="${env.RDS_PASSWORD}" expandProperties="true">
+                            <classpath><pathelement location="${mysql.jar}"/></classpath>
+                            CREATE DATABASE orbeon_${env.TRAVIS_BUILD_NUMBER}_tomcat;
+                        </sql>
+                        <sql driver="${sqlserver.driver}" url="${env.SQLSERVER_URL}" userid="orbeon" password="${env.RDS_PASSWORD}" expandProperties="true">
+                            <classpath><pathelement location="${sqlserver.jar}"/></classpath>
+                            CREATE DATABASE orbeon_${env.TRAVIS_BUILD_NUMBER}_tomcat;
+                        </sql>
+
+                        <!-- Uncompress Tomcat -->
+                        <if>
+                            <not><available file="build/apache-tomcat-${tomcat-version}"/></not>
+                            <then><unzip src="lib/test/apache-tomcat-${tomcat-version}.zip" dest="build"/></then>
+                        </if>
+
+                        <!-- Put database driver in Tomcat's lib -->
+                        <copy file="${mysql.jar}"     todir="build/apache-tomcat-${tomcat-version}/lib"/>
+                        <copy file="${oracle.jar}"    todir="build/apache-tomcat-${tomcat-version}/lib"/>
+                        <copy file="${sqlserver.jar}" todir="build/apache-tomcat-${tomcat-version}/lib"/>
+
+                        <!-- Put URL and passwords in Tomcat's server.xml -->
+                        <replace file="test/catalina_base/conf/server.xml">
+                            <replacefilter token="@RDS_PASSWORD@"         value="${env.RDS_PASSWORD}"/>
+                            <replacefilter token="@TRAVIS_BUILD_NUMBER@"  value="${env.TRAVIS_BUILD_NUMBER}"/>
+                            <replacefilter token="@ORACLE_URL@"           value="${env.ORACLE_URL}"/>
+                            <replacefilter token="@MYSQL_URL@"            value="${env.MYSQL_URL}"/>
+                            <replacefilter token="@SQLSERVER_URL@"        value="${env.SQLSERVER_URL}"/>
+                        </replace>
+
+                        <!-- Run -->
+                        <java jar="build/apache-tomcat-${tomcat-version}/bin/bootstrap.jar" fork="true" taskname="tomcat">
+                            <jvmarg value="-Dcatalina.home=build/apache-tomcat-${tomcat-version}"/>
+                            <jvmarg value="-Dcatalina.base=test/catalina_base"/>
+                            <jvmarg line="-server -verbosegc -Xms256m -Xmx1024m -XX:MaxPermSize=256m -Djava.awt.headless=true -XX:+PerfDisableSharedMem"/>
+                            <jvmarg line="-Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=61155"/>
+                        </java>
+                        <delete dir="test/catalina_base/work"/>
+                    </then>
+                </if>
+            </sequential>
+
+            <sequential>
+
+                <if>
+                    <not><isset property="skip.selenium"/></not>
+                    <then>
+                        <!-- Wait for Tomcat to start -->
+                        <waitfor maxwait="1" maxwaitunit="minute" checkevery="200">
+                            <http url="http://localhost:8080/orbeon/home/"/>
+                        </waitfor>
+                    </then>
+                </if>
+
+                <delete dir="build/temp/test"/>
+               	<mkdir  dir="build/temp/test"/>
+           	    <delete dir="${test.exist-db.dir}"/>
+               	<mkdir  dir="${test.exist-db.dir}"/>
+
+                <!-- Run tests -->
+                <junit fork="true" printsummary="true" showoutput="yes" failureproperty="test.failed" logfailedtests="true">
+                    <!-- Enable assertions -->
+                    <jvmarg value="-ea"/>
+
+                    <batchtest>
+                        <fileset dir="${build.test-classes.dir}">
+                            <include name="org/orbeon/oxf/**/*Test.class"/>
+                            <exclude name="org/orbeon/oxf/client/CombinedClientTest*.class"       if="skip.selenium"/>
+                            <exclude name="org/orbeon/oxf/fr/persistence/**/*Test.class"          if="skip.database"/>
+                        </fileset>
+                    </batchtest>
+
+                    <!-- Configure resource manager -->
+                    <sysproperty key="oxf.resources.factory" value="org.orbeon.oxf.resources.PriorityResourceManagerFactory"/>
+                    <!-- 1: test/resources first, as we need to touch files and compile Java files there -->
+                    <sysproperty key="oxf.resources.priority.1" value="org.orbeon.oxf.resources.FilesystemResourceManagerFactory"/>
+                    <sysproperty key="oxf.resources.priority.1.oxf.resources.filesystem.sandbox-directory" value="src/test/resources"/>
+                    <!-- 2: resources -->
+                    <sysproperty key="oxf.resources.priority.2" value="org.orbeon.oxf.resources.FilesystemResourceManagerFactory"/>
+                    <sysproperty key="oxf.resources.priority.2.oxf.resources.filesystem.sandbox-directory" value="${resources.dir}"/>
+                    <!-- 3: resources-packaged -->
+                    <sysproperty key="oxf.resources.priority.3" value="org.orbeon.oxf.resources.FilesystemResourceManagerFactory"/>
+                    <sysproperty key="oxf.resources.priority.3.oxf.resources.filesystem.sandbox-directory" value="${resources-packaged.dir}"/>
+                    <!-- 4: main/resources (associated with Java test files) -->
+                    <sysproperty key="oxf.resources.priority.4" value="org.orbeon.oxf.resources.FilesystemResourceManagerFactory"/>
+                    <sysproperty key="oxf.resources.priority.4.oxf.resources.filesystem.sandbox-directory" value="src/main/resources"/>
+                    <!-- Classpath -->
+                    <sysproperty key="oxf.resources.priority.5" value="org.orbeon.oxf.resources.ClassLoaderResourceManagerFactory"/>
+                    <!-- Other properties -->
+                    <sysproperty key="oxf.resources.common.min-reload-interval" value="50"/>
+                    <sysproperty key="oxf.test.config" value="oxf:/ops/unit-tests/tests.xml"/>
+                	<sysproperty key="java.io.tmpdir" value="build/temp/test"/>
+
+                    <!-- Some code uses the default time zone, which might different on different system, so we need to set it explicitly -->
+                	<sysproperty key="user.timezone" value="America/Los_Angeles"/>
+                    <!-- Getting a JDK error, per http://stackoverflow.com/a/13575810/5295 -->
+                	<sysproperty key="java.util.Arrays.useLegacyMergeSort" value="true"/>
+
+                    <classpath>
+                        <path refid="test.class.path"/>
+                        <pathelement location="${build.test-classes.dir}"/>
+                        <pathelement location="${resources-private.jar.file}"/>
+                    </classpath>
+                </junit>
+
+                <!-- Stop Tomcat -->
+                <if>
+                    <not><isset property="skip.selenium"/></not>
+                    <then>
+                        <!-- Stop Tomcat -->
+                        <java jar="build/apache-tomcat-${tomcat-version}/bin/bootstrap.jar" fork="true">
+                            <jvmarg value="-Dcatalina.home=build/apache-tomcat-${tomcat-version}"/>
+                            <arg line="stop"/>
+                        </java>
+                        <!-- If we don't wait for Tomcat to be really stopped, databases won't let us users/schemas we're connected to
+                             (todo: find a better way to know when Tomcat has properly shut down) -->
+                        <sleep seconds="20"/>
+                        <!-- Delete schemas -->
+                        <sql driver="${oracle.driver}" url="${env.ORACLE_URL}" userid="orbeon" password="${env.RDS_PASSWORD}" expandProperties="true">
+                            <classpath><pathelement location="${oracle.jar}"/></classpath>
+                            DROP USER orbeon_${env.TRAVIS_BUILD_NUMBER}_tomcat CASCADE;
+                        </sql>
+                        <sql driver="${mysql.driver}" url="${env.MYSQL_URL}" userid="orbeon" password="${env.RDS_PASSWORD}" expandProperties="true">
+                            <classpath><pathelement location="${mysql.jar}"/></classpath>
+                            DROP DATABASE orbeon_${env.TRAVIS_BUILD_NUMBER}_tomcat;
+                        </sql>
+                        <sql driver="${sqlserver.driver}" url="${env.SQLSERVER_URL}" userid="orbeon" password="${env.RDS_PASSWORD}" expandProperties="true">
+                            <classpath><pathelement location="${sqlserver.jar}"/></classpath>
+                            DROP DATABASE orbeon_${env.TRAVIS_BUILD_NUMBER}_tomcat;
+                        </sql>
+                    </then>
+                </if>
+
+                <!-- If tests failed, stop after cleanup -->
+                <fail message="JUnit tests failed" if="test.failed"/>
+
+            </sequential>
+        </parallel>
 
     </target>
 
-    <target name="debug-enabled" if="is.debug">
-        <property name="debug.arg1" value="-Xdebug"/>
-        <property name="debug.arg2" value="-Xnoagent"/>
-        <property name="debug.arg3" value="-Djava.compiler=NONE"/>
-        <property name="debug.arg4" value="-Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=5001"/>
-    </target>
-
-    <target name="debug-disabled" unless="is.debug">
-        <property name="debug.arg1" value=""/>
-        <property name="debug.arg2" value=""/>
-        <property name="debug.arg3" value=""/>
-        <property name="debug.arg4" value=""/>
-    </target>
-
-    <target name="test" depends="jars, test-classes, debug-enabled, debug-disabled, test-classpath">
-    	<!-- 11/14/2004 d : Found Processor was sorta invalid cause once it ran successfully
-    	     				it would leave behind .class files in java.io.tmpdir.  This
-    	     				meant that on subsequent runs of the test it wouldn't try to
-    	     				compile anything.
-
-    	     				So now we delete,create,and specify a specific dir as the temp
-    	     				dir so that compiles always occur.
-    	 -->
-    	<delete dir="${test.tmp.dir}"/>
-    	<mkdir dir="${test.tmp.dir}"/>
-
-	    <delete dir="${test.exist-db.dir}"/>
-    	<mkdir dir="${test.exist-db.dir}"/>
-
-        <junit fork="true" haltonerror="yes" haltonfailure="yes">
-            <!-- Enable assertions -->
-            <jvmarg value="-ea"/>
-
-            <batchtest>
-                <fileset dir="${build.test-classes.dir}">
-                    <include name="org/orbeon/oxf/**/*Test.class"/>
-                    <include name="org/orbeon/oxf/**/Test*.class"/>
-                </fileset>
-            </batchtest>
-
-            <formatter type="plain" usefile="false"/>
-
-            <!-- Configure resource manager -->
-            <sysproperty key="oxf.resources.factory" value="org.orbeon.oxf.resources.PriorityResourceManagerFactory"/>
-            <!-- Put resources-packaged first, as we need to touch files and compile Java files there -->
-            <sysproperty key="oxf.resources.priority.1" value="org.orbeon.oxf.resources.FilesystemResourceManagerFactory"/>
-            <sysproperty key="oxf.resources.priority.1.oxf.resources.filesystem.sandbox-directory" value="${resources-packaged.dir}"/>
-            <!-- resources -->
-            <sysproperty key="oxf.resources.priority.2" value="org.orbeon.oxf.resources.FilesystemResourceManagerFactory"/>
-            <sysproperty key="oxf.resources.priority.2.oxf.resources.filesystem.sandbox-directory" value="${resources.dir}"/>
-            <!-- For resources associated with Java test files -->
-            <sysproperty key="oxf.resources.priority.3" value="org.orbeon.oxf.resources.FilesystemResourceManagerFactory"/>
-            <sysproperty key="oxf.resources.priority.3.oxf.resources.filesystem.sandbox-directory" value="${test-src.dir}"/>
-            <!-- Classpath -->
-            <sysproperty key="oxf.resources.priority.4" value="org.orbeon.oxf.resources.ClassLoaderResourceManagerFactory"/>
-
-            <!-- Other properties -->
-            <sysproperty key="oxf.resources.common.min-reload-interval" value="50"/>
-            <sysproperty key="oxf.test.config" value="oxf:/ops/unit-tests/tests.xml"/>
-        	<sysproperty key="java.io.tmpdir" value="${test.tmp.dir}"/>
-
-            <!-- Some code uses the default time zone, which might different on different system, so we need to set it explicitely -->
-        	<sysproperty key="user.timezone" value="America/Los_Angeles"/>
-
-            <classpath>
-                <path refid="test.class.path"/>
-                <pathelement location="${build.test-classes.dir}"/>
-                <pathelement location="${resources-private.jar.file}"/>
-                <!-- SHOULD ADD THIS WHEN skip.compilation:  <pathelement location="${war.classes}"/>-->
-                <!-- FWIW tomcat 5 doesn't include this jar. -->
-                <pathelement location="${tomcat.dir}/common/lib/mailapi-1_3_2.jar"/>
-            </classpath>
-        </junit>
-    </target>
-
-    <target name="orbeon-dist-war" depends="jars, exist-import-sample-data-to-build" description="Creates Orbeon Forms war file">
+    <target name="orbeon-dist-war" depends="jars, exist-import-sample-data-to-build" description="Creates Orbeon Forms WAR">
         <mkdir dir="${build.distrib.dir}"/>
 
-        <antcall target="war"/>
+        <antcall target="war">
+            <param name="skip.compilation" value="true"/>
+        </antcall>
         <antcall target="war-copy-descriptors">
+            <param name="skip.compilation" value="true"/>
             <param name="target" value="war"/>
             <param name="build.root" value="${build.root}"/>
         </antcall>
@@ -820,14 +905,16 @@
         </zip>
     </target>
 
-    <target name="orbeon-dist-packages" depends="orbeon-dist-war, orbeon-javadoc, orbeon-src">
+    <target name="orbeon-dist-packages" depends="orbeon-dist-war, proxy-portlet-war, orbeon-auth-war, orbeon-src">
         <!-- Create temporary zip file -->
         <property name="tmp-zip" value="${build.distrib.dir}/${versioned-name}-tmp.zip"/>
         <zip zipfile="${tmp-zip}">
             <zipfileset dir="${build.distrib.dir}" fullpath="${versioned-name}/${project.name}.war">
                 <include name="${versioned-name}.war"/>
             </zipfileset>
-            <zipfileset file="${build.distrib.dir}/${versioned-proxy-portlet-name}.war" prefix="${versioned-name}"/>
+            <zipfileset dir="${build.distrib.dir}" fullpath="${versioned-name}/orbeon-auth.war">
+                <include name="orbeon-auth.war"/>
+            </zipfileset>
             <zipfileset file="README.md" prefix="${versioned-name}"/>
             <zipfileset file="README.md" fullpath="${versioned-name}/README.txt"/>
             <zipfileset file="LICENSE.txt" prefix="${versioned-name}"/>
@@ -846,6 +933,7 @@
             <include name="**/*.jsp"/>
             <include name="**/*.jspx"/>
             <include name="**/*.html"/>
+            <include name="**/*.htm"/>
             <include name="**/*.js"/>
             <include name="**/*.css"/>
             <include name="**/*.java"/>
@@ -865,6 +953,7 @@
             <include name="**/*.jsp"/>
             <include name="**/*.jspx"/>
             <include name="**/*.html"/>
+            <include name="**/*.htm"/>
             <include name="**/*.js"/>
             <include name="**/*.css"/>
             <include name="**/*.java"/>
@@ -889,7 +978,11 @@
 
     <target name="orbeon-dist" depends="orbeon-dist-checksum"/>
 
-    <target name="teamcity-release" depends="clean, test, orbeon-dist"/>
+    <target name="skip-selenium-database">
+        <property name="skip.selenium" value="true"/>
+        <property name="skip.database" value="true"/>
+    </target>
+    <target name="teamcity-release" depends="skip-selenium-database, clean, test, orbeon-dist"/>
 
     <target name="teamcity-rsync" depends="teamcity-release">
 
@@ -936,17 +1029,14 @@
 
     </target>
 
-    <target name="exist-task" depends="jars">
+    <target name="exist-task" depends="classpath">
         <!-- eXist tasks -->
         <!-- http://exist-db.org/ant-tasks.html -->
         <typedef resource="org/exist/ant/antlib.xml" uri="http://exist-db.org/ant">
             <classpath>
-                <fileset dir="${lib.dir}">
-                    <include name="*.jar"/>
-                </fileset>
-                <fileset dir="${build.dir}/lib">
-                    <include name="orbeon.jar"/>
-                </fileset>
+                <path refid="class.path"/>
+                <pathelement location="build/lib/orbeon.jar"/>
+                <pathelement location="build/orbeon-war/WEB-INF/classes"/><!-- where classes are when compiling from IntelliJ -->
             </classpath>
         </typedef>
     </target>
@@ -982,13 +1072,18 @@
         <xdb:shutdown configuration="${basedir}/descriptors/ant-exist-conf.xml" uri="xmldb:exist:///db" user="admin" password=""/>
     </target>
 
-    <target name="exist-import-sample-data-to-www" depends="exist-task">
-        <!-- Store data -->
-        <xdb:store uri="xmldb:exist://www.orbeon.com/exist/xmlrpc/db" createcollection="true" createsubcollections="true" user="orbeon" password="secret">
+    <!-- NOTE: You need to comment out the eXist security filter for this to work -->
+    <target name="exist-import-sample-data-to-localhost" depends="exist-task">
+        <!-- Store config first -->
+        <xdb:store uri="xmldb:exist://localhost:8080/orbeon/exist/xmlrpc/db" initDb="true" createcollection="true" createsubcollections="true" user="admin" password="">
+            <fileset dir="data">
+                <include name="system/**"/>
+            </fileset>
+        </xdb:store>
+        <!-- Store data only -->
+        <xdb:store uri="xmldb:exist://localhost:8080/orbeon/exist/xmlrpc/db" initDb="true" createcollection="true" createsubcollections="true" user="guest" password="guest">
             <fileset dir="data">
                 <include name="orbeon/**"/>
-                <!-- TODO: Some examples forms in the builder -->
-                <exclude name="orbeon/fr/orbeon/builder/**"/>
             </fileset>
         </xdb:store>
     </target>

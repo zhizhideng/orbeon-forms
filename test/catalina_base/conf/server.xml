@@ -1,0 +1,58 @@
+<Server port="8005" shutdown="SHUTDOWN">
+    <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on"/>
+    <Listener className="org.apache.catalina.core.JasperListener"/>
+    <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener"/>
+    <Listener className="org.apache.catalina.mbeans.ServerLifecycleListener"/>
+    <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener"/>
+    <GlobalNamingResources>
+        <Resource name="UserDatabase" auth="Container"
+                  type="org.apache.catalina.UserDatabase"
+                  description="User database that can be updated and saved"
+                  factory="org.apache.catalina.users.MemoryUserDatabaseFactory"
+                  pathname="conf/tomcat-users.xml"/>
+    </GlobalNamingResources>
+    <Service name="Catalina">
+        <Connector port="8080" protocol="HTTP/1.1"
+                   connectionTimeout="20000"
+                   redirectPort="8443"
+                   URIEncoding="UTF-8"/>
+        <Connector port="8009" protocol="AJP/1.3" redirectPort="8443"/>
+        <Engine name="Catalina" defaultHost="localhost">
+            <Realm className="org.apache.catalina.realm.UserDatabaseRealm"
+                   resourceName="UserDatabase"/>
+            <Host name="localhost" appBase="webapps"
+                  unpackWARs="true" autoDeploy="false"
+                  xmlValidation="false" xmlNamespaceAware="false">
+                <Context path="/orbeon" docBase="../../../build/orbeon-war-tomcat" reloadable="false" override="true" allowLinking="true" crossContext="true">
+                    <Resource name="jdbc/oracle_tomcat" auth="Container" type="javax.sql.DataSource"
+                        initialSize="3" maxActive="10" maxIdle="20" maxWait="30000"
+                        driverClassName="oracle.jdbc.OracleDriver"
+                        poolPreparedStatements="true"
+                        validationQuery="select * from dual"
+                        testOnBorrow="true"
+                        username="orbeon_@TRAVIS_BUILD_NUMBER@_tomcat"
+                        password="@RDS_PASSWORD@"
+                        url="@ORACLE_URL@"/>
+                    <Resource name="jdbc/mysql_tomcat" auth="Container" type="javax.sql.DataSource"
+                        initialSize="3" maxActive="10" maxIdle="20" maxWait="30000"
+                        driverClassName="com.mysql.jdbc.Driver"
+                        poolPreparedStatements="true"
+                        validationQuery="select 1 from dual"
+                        testOnBorrow="true"
+                        username="orbeon"
+                        password="@RDS_PASSWORD@"
+                        url="@MYSQL_URL@/orbeon_@TRAVIS_BUILD_NUMBER@_tomcat?useUnicode=true&amp;characterEncoding=UTF8"/>
+                    <Resource name="jdbc/sqlserver_tomcat" auth="Container" type="javax.sql.DataSource"
+                        initialSize="3" maxActive="10" maxIdle="20" maxWait="30000"
+                        driverClassName="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+                        validationQuery="select 1"
+                        testOnBorrow="true"
+                        poolPreparedStatements="true"
+                        username="orbeon"
+                        password="@RDS_PASSWORD@"
+                        url="@SQLSERVER_URL@;databaseName=orbeon_@TRAVIS_BUILD_NUMBER@_tomcat"/>
+                </Context>
+            </Host>
+        </Engine>
+    </Service>
+</Server>

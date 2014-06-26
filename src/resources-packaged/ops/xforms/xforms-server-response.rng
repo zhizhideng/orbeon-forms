@@ -13,13 +13,13 @@
   -->
 <grammar datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes"
          xmlns="http://relaxng.org/ns/structure/1.0"
-         xmlns:xforms="http://www.w3.org/2002/xforms"
-         xmlns:xxforms="http://orbeon.org/oxf/xml/xforms">
+         xmlns:xf="http://www.w3.org/2002/xforms"
+         xmlns:xxf="http://orbeon.org/oxf/xml/xforms">
 
     <start>
-        <element name="xxforms:event-response">
+        <element name="xxf:event-response">
             <optional>
-                <element name="xxforms:static-state">
+                <element name="xxf:static-state">
                     <attribute name="container-type">
                         <choice>
                             <value>servlet</value>
@@ -31,19 +31,28 @@
             </optional>
             <optional>
                 <optional>
-                    <element name="xxforms:dynamic-state">
+                    <element name="xxf:dynamic-state">
                         <data type="string"/>
                     </element>
                 </optional>
-                <element name="xxforms:action">
+                <element name="xxf:action">
                     <optional>
-                        <element name="xxforms:control-values">
+                        <element name="xxf:control-values">
                             <zeroOrMore>
                                 <choice>
-                                    <element name="xxforms:control">
+                                    <element name="xxf:control">
                                         <attribute name="id">
                                             <data type="string"/>
                                         </attribute>
+                                        <!-- Optional attributes for all controls -->
+                                        <optional>
+                                            <attribute name="visited">
+                                                <choice>
+                                                    <value>true</value>
+                                                    <value>false</value>
+                                                </choice>
+                                            </attribute>
+                                        </optional>
                                         <optional>
                                             <attribute name="hint"/>
                                         </optional>
@@ -56,22 +65,22 @@
                                         <optional>
                                             <attribute name="help"/>
                                         </optional>
-                                        <!-- Optional attributes for all controls -->
                                         <optional>
-                                            <attribute name="style"/>
-                                        </optional>
-                                        <optional>
-                                            <!-- This attribute is a space-separate list of attributes names prefixed with either '-' or an optional '+' -->
+                                            <!-- Space-separated list of attributes names prefixed with either '-' or an optional '+' -->
                                             <attribute name="class"/>
                                         </optional>
+                                        <!-- NOTE: style attribute is output via xxf:attribute -->
                                         <choice>
-                                            <!-- Optional attributes for xforms:output -->
+                                            <!-- Optional attributes for xf:output -->
                                             <group>
                                                 <optional>
                                                     <attribute name="mediatype"/>
                                                 </optional>
+                                                <optional>
+                                                    <attribute name="filename"/>
+                                                </optional>
                                             </group>
-                                            <!-- Optional attributes for xforms:upload -->
+                                            <!-- Optional attributes for xf:upload -->
                                             <group>
                                                 <optional>
                                                     <attribute name="mediatype"/>
@@ -85,14 +94,13 @@
                                                     </attribute>
                                                 </optional>
                                                 <optional>
-                                                    <attribute name="size">
-                                                        <optional>
-                                                            <data type="nonNegativeInteger"/>
-                                                        </optional>
-                                                    </attribute>
+                                                    <attribute name="size"/>
                                                 </optional>
                                                 <optional>
                                                     <attribute name="filename"/>
+                                                </optional>
+                                                <optional>
+                                                    <attribute name="accept"/>
                                                 </optional>
                                                 <optional>
                                                     <attribute name="progress-received"/>
@@ -104,7 +112,7 @@
                                                     <attribute name="progress-state"/>
                                                 </optional>
                                             </group>
-                                            <!-- Optional attributes for xforms:input -->
+                                            <!-- Optional attributes for xf:input -->
                                             <group>
                                                 <optional>
                                                     <attribute name="size">
@@ -129,7 +137,7 @@
                                                     </attribute>
                                                 </optional>
                                             </group>
-                                            <!-- Optional attributes for xforms:textarea -->
+                                            <!-- Optional attributes for xf:textarea -->
                                             <group>
                                                 <optional>
                                                     <attribute name="maxlength">
@@ -170,12 +178,12 @@
                                         </optional>
                                     </element>
                                     <!-- For selection controls only -->
-                                    <element name="xxforms:itemset">
+                                    <element name="xxf:itemset">
                                         <attribute name="id"/>
                                         <data type="string"/>
                                     </element>
                                     <!-- For switch/case and dialog only -->
-                                    <element name="xxforms:div">
+                                    <element name="xxf:div">
                                         <attribute name="id"/>
                                         <attribute name="visibility">
                                             <choice>
@@ -190,26 +198,28 @@
                                         <!-- For dialog constraining to viewport -->
                                         <optional>
                                             <attribute name="constrain">
-                                                <data type="boolean"/>
+                                                <choice>
+                                                    <value>true</value>
+                                                    <value>false</value>
+                                                </choice>
                                             </attribute>
                                         </optional>
                                     </element>
-                                    <element name="xxforms:attribute">
-                                        <attribute name="id"/>
+                                    <element name="xxf:attribute">
                                         <attribute name="name"/>
                                         <attribute name="for"/>
                                         <optional>
                                             <data type="string"/>
                                         </optional>
                                     </element>
-                                    <element name="xxforms:text">
+                                    <element name="xxf:text">
                                         <attribute name="id"/>
                                         <attribute name="for"/>
                                         <optional>
                                             <data type="string"/>
                                         </optional>
                                     </element>
-                                    <element name="xxforms:copy-repeat-template">
+                                    <element name="xxf:copy-repeat-template">
                                         <attribute name="id">
                                             <data type="string"/>
                                         </attribute>
@@ -230,7 +240,7 @@
                                             </group>
                                         </choice>
                                     </element>
-                                    <element name="xxforms:delete-repeat-elements">
+                                    <element name="xxf:delete-repeat-elements">
                                         <attribute name="id">
                                             <data type="string"/>
                                         </attribute>
@@ -242,7 +252,7 @@
                                         </attribute>
                                     </element>
                                     <!-- For repeat iterations only -->
-                                    <element name="xxforms:repeat-iteration">
+                                    <element name="xxf:repeat-iteration">
                                         <attribute name="id">
                                             <data type="string"/>
                                         </attribute>
@@ -252,7 +262,7 @@
                                         <ref name="model-item-properties"/>
                                     </element>
                                     <!-- Inner HTML for an entire control -->
-                                    <element name="xxforms:inner-html">
+                                    <element name="xxf:inner-html">
                                         <attribute name="id">
                                             <data type="string"/>
                                         </attribute>
@@ -263,9 +273,9 @@
                         </element>
                     </optional>
                     <optional>
-                        <element name="xxforms:repeat-indexes">
+                        <element name="xxf:repeat-indexes">
                             <zeroOrMore>
-                                <element name="xxforms:repeat-index">
+                                <element name="xxf:repeat-index">
                                     <attribute name="id"/>
                                     <attribute name="new-index">
                                         <data type="nonNegativeInteger"/>
@@ -276,7 +286,7 @@
                     </optional>
                     <!-- Allow for zero or more in case there are multiple delays -->
                     <zeroOrMore>
-                        <element name="xxforms:server-events">
+                        <element name="xxf:server-events">
                             <!-- Optional delay after which the client must send the event -->
                             <optional>
                                 <attribute name="delay"/>
@@ -306,7 +316,7 @@
                         </element>
                     </zeroOrMore>
                     <optional>
-                        <element name="xxforms:submission">
+                        <element name="xxf:submission">
                             <optional>
                                 <attribute name="action"/>
                             </optional>
@@ -325,13 +335,13 @@
                         </element>
                     </optional>
                     <zeroOrMore>
-                        <element name="xxforms:message">
+                        <element name="xxf:message">
                             <attribute name="level"/>
                             <data type="string"/>
                         </element>
                     </zeroOrMore>
                     <zeroOrMore>
-                        <element name="xxforms:load">
+                        <element name="xxf:load">
                             <attribute name="resource"/>
                             <attribute name="show">
                                 <choice>
@@ -353,7 +363,7 @@
                         </element>
                     </zeroOrMore>
                     <zeroOrMore>
-                        <element name="xxforms:script">
+                        <element name="xxf:script">
                             <attribute name="name"/>
                             <attribute name="target-id"/>
                             <attribute name="observer-id"/>
@@ -361,24 +371,24 @@
                     </zeroOrMore>
                     <optional>
                         <choice>
-                            <element name="xxforms:focus">
+                            <element name="xxf:focus">
                                 <attribute name="control-id"/>
                             </element>
-                            <element name="xxforms:blur">
+                            <element name="xxf:blur">
                                 <attribute name="control-id"/>
                             </element>
                         </choice>
                     </optional>
                     <optional>
-                        <element name="xxforms:help">
+                        <element name="xxf:help">
                             <attribute name="control-id"/>
                         </element>
                     </optional>
                 </element>
                 <optional>
-                    <element name="xxforms:errors">
+                    <element name="xxf:errors">
                         <zeroOrMore>
-                            <element name="xxforms:error">
+                            <element name="xxf:error">
                                 <optional><attribute name="exception"/></optional>
                                 <optional><attribute name="file"/></optional>
                                 <optional><attribute name="line"/></optional>
@@ -418,15 +428,25 @@
             </attribute>
         </optional>
         <optional>
-            <attribute name="valid">
+            <attribute name="level">
                 <choice>
-                    <value>true</value>
-                    <value>false</value>
+                    <value/>
+                    <value>error</value>
+                    <value>warning</value>
+                    <value>info</value>
                 </choice>
             </attribute>
         </optional>
         <optional>
             <attribute name="type"/>
+        </optional>
+        <optional>
+            <attribute name="empty">
+                <choice>
+                    <value>true</value>
+                    <value>false</value>
+                </choice>
+            </attribute>
         </optional>
     </define>
 

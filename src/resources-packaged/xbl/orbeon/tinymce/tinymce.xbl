@@ -1,82 +1,122 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<xbl:xbl xmlns:xhtml="http://www.w3.org/1999/xhtml"
-         xmlns:xforms="http://www.w3.org/2002/xforms"
+<!--
+  Copyright (C) 2010 Orbeon, Inc.
+
+  This program is free software; you can redistribute it and/or modify it under the terms of the
+  GNU Lesser General Public License as published by the Free Software Foundation; either version
+  2.1 of the License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+  See the GNU Lesser General Public License for more details.
+
+  The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+  -->
+<xbl:xbl xmlns:xh="http://www.w3.org/1999/xhtml"
+         xmlns:xf="http://www.w3.org/2002/xforms"
          xmlns:xs="http://www.w3.org/2001/XMLSchema"
          xmlns:ev="http://www.w3.org/2001/xml-events"
-         xmlns:xi="http://www.w3.org/2001/XInclude"
-         xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
-         xmlns:xxforms="http://orbeon.org/oxf/xml/xforms"
+         xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+         xmlns:exf="http://www.exforms.org/exf/1-0"
          xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
          xmlns:saxon="http://saxon.sf.net/"
          xmlns:xbl="http://www.w3.org/ns/xbl"
          xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
          xmlns:xxbl="http://orbeon.org/oxf/xml/xbl"
          xmlns:oxf="http://www.orbeon.com/oxf/processors"
-		 xmlns:exf="http://www.exforms.org/exf/1-0"
          xmlns:f="http://orbeon.org/oxf/xml/formatting">
 
     <xbl:script src="/xbl/orbeon/tinymce/jscripts/tiny_mce/tiny_mce.js"/>
     <xbl:script src="/xbl/orbeon/tinymce/tinymce.js"/>
     <xbl:script src="/xbl/orbeon/tinymce/tinymce-config.js"/>
-    <xbl:binding id="fr-tinymce" element="fr|tinymce" xxbl:mode="binding lhha">
-        <metadata xmlns="http://orbeon.org/oxf/xml/form-builder">
-            <display-name lang="en">HTML Text</display-name>
-            <display-name lang="fr">Zone texte HTML</display-name>
+    <xbl:binding id="fr-tinymce" element="fr|tinymce" xxbl:mode="lhha binding value focus" xxf:external-events="fr-set-client-value">
+        <metadata xmlns="http://orbeon.org/oxf/xml/form-builder" xmlns:xf="http://www.w3.org/2002/xforms">
+            <display-name lang="en">Formatted Text</display-name>
+            <display-name lang="es">Texto con Formato</display-name>
+            <display-name lang="fi">Muotoiltu teksti</display-name>
+            <display-name lang="fr">Texte formatté</display-name>
             <display-name lang="ru">Текст в формате HTML</display-name>
+            <display-name lang="de">HTML-Formatierter Text</display-name>
+            <display-name lang="it">Testo formattato in HTML</display-name>
+            <display-name lang="sv">Formaterad HTML-text</display-name>
+            <display-name lang="nl">Tekst met opmaak</display-name>
+            <display-name lang="pt">Texto Formatado</display-name>
             <icon lang="en">
-                <small-icon>/forms/orbeon/builder/images/html.png</small-icon>
-                <large-icon>/forms/orbeon/builder/images/html.png</large-icon>
+                <small-icon>/forms/orbeon/builder/images/html5.png</small-icon>
+                <large-icon>/forms/orbeon/builder/images/html5.png</large-icon>
             </icon>
-            <datatype>xs:string</datatype>
-            <template>
-                <fr:tinymce id="" xmlns="">
-                    <xforms:label ref=""/>
-                    <xforms:hint ref=""/>
-                    <xforms:help ref=""/>
-                    <xforms:alert ref="$fr-resources/detail/labels/alert"/>
-                </fr:tinymce>
-            </template>
+            <templates>
+                <view>
+                    <fr:tinymce id="" xmlns="">
+                        <xf:label ref=""/>
+                        <xf:hint ref=""/>
+                        <xf:help ref=""/>
+                        <xf:alert ref=""/>
+                    </fr:tinymce>
+                </view>
+            </templates>
         </metadata>
         <xbl:resources>
             <xbl:style src="/xbl/orbeon/tinymce/tinymce.css"/>
+            <!-- Load theme CSS ahead of time because tinyMCE dynamic CSS loading fails in portlets.
+
+                 Say the CSS has the URL:
+
+                   http://localhost:9090/web/guest/orbeon-proxy?p_p_[...].css.
+
+                 A relative image URL in the CSS will resolve to this, which is wrong:
+
+                   http://localhost:9090/web/guest/img/icons.png.
+
+                 This happens because:
+
+                 - the relative URL is resolved by the browser
+                 - because the CSS is not processed by the XForms resource server
+                 - because the XForms resource server only processes combined resources
+                 - and here the resource is not combined because it is loaded dynamically by tinyMCE
+
+                 We could (should?) support processing any CSS file at some point.
+
+                 See also tinymce-config.js. -->
+            <xbl:style src="/xbl/orbeon/tinymce/jscripts/tiny_mce/themes/advanced/skins/thebigreason/ui.css"/>
         </xbl:resources>
-        <xbl:implementation>
-            <xforms:model id="tinymce-model">
-                <xforms:instance id="tinymce-instance">
-                    <instance>
-                        <client-value/>
-                    </instance>
-                </xforms:instance>
-            </xforms:model>
-        </xbl:implementation>
+        <xbl:handlers>
+            <xbl:handler event="fr-set-client-value" phase="target">
+                <xf:setvalue ref="xxf:binding('fr-tinymce')" value="xxf:call-xpl('oxf:/ops/xforms/clean-html.xpl', 'dirty-html', xf:element('value', event('fr-value')), 'clean-html')"/>
+            </xbl:handler>
+        </xbl:handlers>
         <xbl:template>
-            <xforms:var name="server-value" value="xxforms:binding('fr-tinymce')"/>
-            <xforms:var name="client-value" value="client-value"/>
+            <xf:var name="binding"      value="xxf:binding('fr-tinymce')"/>
+            <xf:var name="script"       value="not(exf:readonly($binding) and property('xxf:readonly-appearance') = 'static' or property('xxf:noscript'))"/>
 
-            <!-- XForms control the JavaScript writes to -->
-            <xforms:textarea ref="$client-value" id="tinymce-client-value" class="xbl-fr-tinymce-xforms-client-value fr-hidden">
-                <xforms:setvalue ev:event="xforms-value-changed" ref="$server-value" value="xxforms:call-xpl('oxf:/ops/xforms/clean-html.xpl', 'dirty-html', $client-value, 'clean-html')"/>
-            </xforms:textarea>
-            <xforms:output ref="$server-value" id="tinymce-server-value" class="xbl-fr-tinymce-xforms-server-value fr-hidden">
-                <!-- Listen on xforms-enable to refresh TinyMCE with latest value in case the value changed while the component was non-relevant -->
-                <xxforms:script id="xf-ch" ev:event="xforms-value-changed xforms-enabled xxforms-iteration-moved">YAHOO.xbl.fr.Tinymce.instance(this).serverToClient();</xxforms:script>
-                <xxforms:script id="xf-ro" ev:event="xforms-readonly">YAHOO.xbl.fr.Tinymce.instance(this).readonly();</xxforms:script>
-                <xxforms:script id="xf-rw" ev:event="xforms-readwrite">YAHOO.xbl.fr.Tinymce.instance(this).readwrite();</xxforms:script>
-            </xforms:output>
+            <xf:group ref=".[$script]">
+                <xf:output ref="$binding" id="tinymce-server-value" class="xbl-fr-tinymce-xforms-server-value xforms-hidden">
+                    <!-- Listen on xforms-enable to refresh TinyMCE with latest value in case the value changed while the component was non-relevant -->
+                    <xxf:script id="xf-ch" ev:event="xforms-value-changed xforms-enabled xxforms-iteration-moved">YAHOO.xbl.fr.Tinymce.instance(this).serverToClient();</xxf:script>
+                    <xxf:script id="xf-ro" ev:event="xforms-readonly">YAHOO.xbl.fr.Tinymce.instance(this).readonly();</xxf:script>
+                    <xxf:script id="xf-rw" ev:event="xforms-readwrite">YAHOO.xbl.fr.Tinymce.instance(this).readwrite();</xxf:script>
+                </xf:output>
 
-            <xhtml:a f:url-type="resource" style="display: none" href="/xbl/orbeon/tinymce/jscripts/tiny_mce.js" class="tinymce-base-url"/>
+                <!-- In portlet mode, we want the resource id to be processed into a base URL, and we use a magic value to
+                     indicate that. Search for 1b713b2e6d7fd45753f4b8a6270b776e in the code for more details.
+                     NOTE: Don't put '/' before 1b713b2e6d7fd45753f4b8a6270b776e because TinyMCE will automatically
+                     append a leading '/', and this causes paths to have '//', which some servers like Jetty don't like.
+                     See: https://github.com/orbeon/orbeon-forms/pull/896
+                 -->
+                <xh:a f:url-type="resource" style="display: none" href="/xbl/orbeon/tinymce/jscripts/tiny_mce1b713b2e6d7fd45753f4b8a6270b776e.js" class="tinymce-base-url"/>
 
-            <!--
-                div to be converted into a TinyMCE Editor instance.
-                By default, a certain div element is used to bind the TinyMCE editor,
-                instead of the "textareas" default. Important: Make sure that class
-                attribute corresponds to myDivClass variable in tinymce.js! -->
-            <xhtml:div
-                class="xbl-fr-tinymce-div xbl-html-input"
-                id="tinymce-div"
-                xbl:attr="style tabindex tabindex=navindex" />
-            <!-- Stop propagation of all local UI events -->
-            <xforms:action ev:event="#all" ev:propagate="stop"/>
+                <!--
+                    div to be converted into a TinyMCE Editor instance.
+                    By default, a certain div element is used to bind the TinyMCE editor,
+                    instead of the "textareas" default. Important: Make sure that class
+                    attribute corresponds to myDivClass variable in tinymce.js! -->
+                <xh:div
+                    class="xbl-fr-tinymce-div xbl-html-input"
+                    id="tinymce-div"
+                    aria-label="{xxf:label('fr-tinymce')}"
+                    xbl:attr="style tabindex tabindex=navindex"/>
+            </xf:group>
+            <xf:output mediatype="text/html" ref="$binding[not($script)]"/>
+
         </xbl:template>
     </xbl:binding>
 

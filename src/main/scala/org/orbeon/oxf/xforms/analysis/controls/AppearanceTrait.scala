@@ -1,0 +1,58 @@
+/**
+ *  Copyright (C) 2007 Orbeon, Inc.
+ *
+ *  This program is free software you can redistribute it and/or modify it under the terms of the
+ *  GNU Lesser General Public License as published by the Free Software Foundation either version
+ *  2.1 of the License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY
+ *  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *  See the GNU Lesser General Public License for more details.
+ *
+ *  The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+ */
+package org.orbeon.oxf.xforms.analysis.controls
+
+import java.{lang ⇒ jl}
+import org.orbeon.oxf.xforms.XFormsConstants._
+import org.orbeon.oxf.xforms.analysis.ElementAnalysis._
+import org.orbeon.oxf.xforms.analysis.SimpleElementAnalysis
+import org.dom4j.QName
+
+// Trait for all elements that have an appearance
+trait AppearanceTrait extends SimpleElementAnalysis {
+
+    import AppearanceTrait._
+
+    val appearances = attQNameSet(element, APPEARANCE_QNAME, namespaceMapping)
+    val mediatype   = Option(element.attributeValue(MEDIATYPE_QNAME))
+    
+    def encodeAndAppendAppearances(sb: jl.StringBuilder) =
+        appearances foreach (encodeAndAppendAppearance(sb, localName, _))
+}
+
+object AppearanceTrait {
+    // The client expects long prefixes
+    private val StandardPrefixes = Map(XXFORMS_NAMESPACE_URI → "xxforms", XFORMS_NAMESPACE_URI → "xforms")
+
+    def encodeAndAppendAppearance(sb: jl.StringBuilder, lhha: String, appearance: QName) = {
+        if (sb.length > 0)
+            sb.append(' ')
+        sb.append("xforms-")
+        sb.append(lhha)
+        sb.append("-appearance-")
+
+        // Names in a namespace may get a prefix
+        val uri = appearance.getNamespaceURI
+        if (uri != "") {
+            // Try standard prefixes or else use the QName prefix
+            val prefix = AppearanceTrait.StandardPrefixes.getOrElse(uri, appearance.getNamespacePrefix)
+            if (prefix != "") {
+                sb.append(prefix)
+                sb.append("-")
+            }
+        }
+
+        sb.append(appearance.getName)
+    }
+}

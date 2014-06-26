@@ -14,10 +14,10 @@
 <p:config xmlns:p="http://www.orbeon.com/oxf/pipeline"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:fo="http://www.w3.org/1999/XSL/Format"
-    xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xmlns:xh="http://www.w3.org/1999/xhtml"
     xmlns:oxf="http://www.orbeon.com/oxf/processors"
-    xmlns:xforms="http://www.w3.org/2002/xforms"
-    xmlns:xxforms="http://orbeon.org/oxf/xml/xforms"
+    xmlns:xf="http://www.w3.org/2002/xforms"
+    xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
     <!-- Generate resource based on path -->
@@ -40,18 +40,7 @@
         <p:output name="data" id="rewritten-data"/>
     </p:processor>
     <!-- Move from XHTML namespace to no namespace -->
-    <p:processor name="oxf:qname-converter">
-        <p:input name="config">
-            <config>
-                <match>
-                    <uri>http://www.w3.org/1999/xhtml</uri>
-                </match>
-                <replace>
-                    <uri/>
-                    <prefix/>
-                </replace>
-            </config>
-        </p:input>
+    <p:processor name="oxf:plain-html-converter">
         <p:input name="data" href="#rewritten-data"/>
         <p:output name="data" id="html-data"/>
     </p:processor>
@@ -59,8 +48,7 @@
     <p:processor name="oxf:html-converter">
         <p:input name="config">
             <config>
-                <public-doctype>-//W3C//DTD HTML 4.01 Transitional//EN</public-doctype>
-                <version>4.01</version>
+                <version>5.0</version>
                 <encoding>utf-8</encoding>
             </config>
         </p:input>

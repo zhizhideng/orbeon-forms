@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <!--
     Copyright (C) 2008 Orbeon, Inc.
 
@@ -29,7 +28,7 @@
     <!-- Extract request parameters (app, form, document, and mode) from URL -->
     <p:processor name="oxf:pipeline">
         <p:input name="config" href="../request-parameters.xpl"/>
-        <p:output name="data" id="parameters" ref="instance"/>
+        <p:output name="data" id="parameters"/>
     </p:processor>
 
     <!-- If data is posted, store as request attribute -->
@@ -52,6 +51,7 @@
         <p:input name="config" href="read-form.xpl"/>
         <p:input name="instance" href="#parameters"/>
         <p:output name="data" id="xhtml-fr-xforms" ref="data"/>
+        <p:output name="instance" ref="instance"/>
     </p:processor>
 
 </p:config>

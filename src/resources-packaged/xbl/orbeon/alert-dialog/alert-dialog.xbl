@@ -11,13 +11,13 @@
 
   The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
   -->
-<xbl:xbl xmlns:xhtml="http://www.w3.org/1999/xhtml"
-         xmlns:xforms="http://www.w3.org/2002/xforms"
+<xbl:xbl xmlns:xh="http://www.w3.org/1999/xhtml"
+         xmlns:xf="http://www.w3.org/2002/xforms"
          xmlns:xs="http://www.w3.org/2001/XMLSchema"
          xmlns:ev="http://www.w3.org/2001/xml-events"
          xmlns:xi="http://www.w3.org/2001/XInclude"
          xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
-         xmlns:xxforms="http://orbeon.org/oxf/xml/xforms"
+         xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
          xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
          xmlns:saxon="http://saxon.sf.net/"
          xmlns:xbl="http://www.w3.org/ns/xbl"
@@ -30,12 +30,13 @@
             <xbl:style src="/xbl/orbeon/alert-dialog/alert-dialog.css"/>
         </xbl:resources>
         <xbl:handlers>
-            <xbl:handler event="fr-show" phase="target">
-                <xforms:setvalue if="event('message')" ref="message" value="event('message')"/>
-                <xforms:setvalue if="event('positive-targetid')" ref="positive" value="event('positive-targetid')"/>
-                <xforms:setvalue if="event('negative-targetid')" ref="negative" value="event('negative-targetid')"/>
-                <xforms:setvalue if="event('neutral-targetid')" ref="neutral" value="event('neutral-targetid')"/>
-                <xxforms:show dialog="dialog" xxbl:scope="inner"/>
+            <xbl:handler event="fr-show xxforms-dialog-open" phase="target">
+                <xf:setvalue if="event('message')"           ref="message"  value="event('message')"/>
+                <xf:setvalue if="event('context')"           ref="context"  value="event('context')"/>
+                <xf:setvalue if="event('positive-targetid')" ref="positive" value="event('positive-targetid')"/>
+                <xf:setvalue if="event('negative-targetid')" ref="negative" value="event('negative-targetid')"/>
+                <xf:setvalue if="event('neutral-targetid')"  ref="neutral"  value="event('neutral-targetid')"/>
+                <xxf:show dialog="dialog" xxbl:scope="inner"/>
             </xbl:handler>
         </xbl:handlers>
         <xbl:template xxbl:transform="oxf:unsafe-xslt">
@@ -43,23 +44,26 @@
                 <xsl:import href="oxf:/oxf/xslt/utils/xbl.xsl"/>
 
                 <xsl:template match="/*">
-                    
+
                     <xsl:variable name="has-multiple-choices" select="count(fr:positive-choice | fr:negative-choice | fr:neutral-choice) > 1"/>
-                    <xxforms:dialog xxbl:scope="inner" id="dialog" level="modal" appearance="full" close="{exists(fr:neutral-choice) and not ($has-multiple-choices)}"
+
+                    <!-- Once AVTs are supported: close="{exists(fr:neutral-choice) and not ($has-multiple-choices)}"  -->
+                    <xxf:dialog xxbl:scope="inner" id="dialog" level="modal" appearance="full" close="{(@close, 'false')[1]}"
                             class="xbl-fr-alert-dialog xbl-fr-alert-dialog-{if ($has-multiple-choices) then 'question' else 'info'}">
 
-                        <xforms:model>
-                            <xforms:instance>
+                        <xf:model>
+                            <xf:instance>
                                 <alert>
                                     <message/>
+                                    <context/>
                                     <positive/>
                                     <negative/>
                                     <neutral/>
                                 </alert>
-                            </xforms:instance>
-                        </xforms:model>
+                            </xf:instance>
+                        </xf:model>
 
-                        <xxforms:variable name="local" value="instance()"/>
+                        <xf:var name="local" value="instance()"/>
 
                         <!-- Set the focus on the first button in the dialog. This is done:
                              a) For usability: so users can press enter to activate the button, or press tab to go to
@@ -73,78 +77,98 @@
                              b) We need code to figure out what the id of the first button is, while in JavaScript we
                                 can just refer to "the first button in the dialog".
                         -->
-                        <xxforms:script ev:event="xxforms-dialog-open">
+                        <xxf:script ev:event="xxforms-dialog-open">
                             var buttons = this.getElementsByTagName("button");
                             if (buttons.length > 0) buttons[0].focus();
-                        </xxforms:script>
-                        <xforms:label xxbl:scope="outer"><xsl:copy-of select="fr:label/(@* | node())"/></xforms:label>
-                        <xforms:group appearance="xxforms:internal">
-                            <!-- Any button click closes the dialog and clears the local data -->
-                            <xforms:action ev:event="DOMActivate">
-                                <xxforms:hide dialog="dialog"/>
-                                <xforms:setvalue iterate="*" ref="."/>
-                            </xforms:action>
-
-                            <xhtml:div class="xbl-fr-alert-dialog-message">
-                                <xsl:choose>
-                                    <xsl:when test="fr:message">
-                                        <!-- Use static message -->
-                                        <xforms:output value="''" xxbl:scope="outer">
-                                            <xforms:label><xsl:copy-of select="fr:message/(@* | node())"/></xforms:label>
-                                        </xforms:output>
-                                    </xsl:when>
-                                    <xsl:otherwise>
-                                        <!-- use dynamic message -->
-                                        <xforms:output value="''"><xforms:label ref="$local/message"/></xforms:output>
-                                    </xsl:otherwise>
-                                </xsl:choose>
-                            </xhtml:div>
-                            <xhtml:div class="xbl-fr-alert-dialog-buttons">
-                                <xsl:apply-templates/>
-                            </xhtml:div>
-                        </xforms:group>
-                    </xxforms:dialog>
+                        </xxf:script>
+                        <xf:label xxbl:scope="outer"><xsl:copy-of select="fr:label/(@* | node())"/></xf:label>
+                        <xh:div class="xbl-fr-alert-dialog-message">
+                            <xsl:choose>
+                                <xsl:when test="fr:message">
+                                    <!-- Use static message -->
+                                    <xf:output value="''" xxbl:scope="outer">
+                                        <xf:label><xsl:copy-of select="fr:message/(@* | node())"/></xf:label>
+                                    </xf:output>
+                                </xsl:when>
+                                <xsl:otherwise>
+                                    <!-- use dynamic message -->
+                                    <xf:output value="''"><xf:label ref="$local/message"/></xf:output>
+                                </xsl:otherwise>
+                            </xsl:choose>
+                        </xh:div>
+                        <xh:div class="xbl-fr-alert-dialog-buttons">
+                            <xf:group appearance="xxf:internal" xxbl:scope="outer">
+                                <!-- Any button click closes the dialog and clears the local data -->
+                                <xf:action ev:event="DOMActivate">
+                                    <xxf:hide dialog="dialog" xxbl:scope="inner"/>
+                                    <xf:setvalue iterate="*" ref="." xxbl:scope="inner"/>
+                                </xf:action>
+                                <xsl:variable name="buttons" as="element(xf:trigger)*">
+                                    <xsl:apply-templates/>
+                                </xsl:variable>
+                                <xsl:for-each select="$buttons">
+                                    <xsl:variable name="is-primary" select="position() = last()"/>
+                                    <xsl:copy>
+                                        <xsl:if test="$is-primary">
+                                            <xsl:attribute name="appearance">xxf:primary</xsl:attribute>
+                                        </xsl:if>
+                                        <xsl:copy-of select="@* | node()"/>
+                                    </xsl:copy>
+                                </xsl:for-each>
+                            </xf:group>
+                        </xh:div>
+                    </xxf:dialog>
                 </xsl:template>
 
                 <xsl:template match="fr:positive-choice">
-                    <xhtml:span class="xbl-fr-alert-dialog-positive">
-                        <xsl:copy-of select="xforms:trigger(*, 'Yes', 'positive')"/>
-                    </xhtml:span>
+                    <!-- TODO: i18n -->
+                    <xsl:variable name="default"><xh:i class="icon-ok"/> Yes</xsl:variable>
+                    <xsl:copy-of select="xf:trigger(@xxf:modal | *, $default, 'positive')"/>
                 </xsl:template>
 
                 <xsl:template match="fr:negative-choice">
-                    <xhtml:span class="xbl-fr-alert-dialog-negative">
-                        <xsl:copy-of select="xforms:trigger(*, 'No', 'negative')"/>
-                    </xhtml:span>
+                    <!-- TODO: i18n -->
+                    <xsl:variable name="default"><xh:i class="icon-remove"/> No</xsl:variable>
+                    <xsl:copy-of select="xf:trigger(@xxf:modal | *, $default, 'negative')"/>
                 </xsl:template>
 
                 <xsl:template match="fr:neutral-choice">
-                    <xhtml:span class="xbl-fr-alert-dialog-neutral">
-                        <xsl:copy-of select="xforms:trigger(*, 'OK', 'neutral')"/>
-                    </xhtml:span>
+                    <!-- TODO: i18n -->
+                    <xsl:copy-of select="xf:trigger(@xxf:modal | *, 'OK', 'neutral')"/>
                 </xsl:template>
 
-                <xsl:function name="xforms:trigger">
-                    <xsl:param name="content" as="element()*"/>
-                    <xsl:param name="default" as="xs:string"/>
+                <xsl:function name="xf:trigger" as="element(xf:trigger)">
+                    <xsl:param name="content" as="node()*"/>
+                    <xsl:param name="default" as="item()*"/>
                     <xsl:param name="handler" as="xs:string"/>
                     <xsl:variable name="fr-label" as="element(fr:label)?" select="$content/self::fr:label"/>
-                    <xforms:trigger ref="." xxbl:scope="outer">
-                        <xforms:label>
+                    <xf:trigger xxbl:scope="outer">
+                        <xsl:copy-of select="$content except $fr-label"/>
+                        <xf:label>
                             <xsl:choose>
                                 <xsl:when test="exists($fr-label)">
+                                    <!-- We used to use an <xf:output> wrapper here because we prepended icons above.
+                                         This change broke the case where there was a non-default static label. Now we
+                                         pass <xh:i> via $default instead. It's not ideal that we need to hardcode
+                                         <xh:i> and it would be better if we could revert to using CSS for this.
+                                         See: https://github.com/orbeon/orbeon-forms/issues/607 -->
                                     <xsl:copy-of select="$fr-label/(@* | node())"/>
                                 </xsl:when>
                                 <xsl:otherwise>
-                                    <xsl:value-of select="$default"/>
+                                    <xsl:copy-of select="$default"/>
                                 </xsl:otherwise>
                             </xsl:choose>
-                        </xforms:label>
-                        <xsl:copy-of select="$content except $fr-label"/>
+                        </xf:label>
                         <!-- If a custom target is provided, dispatch to it -->
-                        <!-- NOTE: For now target must be an effective id -->
-                        <xforms:dispatch ev:event="DOMActivate" if="normalize-space($local/{$handler})" name="fr-{$handler}" targetid="{{$local/{$handler}}}" xxbl:scope="inner"/>
-                    </xforms:trigger>
+                        <xf:action ev:event="DOMActivate">
+                            <xf:var name="local"><xxf:value value="$local" xxbl:scope="inner"/></xf:var>
+                            <xf:var name="targetid" value="normalize-space($local/{$handler})"/>
+
+                            <xf:dispatch if="$targetid != ''" name="fr-{$handler}" targetid="{{$targetid}}">
+                                <xf:property name="context" value="$local/context"/>
+                            </xf:dispatch>
+                        </xf:action>
+                    </xf:trigger>
                 </xsl:function>
 
                 <xsl:template match="@*|node()" priority="-100"/>

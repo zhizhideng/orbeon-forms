@@ -15,19 +15,6 @@
             xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
             xmlns:xi="http://www.w3.org/2001/XInclude">
 
-    <!-- Include user definitions. By default an empty file is present in packaged resources, and can be overridden. -->
-    <xi:include href="oxf:/config/processors-local.xml"/>
-
-    <!-- For backward compatibility -->
-    <xi:include href="oxf:/config/custom-processors.xml"/>
-
-    <!-- Include third-party definitions. The file must be present. -->
-    <xi:include href="oxf:/config/third-party-processors.xml"/>
-
-    <!-- These are the main processor declarations. They are defined globally for any pipeline
-    running in OXF. The uri attributes are present only for backward compatibility and is likely to
-    be deprecated. The name attribute should be used for new processor definitions. -->
-
     <!-- Base processors -->
     <processor name="oxf:identity">
         <class name="org.orbeon.oxf.processor.IdentityProcessor"/>
@@ -69,6 +56,10 @@
         <class name="org.orbeon.oxf.processor.generator.ExceptionGenerator"/>
     </processor>
 
+    <processor name="oxf:exception-catcher">
+        <class name="org.orbeon.oxf.processor.ExceptionCatcher"/>
+    </processor>
+
     <processor name="oxf:dom-generator">
         <class name="org.orbeon.oxf.processor.generator.DOMGenerator"/>
     </processor>
@@ -82,11 +73,15 @@
     </processor>
 
     <processor name="oxf:perl5-matcher">
-        <class name="org.orbeon.oxf.processor.Perl5MatchProcessor"/>
+        <class name="org.orbeon.oxf.processor.RegexpProcessor"/>
+    </processor>
+
+    <processor name="oxf:regexp">
+        <class name="org.orbeon.oxf.processor.RegexpProcessor"/>
     </processor>
 
     <processor name="oxf:glob-matcher">
-        <class name="org.orbeon.oxf.processor.GlobMatchProcessor"/>
+        <class name="org.orbeon.oxf.processor.GlobProcessor"/>
     </processor>
 
     <processor name="oxf:debug">
@@ -313,7 +308,7 @@
 
     <!-- Page Flow processors -->
     <processor name="oxf:page-flow">
-        <class name="org.orbeon.oxf.processor.PageFlowControllerProcessor"/>
+        <class name="org.orbeon.oxf.controller.PageFlowControllerProcessor"/>
     </processor>
 
     <processor name="oxf:pfc-xslt-1.0">
@@ -422,6 +417,14 @@
         <class name="org.orbeon.oxf.processor.converter.QNameConverter"/>
     </processor>
 
+    <processor name="oxf:plain-html-converter">
+        <class name="org.orbeon.oxf.processor.converter.PlainHTMLConverter"/>
+    </processor>
+
+    <processor name="oxf:plain-xhtml-converter">
+        <class name="org.orbeon.oxf.processor.converter.PlainXHTMLConverter"/>
+    </processor>
+
     <processor name="oxf:to-xml-converter">
         <class name="org.orbeon.oxf.processor.converter.ToXMLConverter"/>
     </processor>
@@ -521,6 +524,10 @@
 
     <processor name="oxf:xforms-resource-server">
         <class name="org.orbeon.oxf.xforms.processor.XFormsResourceServer"/>
+    </processor>
+
+    <processor name="oxf:xforms-upload">
+        <class name="org.orbeon.oxf.xforms.processor.Upload"/>
     </processor>
 
     <processor name="oxf:xforms-submission">
@@ -642,23 +649,6 @@
         <class name="org.orbeon.oxf.portlet.processor.PortletPreferencesSerializer"/>
     </processor>
 
-    <!-- Tamino processors -->
-    <processor name="oxf:tamino-query">
-        <class name="org.orbeon.oxf.processor.tamino.TaminoQueryProcessor"/>
-    </processor>
-
-    <processor name="oxf:tamino-insert">
-        <class name="org.orbeon.oxf.processor.tamino.TaminoInsertProcessor"/>
-    </processor>
-
-    <processor name="oxf:tamino-update">
-        <class name="org.orbeon.oxf.processor.tamino.TaminoUpdateProcessor"/>
-    </processor>
-
-    <processor name="oxf:tamino-delete">
-        <class name="org.orbeon.oxf.processor.tamino.TaminoDeleteProcessor"/>
-    </processor>
-
     <!-- XML:DB processors -->
     <processor name="oxf:xmldb-query">
         <class name="org.orbeon.oxf.processor.xmldb.XMLDBQueryProcessor"/>
@@ -700,10 +690,6 @@
 
     <processor name="oxf:counter">
         <class name="org.orbeon.oxf.processor.test.CounterProcessor"/>
-    </processor>
-
-    <processor name="oxf:exception-catcher">
-        <class name="org.orbeon.oxf.processor.test.ExceptionCatcher"/>
     </processor>
 
     <processor name="oxf:sleep">
@@ -783,7 +769,27 @@
     <processor name="fr:persistence-proxy">
         <class name="org.orbeon.oxf.fr.FormRunnerPersistenceProxy"/>
     </processor>
+    <processor name="fr:relational-persistence-reindex">
+        <class name="org.orbeon.oxf.fr.relational.ReindexProcessor"/>
+    </processor>
+    <processor name="fr:relational-crud">
+        <class name="org.orbeon.oxf.fr.relational.crud.CRUD"/>
+    </processor>
+    <processor name="fr:xforms-to-schema">
+        <class name="org.orbeon.oxf.fr.schema.XFormsToSchema"/>
+    </processor>
+    <processor name="fr:resources-patcher">
+        <class name="org.orbeon.oxf.fr.ResourcesPatcher"/>
+    </processor>
 
-    <!-- No longer supported processors -->
+    <!-- Third-party processors -->
+    <processor name="tao:from-pdf-converter" xmlns:tao="http://www.taoconsulting.biz/ops/processors">
+        <class name="biz.taoconsulting.oxf.processor.converter.FromPdfConverter"/>
+    </processor>
+
+    <!-- Include in the end so it's possible to override, see: https://github.com/orbeon/orbeon-forms/issues/447 -->
+
+    <!-- Include user definitions. By default an empty file is present in packaged resources, and can be overridden. -->
+    <xi:include href="oxf:/config/processors-local.xml"/>
 
 </processors>

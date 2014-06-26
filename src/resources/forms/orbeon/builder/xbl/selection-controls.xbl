@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!--
   Copyright (C) 2009 Orbeon, Inc.
 
@@ -15,213 +14,157 @@
 <!--
     This is the standard Form Builder standard controls library.
  -->
-<xbl:xbl xmlns:xhtml="http://www.w3.org/1999/xhtml"
-         xmlns:xforms="http://www.w3.org/2002/xforms"
+<xbl:xbl xmlns:xh="http://www.w3.org/1999/xhtml"
+         xmlns:xf="http://www.w3.org/2002/xforms"
          xmlns:xs="http://www.w3.org/2001/XMLSchema"
          xmlns:ev="http://www.w3.org/2001/xml-events"
          xmlns:xi="http://www.w3.org/2001/XInclude"
          xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
-         xmlns:xxforms="http://orbeon.org/oxf/xml/xforms"
+         xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
          xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
          xmlns:saxon="http://saxon.sf.net/"
          xmlns:xbl="http://www.w3.org/ns/xbl">
 
     <metadata xmlns="http://orbeon.org/oxf/xml/form-builder">
         <display-name lang="en">Selection Controls</display-name>
+        <display-name lang="es">Controles de Selección</display-name>
+        <display-name lang="fi">Valintakontrollit</display-name>
         <display-name lang="fr">Contrôles de sélection</display-name>
         <display-name lang="ru">Элементы выбора</display-name>
-        <!--<icon lang="en">-->
-            <!--<small-icon>/forms/orbeon/builder/images/input.png</small-icon>-->
-            <!--<large-icon>/forms/orbeon/builder/images/input.png</large-icon>-->
-        <!--</icon>-->
+        <display-name lang="de">Auswahl-Bedienelemente</display-name>
+        <display-name lang="it">Controlli di selezione</display-name>
+        <display-name lang="nl">Selectie-elementen</display-name>
+        <display-name lang="pt">Controlos de Selecção</display-name>
     </metadata>
 
-    <xbl:binding id="fb-input-select1-minimal" element="xforms|select1">
-        <metadata xmlns="http://orbeon.org/oxf/xml/form-builder">
-            <display-name lang="en">Dropdown</display-name>
-            <display-name lang="fr">Menu déroulant</display-name>
-            <display-name lang="ru">Выпадающий список</display-name>
-            <icon lang="en">
-                <small-icon>/forms/orbeon/builder/images/dropdown.png</small-icon>
-                <large-icon>/forms/orbeon/builder/images/dropdown.png</large-icon>
-            </icon>
-            <datatype>xforms:string</datatype>
-            <editors static-itemset="true"/>
-            <template>
-                <xforms:select1 id="" appearance="minimal" ref="" xmlns="">
-                    <xforms:label ref=""/>
-                    <xforms:hint ref=""/>
-                    <xforms:help ref=""/>
-                    <xforms:alert ref="$fr-resources/detail/labels/alert"/>
-                    <xforms:item>
-                        <xforms:label>[Select...]</xforms:label>
-                        <xforms:value/>
-                    </xforms:item>
-                    <xforms:itemset ref="">
-                        <xforms:label ref="label"/>
-                        <xforms:value ref="value"/>
-                    </xforms:itemset>
-                </xforms:select1>
-            </template>
-        </metadata>
-    </xbl:binding>
-
-    <xbl:binding id="fb-input-select1-full" element="xforms|select1">
+    <xbl:binding id="fb-input-select1-full" element="xf|select1">
         <metadata xmlns="http://orbeon.org/oxf/xml/form-builder">
             <display-name lang="en">Radio Buttons</display-name>
+            <display-name lang="es">Botones de Opción</display-name>
+            <display-name lang="fi">Radiopainikkeet</display-name>
             <display-name lang="fr">Boutons radio</display-name>
             <display-name lang="ru">Радио-кнопки</display-name>
+            <display-name lang="de">Exklusive Auswahl</display-name>
+            <display-name lang="it">Scelta unica</display-name>
+            <display-name lang="nl">Keuzerondje</display-name>
+            <display-name lang="pt">Botões de Opção</display-name>
             <icon lang="en">
                 <small-icon>/forms/orbeon/builder/images/radio.png</small-icon>
                 <large-icon>/forms/orbeon/builder/images/radio.png</large-icon>
             </icon>
-            <datatype>xs:string</datatype>
-            <editors static-itemset="true"/>
-            <template>
-                <xforms:select1 id="" appearance="full" ref="" xmlns="">
-                    <xforms:label ref=""/>
-                    <xforms:hint ref=""/>
-                    <xforms:help ref=""/>
-                    <xforms:alert ref="$fr-resources/detail/labels/alert"/>
-                    <xforms:itemset ref="">
-                        <xforms:label ref="label"/>
-                        <xforms:value ref="value"/>
-                    </xforms:itemset>
-                </xforms:select1>
-            </template>
+            <editors static-itemset="true" item-hint="true"/>
+            <templates>
+                <view>
+                    <xf:select1 id="" appearance="full" ref="" xmlns="">
+                        <xf:label ref=""/>
+                        <xf:hint ref=""/>
+                        <xf:help ref=""/>
+                        <xf:alert ref=""/>
+                        <xf:itemset ref="">
+                            <xf:label ref="label"/>
+                            <xf:value ref="value"/>
+                            <xf:hint ref="hint"/>
+                        </xf:itemset>
+                    </xf:select1>
+                </view>
+            </templates>
         </metadata>
     </xbl:binding>
 
-    <xbl:binding id="fb-input-select-full" element="xforms|select">
+    <xbl:binding id="fb-input-select-full" element="xf|select">
         <metadata xmlns="http://orbeon.org/oxf/xml/form-builder">
             <display-name lang="en">Checkboxes</display-name>
+            <display-name lang="es">Casillas de Verificación</display-name>
+            <display-name lang="fi">Valintaruudut</display-name>
             <display-name lang="fr">Cases à cocher</display-name>
             <display-name lang="ru">Галочки</display-name>
+            <display-name lang="de">Mehrfachauswahl</display-name>
+            <display-name lang="it">Scelta multipla</display-name>
+            <display-name lang="nl">Selectievakjes</display-name>
+            <display-name lang="pt">Caixas de Verificação</display-name>
             <icon lang="en">
                 <small-icon>/forms/orbeon/builder/images/checkbox.png</small-icon>
                 <large-icon>/forms/orbeon/builder/images/checkbox.png</large-icon>
             </icon>
-            <datatype>xs:string</datatype>
-            <editors static-itemset="true"/>
-            <template>
-                <xforms:select id="" appearance="full" ref="" xmlns="">
-                    <xforms:label ref=""/>
-                    <xforms:hint ref=""/>
-                    <xforms:help ref=""/>
-                    <xforms:alert ref="$fr-resources/detail/labels/alert"/>
-                    <xforms:itemset ref="">
-                        <xforms:label ref="label"/>
-                        <xforms:value ref="value"/>
-                    </xforms:itemset>
-                </xforms:select>
-            </template>
+            <editors static-itemset="true" item-hint="true"/>
+            <templates>
+                <view>
+                    <xf:select id="" appearance="full" ref="" xmlns="">
+                        <xf:label ref=""/>
+                        <xf:hint ref=""/>
+                        <xf:help ref=""/>
+                        <xf:alert ref=""/>
+                        <xf:itemset ref="">
+                            <xf:label ref="label"/>
+                            <xf:value ref="value"/>
+                            <xf:hint ref="hint"/>
+                        </xf:itemset>
+                    </xf:select>
+                </view>
+            </templates>
         </metadata>
     </xbl:binding>
 
-    <xbl:binding id="fb-input-select1-compact" element="xforms|select1">
+    <xbl:binding id="fb-input-select1-compact" element="xf|select1">
         <metadata xmlns="http://orbeon.org/oxf/xml/form-builder">
-            <display-name lang="en">Single List Box</display-name>
-            <display-name lang="fr">Liste simple</display-name>
+            <display-name lang="en">Scrollable List</display-name>
+            <display-name lang="es">Lista Desplegable</display-name>
+            <display-name lang="fi">Vieritettävä lista</display-name>
+            <display-name lang="fr">Liste défilante</display-name>
             <display-name lang="ru">Один из контейнера</display-name>
+            <display-name lang="de">Scrollbare Liste</display-name>
+            <display-name lang="it">Elenco scrollabile</display-name>
+            <display-name lang="nl">Schuifbare lijst</display-name>
+            <display-name lang="pt">Lista</display-name>
             <icon lang="en">
                 <small-icon>/forms/orbeon/builder/images/listbox.png</small-icon>
                 <large-icon>/forms/orbeon/builder/images/listbox.png</large-icon>
             </icon>
-            <datatype>xs:string</datatype>
             <editors static-itemset="true"/>
-            <template>
-                <xforms:select1 id="" appearance="compact" ref="" xmlns="">
-                    <xforms:label ref=""/>
-                    <xforms:hint ref=""/>
-                    <xforms:help ref=""/>
-                    <xforms:alert ref="$fr-resources/detail/labels/alert"/>
-                    <xforms:itemset ref="">
-                        <xforms:label ref="label"/>
-                        <xforms:value ref="value"/>
-                    </xforms:itemset>
-                </xforms:select1>
-            </template>
+            <templates>
+                <view>
+                    <xf:select1 id="" appearance="compact" ref="" xmlns="">
+                        <xf:label ref=""/>
+                        <xf:hint ref=""/>
+                        <xf:help ref=""/>
+                        <xf:alert ref=""/>
+                        <xf:itemset ref="">
+                            <xf:label ref="label"/>
+                            <xf:value ref="value"/>
+                        </xf:itemset>
+                    </xf:select1>
+                </view>
+            </templates>
         </metadata>
     </xbl:binding>
 
-    <xbl:binding id="fb-input-select-compact" element="xforms|select">
+    <xbl:binding id="fb-input-boolean" element="xf|input">
         <metadata xmlns="http://orbeon.org/oxf/xml/form-builder">
-            <display-name lang="en">Multi List Box</display-name>
-            <display-name lang="fr">Liste multiple</display-name>
-            <display-name lang="ru">Несколько из контейнера</display-name>
+            <display-name lang="en">Boolean Input</display-name>
+            <display-name lang="es">Entrada Booleana</display-name>
+            <display-name lang="fi">Boolean-syöttäminen</display-name>
+            <display-name lang="fr">Champ Booléen</display-name>
+            <display-name lang="ru">[Boolean Input]</display-name>
+            <display-name lang="de">Boolsche Eingabe</display-name>
+            <display-name lang="it">Campo boolean</display-name>
+            <display-name lang="nl">Booleaanse invoer</display-name>
+            <display-name lang="pt">Entrada Booleana</display-name>
             <icon lang="en">
-                <small-icon>/forms/orbeon/builder/images/listbox.png</small-icon>
-                <large-icon>/forms/orbeon/builder/images/listbox.png</large-icon>
+                <small-icon>/forms/orbeon/builder/images/checkbox.png</small-icon>
+                <large-icon>/forms/orbeon/builder/images/checkbox.png</large-icon>
             </icon>
-            <datatype>xs:string</datatype>
-            <editors static-itemset="true"/>
-            <template>
-                <xforms:select id="" appearance="compact" ref="" xmlns="">
-                    <xforms:label ref=""/>
-                    <xforms:hint ref=""/>
-                    <xforms:help ref=""/>
-                    <xforms:alert ref="$fr-resources/detail/labels/alert"/>
-                    <xforms:itemset ref="">
-                        <xforms:label ref="label"/>
-                        <xforms:value ref="value"/>
-                    </xforms:itemset>
-                </xforms:select>
-            </template>
+            <templates>
+                <bind type="xf:boolean"/>
+                <view>
+                    <xf:input id="" ref="" xmlns="">
+                        <xf:label ref=""/>
+                        <xf:hint ref=""/>
+                        <xf:help ref=""/>
+                        <xf:alert ref=""/>
+                    </xf:input>
+                </view>
+            </templates>
         </metadata>
     </xbl:binding>
-
-    <!-- Not considered useful as of 2012-04-12 as the trees are on-level only
-    <xbl:binding id="fb-input-select1-tree" element="xforms|select1">
-        <metadata xmlns="http://orbeon.org/oxf/xml/form-builder">
-            <display-name lang="en">Single Selection Tree</display-name>
-            <display-name lang="fr">Arbre sél. simple</display-name>
-            <display-name lang="ru">Один из дерева</display-name>
-            <icon lang="en">
-                <small-icon>/forms/orbeon/builder/images/tree_mode.gif</small-icon>
-                <large-icon>/forms/orbeon/builder/images/tree_mode.gif</large-icon>
-            </icon>
-            <datatype>xs:string</datatype>
-            <editors static-itemset="true"/>
-            <template>
-                <xforms:select1 id="" appearance="xxforms:tree" ref="" xmlns="">
-                    <xforms:label ref=""/>
-                    <xforms:hint ref=""/>
-                    <xforms:help ref=""/>
-                    <xforms:alert ref="$fr-resources/detail/labels/alert"/>
-                    <xforms:itemset ref="">
-                        <xforms:label ref="label"/>
-                        <xforms:value ref="value"/>
-                    </xforms:itemset>
-                </xforms:select1>
-            </template>
-        </metadata>
-    </xbl:binding>
-
-    <xbl:binding id="fb-input-select-tree" element="xforms|select">
-        <metadata xmlns="http://orbeon.org/oxf/xml/form-builder">
-            <display-name lang="en">Multi Selection Tree</display-name>
-            <display-name lang="fr">Arbre sél. multiple</display-name>
-            <display-name lang="ru">Несколько из дерева</display-name>
-            <icon lang="en">
-                <small-icon>/forms/orbeon/builder/images/tree_mode.gif</small-icon>
-                <large-icon>/forms/orbeon/builder/images/tree_mode.gif</large-icon>
-            </icon>
-            <datatype>xs:string</datatype>
-            <editors static-itemset="true"/>
-            <template>
-                <xforms:select id="" appearance="xxforms:tree" ref="" xmlns="">
-                    <xforms:label ref=""/>
-                    <xforms:hint ref=""/>
-                    <xforms:help ref=""/>
-                    <xforms:alert ref="$fr-resources/detail/labels/alert"/>
-                    <xforms:itemset ref="">
-                        <xforms:label ref="label"/>
-                        <xforms:value ref="value"/>
-                    </xforms:itemset>
-                </xforms:select>
-            </template>
-        </metadata>
-    </xbl:binding>
-    -->
 
 </xbl:xbl>

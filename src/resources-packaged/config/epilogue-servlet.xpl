@@ -20,10 +20,10 @@
           xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
           xmlns:fo="http://www.w3.org/1999/XSL/Format"
           xmlns:svg="http://www.w3.org/2000/svg"
-          xmlns:xhtml="http://www.w3.org/1999/xhtml"
+          xmlns:xh="http://www.w3.org/1999/xhtml"
           xmlns:oxf="http://www.orbeon.com/oxf/processors"
-          xmlns:xforms="http://www.w3.org/2002/xforms"
-          xmlns:xxforms="http://orbeon.org/oxf/xml/xforms"
+          xmlns:xf="http://www.w3.org/2002/xforms"
+          xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xmlns:atom="http://www.w3.org/2005/Atom">
 
@@ -51,7 +51,7 @@
     <!-- The container is a servlet -->
     <p:choose href="#xformed-data">
         <!-- XHTML detection. Apply the theme, rewrite URLs, and serialize to HTML or XHTML. -->
-        <p:when test="/xhtml:html">
+        <p:when test="/xh:html">
 
             <!-- Pick theme -->
             <p:choose href="#request">
@@ -71,7 +71,7 @@
                                  href="aggregate('config', #request#xpointer(for $app in tokenize(/request/request-path, '/')[2] return
                                             for $is-embeddable in
                                                 p:property('oxf.epilogue.embeddable')
-                                                    or /request/parameters/parameter[name = ('orbeon-embeddable', 'orbeon-portlet')]/value = 'true' return
+                                                    or /request/parameters/parameter[name = 'orbeon-embeddable']/value = 'true' return
                                             for $is-renderer in
                                                 p:get-request-attribute('oxf.xforms.renderer.deployment', 'text/plain') = ('separate', 'integrated') return
                                             for $app-style in concat('oxf:/apps/', $app, if ($is-embeddable) then '/theme-embeddable.xsl' else '/theme.xsl') return
@@ -134,17 +134,7 @@
                     <!-- Produce XHTML output -->
                     <p:choose href="#request">
                         <p:when test="contains(/request/headers/header[name = 'accept'], 'application/xhtml+xml')">
-                            <p:processor name="oxf:qname-converter">
-                                <p:input name="config">
-                                    <config>
-                                        <match>
-                                            <uri>http://www.w3.org/1999/xhtml</uri>
-                                        </match>
-                                        <replace>
-                                            <prefix/>
-                                        </replace>
-                                    </config>
-                                </p:input>
+                            <p:processor name="oxf:plain-xhtml-converter">
                                 <p:input name="data" href="#rewritten-data"/>
                                 <p:output name="data" id="xhtml-data"/>
                             </p:processor>
@@ -152,8 +142,7 @@
                                 <p:input name="config">
                                     <config>
                                         <method>xhtml</method>
-                                        <public-doctype>-//W3C//DTD XHTML 1.0 Strict//EN</public-doctype>
-                                        <system-doctype>http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd</system-doctype>
+                                        <omit-xml-declaration>true</omit-xml-declaration>
                                         <encoding>utf-8</encoding>
                                         <content-type>application/xhtml+xml</content-type>
                                         <indent>true</indent>
@@ -165,32 +154,20 @@
                             </p:processor>
                         </p:when>
                         <p:otherwise>
-                            <p:processor name="oxf:qname-converter">
-                                <p:input name="config">
-                                    <config>
-                                        <match>
-                                            <uri>http://www.w3.org/1999/xhtml</uri>
-                                        </match>
-                                        <replace>
-                                            <uri/>
-                                            <prefix/>
-                                        </replace>
-                                    </config>
-                                </p:input>
+                            <p:processor name="oxf:plain-html-converter">
                                 <p:input name="data" href="#rewritten-data"/>
-                                <p:output name="data" id="html-data"/>
+                                <p:output name="data" id="xhtml-data"/>
                             </p:processor>
                             <p:processor name="oxf:html-converter">
                                 <p:input name="config">
                                     <config>
-                                        <public-doctype>-//W3C//DTD HTML 4.01//EN</public-doctype>
-                                        <version>4.01</version>
+                                        <version>5.0</version>
                                         <encoding>utf-8</encoding>
                                         <indent>true</indent>
                                         <indent-amount>0</indent-amount>
                                     </config>
                                 </p:input>
-                                <p:input name="data" href="#html-data"/>
+                                <p:input name="data" href="#xhtml-data"/>
                                 <p:output name="data" id="converted"/>
                             </p:processor>
                         </p:otherwise>
@@ -198,22 +175,6 @@
                 </p:when>
                 <p:otherwise>
                     <!-- Produce HTML output -->
-                    <!-- Move from XHTML namespace to no namespace -->
-                    <p:processor name="oxf:qname-converter">
-                        <p:input name="config">
-                            <config>
-                                <match>
-                                    <uri>http://www.w3.org/1999/xhtml</uri>
-                                </match>
-                                <replace>
-                                    <uri/>
-                                    <prefix/>
-                                </replace>
-                            </config>
-                        </p:input>
-                        <p:input name="data" href="#rewritten-data"/>
-                        <p:output name="data" id="html-data"/>
-                    </p:processor>
 
                     <!-- For embeddable, don't put a doctype declaration -->
                     <p:choose href="#request">
@@ -234,8 +195,7 @@
                             <p:processor name="oxf:identity">
                                 <p:input name="data">
                                     <config>
-                                        <public-doctype>-//W3C//DTD HTML 4.01//EN</public-doctype>
-                                        <version>4.01</version>
+                                        <version>5.0</version>
                                         <encoding>utf-8</encoding>
                                         <indent>true</indent>
                                         <indent-amount>0</indent-amount>
@@ -246,10 +206,15 @@
                         </p:otherwise>
                     </p:choose>
 
+                    <p:processor name="oxf:plain-html-converter">
+                        <p:input name="data" href="#rewritten-data"/>
+                        <p:output name="data" id="xhtml-data"/>
+                    </p:processor>
+
                     <!-- Convert to HTML, choosing between embeddable and plain -->
                     <p:processor name="oxf:html-converter">
                         <p:input name="config" href="#html-converter-config"/>
-                        <p:input name="data" href="#html-data"/>
+                        <p:input name="data" href="#xhtml-data"/>
                         <p:output name="data" id="converted"/>
                     </p:processor>
 
@@ -277,8 +242,7 @@
             <p:processor name="oxf:html-converter">
                 <p:input name="config">
                     <config>
-                        <public-doctype>-//W3C//DTD HTML 4.01//EN</public-doctype>
-                        <version>4.01</version>
+                        <version>5.0</version>
                         <encoding>utf-8</encoding>
                         <indent>true</indent>
                         <indent-amount>0</indent-amount>

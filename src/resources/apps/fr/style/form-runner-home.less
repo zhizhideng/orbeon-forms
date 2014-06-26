@@ -1,0 +1,105 @@
+// Copyright (C) 2011 Orbeon, Inc.
+//
+// This program is free software; you can redistribute it and/or modify it under the terms of the
+// GNU Lesser General Public License as published by the Free Software Foundation; either version
+// 2.1 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+// without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+
+@import (reference) "form-runner-common";
+
+.orbeon {
+
+    .btn-toolbar {
+        display: block;
+        float: left;
+    }
+
+    .pagination {
+        display: block;
+        float: right;
+        margin-top: 6px;
+        margin-bottom: 6px;
+
+        .fr-paging-numbers > span {
+            min-width: 125px; // try to allow at least 3 times 3 digits so the size doesn't change too much when paging
+            text-align: center;
+        }
+    }
+
+    .row .alert, .row-fluid .alert  {
+        display: block;
+        margin: 0;
+    }
+
+    .fr-forms-table {
+
+        clear: both;
+
+        .fr-summary, .fr-new {
+            text-align: center;
+        }
+
+        th {
+            white-space: nowrap;
+            min-width: 12px;
+        }
+
+        td {
+            position: relative;
+            a {
+                width: 100%;
+                display: inline-block;
+                height: 100%;
+                vertical-align: middle;
+                text-decoration: none;
+                color: black;
+                outline: 0;
+            }
+            a:hover {
+                text-decoration: none;
+                color: black;
+            }
+        }
+
+        .fr-home-select {
+            .fr-plain-checkbox-container();
+        }
+
+        .fr-home-status {
+            .narrow-td();
+        }
+
+        .fr-home-modified {
+            .narrow-td();
+            white-space: nowrap;
+        }
+
+        .label {
+            display: inline-block;
+            text-align: left;
+            .box-sizing(border-box);
+            width: 100%;
+        }
+    }
+
+    .fr-credentials-dialog {
+
+        .fr-dialog-credentials-fields {
+            margin-left: 110px;
+        }
+
+        img { float: left; margin: 5px 10px 0 10px }
+        .fb-dialog-form-settings-fields {
+            float: left;
+            width: 110px;
+            input, textarea {
+                width: 100%;
+            }
+        }
+    }
+}

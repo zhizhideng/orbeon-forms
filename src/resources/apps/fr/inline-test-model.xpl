@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <!--
     Copyright (C) 2008 Orbeon, Inc.
 
@@ -18,7 +17,7 @@
         xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
         xmlns:oxf="http://www.orbeon.com/oxf/processors"
         xmlns:xi="http://www.w3.org/2001/XInclude"
-        xmlns:xforms="http://www.w3.org/2002/xforms"
+        xmlns:xf="http://www.w3.org/2002/xforms"
         xmlns:ev="http://www.w3.org/2001/xml-events">
 
     <!-- Form in XHTML+XForms format -->
@@ -28,7 +27,7 @@
     <!-- Instance usable by the view -->
     <p:param type="output" name="instance"/>
 
-    <!-- NOTE: It's disappointing that we have to use oxf:request/oxf:perl5-matcher rather than using the page flow
+    <!-- NOTE: It's disappointing that we have to use oxf:request/oxf:regexp rather than using the page flow
          directly, but because we want to support the PUT and POST methods, this is currently the only solution. -->
     <p:processor name="oxf:request">
         <p:input name="config">
@@ -40,7 +39,7 @@
         <p:output name="data" id="request"/>
     </p:processor>
 
-    <p:processor name="oxf:perl5-matcher">
+    <p:processor name="oxf:regexp">
         <p:input name="config"><config>/fr/([^/]+)/([^/]+)/(test)/?</config></p:input>
         <p:input name="data" href="#request#xpointer(/request/request-path)"/>
         <p:output name="data" id="matcher-groups"/>

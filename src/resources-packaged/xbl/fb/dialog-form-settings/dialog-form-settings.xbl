@@ -23,20 +23,21 @@
          xmlns:saxon="http://saxon.sf.net/"
          xmlns:xbl="http://www.w3.org/ns/xbl"
          xmlns:xxbl="http://orbeon.org/oxf/xml/xbl"
-         xmlns:containerOps="java:org.orbeon.oxf.fb.ContainerOps">
+         xmlns:fbf="java:org.orbeon.oxf.fb.FormBuilder">
 
     <xbl:binding id="fb-dialog-form-settings" element="fb|dialog-form-settings">
         <xbl:handlers>
             <!-- Handler to open dialog -->
-            <xbl:handler event="fb-show-dialog" phase="target">
-                <xf:setvalue iterate="*[not(*)]" ref="."/> <!-- Clear all local values -->
+            <xbl:handler event="fb-show-dialog xxforms-dialog-open" phase="target">
+                <!-- Clear local values -->
+                <xf:setvalue iterate="*[not(*)]" ref="."/>
+                <!-- Save event context information in local instance -->
+                <xf:setvalue
+                    iterate="'app', 'form', 'title', 'description', 'mode'"
+                    ref="instance()/*[name() = context()]" value="event(context())"/>
 
-                <!--<xf:setvalue iterate="'app', 'form', 'mode'" ref="instance()/*[name() = current()]"  value="event(current())"/>-->
-
-                <xf:setvalue ref="app"  value="event('app')"/>
-                <xf:setvalue ref="form" value="event('form')"/>
-                <xf:setvalue ref="mode" value="event('mode')"/>
-
+                <!-- FIXME: Have caller pass the info instead? -->
+                <xf:setvalue if="$app-chooser = 'output'" ref="app" value="xxf:instance('fb-permissions')/app/@name"/>
                 <xxf:show dialog="dialog"/>
             </xbl:handler>
         </xbl:handlers>
@@ -46,31 +47,46 @@
                     <instance>
                         <app/>
                         <form/>
+                        <title/>
+                        <description/>
                         <mode/>
                     </instance>
                 </xf:instance>
 
-                <!-- NOTE: use normalize-space() = . because type validation seems to allow leading and trailing spaces -->
-                <xf:bind ref="app" required="true()" type="xs:NCName" constraint="normalize-space() = ."/>
-                <xf:bind ref="form" required="true()" type="xs:NCName" constraint="normalize-space() = ."/>
-                <xf:bind ref="mode" constraint=". = ('new', 'edit', 'save-as')"/>
+                <!-- Control used for choosing the app name; value can be: 'input', 'output', or 'select1' -->
+                <xf:var name="app-chooser" value="
+                    if (xxf:instance('fb-permissions')[@has-roles = 'false' or app[@name = '*']]) then 'input'
+                    else if (count(xxf:instance('fb-permissions')/app) = 1) then 'output'
+                    else 'select1'"/>
+
+                <xf:bind
+                    ref="app | form"
+                    required="true()"
+                    constraint="matches(., '^[A-Z|a-z|0-9\-_]+$')"
+                    calculate="normalize-space()"
+                    readonly="false()"/>
+                <xf:bind
+                    ref="mode"
+                    constraint=". = ('new', 'edit', 'save-as')"/>
             </xf:model>
         </xbl:implementation>
         <xbl:template>
 
             <!-- Bindings specified on control -->
-            <xf:var name="body"><xxf:sequence value=". treat as element()" xxbl:scope="outer" xbl:attr="model context ref=body-ref"/></xf:var>
-            <xf:var name="resources"><xxf:sequence value=". treat as element()" xxbl:scope="outer" xbl:attr="model context ref=resources-ref"/></xf:var>
-            <xf:var name="fr-resources"><xxf:sequence value=". treat as element()" xxbl:scope="outer" xbl:attr="model context ref=fr-resources-ref"/></xf:var>
+            <xf:var name="body"><xxf:value value=". treat as element()" xxbl:scope="outer" xbl:attr="model context ref=body-ref"/></xf:var>
+            <xf:var name="resources"><xxf:value value=". treat as element()" xxbl:scope="outer" xbl:attr="model context ref=resources-ref"/></xf:var>
+            <xf:var name="fr-resources"><xxf:value value=". treat as element()" xxbl:scope="outer" xbl:attr="model context ref=fr-resources-ref"/></xf:var>
 
-            <xf:var name="is-new-form" value="mode = 'new'"/>
-            <xf:var name="is-save-as" value="mode = 'save-as'"/>
+            <xf:var name="is-new-form"      value="mode = 'new'"/>
+            <xf:var name="is-save-as"       value="mode = 'save-as'"/>
+            <xf:var name="is-form-settings" value="not($is-new-form or $is-save-as)"/>
 
+            <!-- Once AVTs are supported: close="{not($is-new-form)}"  -->
             <xxf:dialog id="dialog" close="false" class="fb-dialog-form-settings">
                 <!-- Dialog title -->
-                <xf:label value="if ($is-new-form) then ()
-                                 else if ($is-save-as) then $fr-resources/detail/labels/save-as-document
-                                 else $resources/dialog-form-settings/label"/>
+                <xf:label value="$resources/dialog-form-settings/(if ($is-new-form) then ()
+                                                                  else if ($is-save-as) then save-as
+                                                                  else label)"/>
                 <xh:div>
                     <!-- IE warning -->
                     <xf:group ref=".[$is-new-form and xxf:instance('fb-user-agent-instance')/is-supported-browser = 'false']">
@@ -91,81 +107,115 @@
                         </xh:div>
                     </xf:group>
 
-                    <xh:p>
-                        <!-- Display message to user -->
-                        <xf:output value="if ($is-new-form) then $resources/messages/new-metadata-output
+                    <xf:var name="message" value="if ($is-new-form) then $resources/messages/new-metadata-output
                                               else if ($is-save-as) then $resources/messages/save-as-metadata-output
                                               else $resources/messages/edit-metadata-output"/>
-                    </xh:p>
+                    <xf:group ref=".[normalize-space($message)]" xxf:element="p">
+                        <!-- Display message to user -->
+                        <xf:output value="$message"/>
+                    </xf:group>
                     <xh:img src="/forms/orbeon/builder/images/label_64.png" alt=""/>
                     <xh:div class="fb-dialog-form-settings-fields">
-                        <!-- Application name -->
 
-                        <!-- Use an input if app name is a wildcard -->
-                        <xf:var name="is-input" value="xxf:instance('fr-permissions')/app[@name = '*']" as="xs:boolean"/>
-                        <xf:group ref=".[$is-input]">
-                            <xf:input ref="app" id="fb-application-name-input" tabindex="1" xxf:autocomplete="off">
-                                <xf:label ref="$resources/application-name/label"/>
-                                <xf:hint ref="$resources/application-name/hint"/>
-                                <xf:alert ref="$resources/application-name/alert"/>
+                        <xh:div>
+
+                            <!-- Application name -->
+                            <!-- Use an input if app name is a wildcard -->
+                            <xf:group ref=".[$app-chooser = 'input']">
+                                <xf:input ref="app" id="fb-application-name-input" xxf:autocomplete="off">
+                                    <xf:label ref="$resources/application-name/label"/>
+                                    <xf:hint ref="$resources/application-name/hint"/>
+                                    <xf:alert ref="$resources/application-name/alert"/>
+                                </xf:input>
+                            </xf:group>
+                            <!-- Otherwise, if there are multiple choices, use a dropdown -->
+                            <xf:group ref=".[$app-chooser = 'select1']">
+                                <fr:dropdown-select1 ref="app">
+                                    <xf:label ref="$resources/application-name/label"/>
+                                    <xf:alert ref="$resources/application-name/alert"/>
+                                    <xf:itemset ref="xxf:instance('fb-permissions')/app">
+                                        <xf:label ref="@name"/>
+                                        <xf:value ref="@name"/>
+                                    </xf:itemset>
+                                </fr:dropdown-select1>
+                            </xf:group>
+                            <!-- Otherwise, if there is just one choice, just show what the value will be -->
+                            <xf:group ref=".[$app-chooser = 'output']">
+                                <xf:output ref="app">
+                                    <xf:label ref="$resources/application-name/label"/>
+                                </xf:output>
+                            </xf:group>
+
+                        </xh:div>
+
+                        <xh:div>
+
+                            <!-- Form name -->
+                            <xf:input ref="form" id="fb-form-name-input" xxf:autocomplete="off">
+                                <xf:label ref="$resources/form-name/label"/>
+                                <xf:hint ref="$resources/form-name/hint"/>
+                                <xf:alert ref="$resources/form-name/alert"/>
                             </xf:input>
-                        </xf:group>
-                        <!-- Otherwise list apps allowed -->
-                        <xf:group ref=".[not($is-input)]">
-                            <xf:select1 ref="app">
-                                <xf:label ref="$resources/application-name/label"/>
-                                <xf:itemset model="fr-roles-model" ref="xxf:instance('fr-permissions')/app">
-                                    <xf:label ref="@name"/>
-                                    <xf:value ref="@name"/>
-                                </xf:itemset>
-                            </xf:select1>
-                        </xf:group>
 
-                        <!-- Form name -->
-                        <xf:input ref="form" id="fb-form-name-input" tabindex="2" xxf:autocomplete="off">
-                            <xf:label ref="$resources/form-name/label"/>
-                            <xf:hint ref="$resources/form-name/hint"/>
-                            <xf:alert ref="$resources/form-name/alert"/>
-                        </xf:input>
+                            <!-- Title -->
+                            <xf:input ref="title" id="fb-title-input" xxf:autocomplete="off">
+                                <xf:label ref="$resources/title/label"/>
+                                <xf:hint ref="$resources/title/hint"/>
+                                <xf:alert ref="$resources/title/alert"/>
+                            </xf:input>
 
-                        <!-- Stats -->
-                        <xf:group ref=".[not($is-new-form or $is-save-as)]" class="fb-dialog-form-settings-stats">
-                            <xf:label value="$resources/dialog-form-settings/stats"/>
+                            <!-- Description -->
+                            <xf:textarea ref="description" >
+                                <xf:label ref="$resources/description/label"/>
+                                <xf:hint ref="$resources/description/hint"/>
+                                <xf:alert ref="$resources/description/alert"/>
+                            </xf:textarea>
 
-                            <xf:var name="labels"
-                                    value="$resources/dialog-form-settings/(sections, repeats, grids, section-templates, controls, all)"/>
-                            <xf:var name="counts"
-                                    value="(containerOps:countSections($body),
-                                            containerOps:countRepeats($body),
-                                            containerOps:countGrids($body),
-                                            containerOps:countSectionTemplates($body),
-                                            containerOps:countAllNonContainers($body),
-                                            containerOps:countAllControls($body))"/>
+                        </xh:div>
 
-                            <xh:table>
-                                <xf:repeat ref="1 to count($labels)">
-                                    <xf:var name="i" value="position()"/>
-                                    <xh:tr>
-                                        <xh:th><xf:output value="$labels[$i]"/></xh:th>
-                                        <xh:td><xf:output value="$counts[$i]"/></xh:td>
-                                    </xh:tr>
-                                </xf:repeat>
-                            </xh:table>
+                        <xh:div>
 
-                        </xf:group>
+                            <!-- Stats -->
+                            <xf:group ref=".[$is-form-settings]" class="fb-dialog-form-settings-stats">
+                                <xf:label value="$resources/dialog-form-settings/stats"/>
+                                <xf:var name="labels"
+                                        value="$resources/dialog-form-settings/(sections, repeats, grids, section-templates, controls, all)"/>
+                                <xf:var name="counts"
+                                        value="(fbf:countSections($body),
+                                                fbf:countRepeats($body),
+                                                fbf:countGrids($body),
+                                                fbf:countSectionTemplates($body),
+                                                fbf:countAllNonContainers($body),
+                                                fbf:countAllControls($body))"/>
+                                <xh:table>
+                                    <xf:repeat ref="1 to count($labels)">
+                                        <xf:var name="i" value="position()"/>
+                                        <xh:tr>
+                                            <xh:th><xf:output value="$labels[$i]"/></xh:th>
+                                            <xh:td><xf:output value="$counts[$i]"/></xh:td>
+                                        </xh:tr>
+                                    </xf:repeat>
+                                </xh:table>
+                            </xf:group>
+
+                        </xh:div>
+
                     </xh:div>
 
                     <xh:div class="fr-dialog-buttons">
-                        <xf:trigger id="fb-metadata-continue-trigger" tabindex="3">
-                            <xf:label value="$resources/(if ($is-new-form) then continue else apply)/label"/>
+                        <xf:trigger id="fb-metadata-continue-trigger" appearance="xxf:primary">
+                            <xf:label mediatype="text/html" value="$resources/(if ($is-new-form) then continue else apply)/label"/>
                         </xf:trigger>
                         <xf:output value="$resources/or/label"/>
-                        <xf:trigger appearance="minimal" class="fr-inplace-cancel" tabindex="4">
-                            <xf:label value="$resources/cancel/label"/>
-                            <!-- Hide this dialog or go to the summary page -->
-                            <xf:action ev:event="DOMActivate">
-                                <xf:load if="$is-new-form" resource="/fr/orbeon/builder/summary"/>
-                                <xxf:hide if="not($is-new-form)" dialog="dialog"/>
+                        <xf:trigger appearance="minimal">
+                            <xf:label mediatype="text/html" value="$resources/(if ($is-new-form) then close else cancel)/label"/>
+                            <!-- Hide this dialog without saving -->
+                            <xxf:hide ev:event="DOMActivate" if="not($is-new-form)" dialog="dialog"/>
+                            <!-- Or go back to the summary -->
+                            <!-- NOTE: Ideally we would go back to where we came from! We had an attempt for that with
+                                 window.close() in the old home/back button. But it's a bit unclear what's best. -->
+                            <xf:action ev:event="DOMActivate" if="$is-new-form" type="xpath" xmlns:process="java:org.orbeon.oxf.fr.process.SimpleProcess">
+                                process:runProcessByName('oxf.fr.detail.process', 'close')
                             </xf:action>
                         </xf:trigger>
                     </xh:div>
@@ -173,24 +223,22 @@
                     <!-- Event handler for 2 field and button -->
                     <xf:action
                             ev:event="DOMActivate"
-                            ev:target="fb-application-name-input fb-form-name-input fb-metadata-continue-trigger"
-                            if="xxf:valid(instance(), true())">
+                            ev:target="fb-application-name-input fb-form-name-input fb-title-input fb-metadata-continue-trigger"
+                            if="valid(instance())">
 
                         <!-- Dispatch event with result -->
                         <xf:dispatch name="fb-update-metadata" targetid="fb-dialog-form-settings">
-                            <xxf:context name="app"  value="instance()/app"/>
-                            <xxf:context name="form" value="instance()/form"/>
-                            <xxf:context name="mode" value="instance()/mode"/>
+                            <xf:property name="app"         value="instance()/app"/>
+                            <xf:property name="form"        value="instance()/form"/>
+                            <xf:property name="title"       value="instance()/title"/>
+                            <xf:property name="description" value="instance()/description"/>
+                            <xf:property name="logo" value="instance()/logo"/>
+                            <xf:property name="mode"        value="instance()/mode"/>
                         </xf:dispatch>
 
                         <!-- Hide this dialog -->
                         <xxf:hide dialog="dialog"/>
                     </xf:action>
-
-                    <!-- Stop value change propagation so changes in this section of the form don't cause data
-                         to become dirty in fr-persistence-model -->
-                    <xf:action ev:event="#all" ev:propagate="stop"/>
-
                 </xh:div>
             </xxf:dialog>
         </xbl:template>

@@ -19,15 +19,50 @@
         xmlns:saxon="http://saxon.sf.net/"
         xmlns:oxf="http://www.orbeon.com/oxf/processors"
         xmlns:xi="http://www.w3.org/2001/XInclude"
-        xmlns:xforms="http://www.w3.org/2002/xforms"
-        xmlns:xxforms="http://orbeon.org/oxf/xml/xforms"
-        xmlns:ev="http://www.w3.org/2001/xml-events">
+        xmlns:xf="http://www.w3.org/2002/xforms"
+        xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+        xmlns:ev="http://www.w3.org/2001/xml-events"
+        xmlns:frf="java:org.orbeon.oxf.fr.FormRunner">
 
     <!-- Search instance -->
     <p:param name="instance" type="input"/>
 
     <!-- Search result -->
     <p:param name="data" type="output"/>
+
+    <p:processor name="oxf:pipeline">
+        <p:input name="config" href="../common-search.xpl"/>
+        <p:input name="search" href="#instance"/>
+        <p:output name="search" id="search-input"/>
+    </p:processor>
+
+    <!-- Check whether users can do a search based on their roles -->
+    <p:processor name="oxf:xforms-submission">
+        <p:input name="request"><dummy/></p:input>
+        <p:input name="submission" transform="oxf:xslt" href="#search-input">
+            <xf:submission xsl:version="2.0" method="get" replace="instance"
+                               resource="/fr/service/persistence/form/{encode-for-uri(/search/app)}/{encode-for-uri(/search/form)}"/>
+        </p:input>
+        <p:output name="response" id="form-metadata"/>
+    </p:processor>
+    <p:processor name="oxf:unsafe-xslt">
+        <p:input name="data" href="#form-metadata"/>
+        <p:input name="config">
+            <root xsl:version="2.0">
+                <xsl:variable name="permissions"                select="/forms/form/permissions"/>
+                <xsl:variable name="operations-from-role"       select="frf:javaAuthorizedOperationsBasedOnRoles($permissions)"/>
+                <xsl:variable name="search-operations"          select="('*', 'read', 'update', 'delete')"/>
+                <xsl:variable name="authorized-based-on-role"   select="$operations-from-role = $search-operations"/>
+                <xsl:if test="not($authorized-based-on-role)">
+                    <xsl:value-of select="frf:sendError(403)"/>
+                </xsl:if>
+            </root>
+        </p:input>
+        <p:output name="data" id="check-authorized"/>
+    </p:processor>
+    <p:processor name="oxf:null-serializer">
+        <p:input name="data" href="#check-authorized"/>
+    </p:processor>
 
     <p:processor name="oxf:request">
         <p:input name="config">
@@ -40,10 +75,10 @@
 
     <!-- Prepare submission -->
     <p:processor name="oxf:xslt">
-        <p:input name="data" href="#instance"/>
+        <p:input name="data" href="#search-input"/>
         <p:input name="request" href="#request"/>
         <p:input name="config">
-            <xforms:submission xsl:version="2.0" method="post"
+            <xf:submission xsl:version="2.0" method="post"
                                resource="{doc('input:request')/request/headers/header[name = 'orbeon-exist-uri']/value}/{/*/app}/{/*/form
                                             }/data/?page-size={/*/page-size
                                             }&amp;page-number={/*/page-number
@@ -53,16 +88,16 @@
                                                          return concat('&amp;path=', encode-for-uri($query/@path), '&amp;value=', $query), ''))
                                             }&amp;lang={/*/lang}" replace="instance">
                 <!-- Move resulting <document> element as root element -->
-                <xforms:insert ev:event="xforms-submit-done" if="event('response-status-code') = 200" nodeset="/*" origin="/*/*[1]"/>
+                <xf:insert ev:event="xforms-submit-done" if="event('response-status-code') = 200" ref="/*" origin="/*/*[1]"/>
                 <xi:include href="propagate-exist-error.xml" xpointer="xpath(/root/*)"/>
-            </xforms:submission>
+            </xf:submission>
         </p:input>
         <p:output name="data" id="submission"/>
     </p:processor>
 
     <!-- Prepare query -->
     <p:processor name="oxf:xslt">
-        <p:input name="data" href="#instance"/>
+        <p:input name="data" href="#search-input"/>
         <p:input name="query" href="search.xml"/>
         <p:input name="config">
             <xsl:stylesheet version="2.0">

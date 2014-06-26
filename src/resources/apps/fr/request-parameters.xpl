@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <!--
     Copyright (C) 2008 Orbeon, Inc.
 
@@ -20,7 +19,7 @@
         xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
         xmlns:oxf="http://www.orbeon.com/oxf/processors"
         xmlns:xi="http://www.w3.org/2001/XInclude"
-        xmlns:xforms="http://www.w3.org/2002/xforms"
+        xmlns:xf="http://www.w3.org/2002/xforms"
         xmlns:ev="http://www.w3.org/2001/xml-events">
 
     <!-- Request parameters document -->
@@ -31,26 +30,36 @@
         <p:input name="config">
             <config>
                 <include>/request/request-path</include>
+                <include>/request/parameters/parameter[name = 'form-version']</include>
             </config>
         </p:input>
         <p:output name="data" id="request"/>
     </p:processor>
-    <p:processor name="oxf:perl5-matcher">
-        <p:input name="config"><config>/fr/(service/)?([^/]+)/([^/]+)/(new|edit|view|pdf|email|validate|import)(/([^/]+))?(/([A-Z0-9\-]+)\.pdf)?</config></p:input>
+
+    <p:processor name="oxf:regexp">
+        <p:input name="config"><config>/fr/(service/)?([^/]+)/([^/]+)/(new|edit|view|pdf|email|validate|import|schema)(/([^/]+))?(/([0-9A-Za-z\-]+)\.pdf)?</config></p:input>
         <p:input name="data" href="#request#xpointer(/request/request-path)"/>
         <p:output name="data" id="matcher-groups"/>
     </p:processor>
 
     <!-- Put app, form, and mode in format understood by read-form.xpl -->
     <p:processor name="oxf:xslt">
-        <p:input name="data" href="#matcher-groups"/>
+        <p:input name="data"><dummy/></p:input>
+        <p:input name="matcher-groups" href="#matcher-groups"/>
+        <p:input name="request"        href="#request"/>
         <p:input name="config">
             <request xsl:version="2.0">
-                <app><xsl:value-of select="/result/group[2]"/></app>
-                <form><xsl:value-of select="/result/group[3]"/></form>
-                <document><xsl:value-of select="/result/group[6]"/></document>
-                <mode><xsl:value-of select="/result/group[4]"/></mode>
-                <uuid><xsl:value-of select="/result/group[8]"/></uuid>
+                <xsl:variable name="groups"  select="doc('input:matcher-groups')/result/group"/>
+                <xsl:variable name="request" select="doc('input:request')/request"/>
+                <app><xsl:value-of select="$groups[2]"/></app>
+                <form><xsl:value-of select="$groups[3]"/></form>
+                <form-version>
+                    <!-- If not provided as a request parameter, will be populated by read-form.xpl -->
+                    <xsl:value-of select="$request/parameters/parameter[name = 'form-version']/value"/>
+                </form-version>
+                <document><xsl:value-of select="$groups[6]"/></document>
+                <mode><xsl:value-of select="$groups[4]"/></mode>
+                <uuid><xsl:value-of select="$groups[8]"/></uuid>
             </request>
         </p:input>
         <p:output name="data" ref="data"/>

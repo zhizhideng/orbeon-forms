@@ -24,11 +24,11 @@ class LoadingIndicator
     constructor: (@form) ->
         @shownCounter = 0
 
-        # For now hide the loading indicator
-        @loadingSpan = _.detect @form.childNodes, (node) -> YD.hasClass node, "xforms-loading-loading"
+        # For now hide the loading indicator (use jQuery to fix #403)
+        @loadingSpan = (f$.children '.xforms-loading-loading', $ @form)[0]
         @loadingSpan.style.display = "none"
 
-        # Differ creation of the overlay to the first time we need it,
+        # Differ creation of the overlay to the first time we need it
         @loadingOverlay = null
         # On scroll or resize, move the overlay so it stays visible
         Overlay.windowScrollEvent.subscribe => @_updateLoadingPosition()
@@ -49,17 +49,19 @@ class LoadingIndicator
 
         # When an Ajax call ends, we might want to hide the indicator
         requestEnded = =>
-            # Defer hiding the indicator to give a chance to next request to start, so we don't flash the indicator
-            _.defer =>
-                @shownCounter--
-                @hide() if @shownCounter == 0
-            # Reset show and message
-            @nextConnectShow = true
-            @nextConnectMessage = DEFAULT_LOADING_TEXT
+            if @nextConnectShow
+                # Defer hiding the indicator to give a chance to next request to start, so we don't flash the indicator
+                _.defer =>
+                    @shownCounter--
+                    @hide() if @shownCounter == 0
+                # Reset show and message
+                @nextConnectShow = true
+                @nextConnectMessage = DEFAULT_LOADING_TEXT
         Events.ajaxResponseProcessedEvent.subscribe requestEnded
         Connect.failureEvent.subscribe requestEnded
 
-    setNextConnectProgressShown: (shown) -> @nextConnectShow = shown
+    setNextConnectProgressShown: (shown) ->
+        @nextConnectShow = shown
     setNextConnectProgressMessage: (message) -> @nextConnectMessage = message
 
     runShowing: (f) ->

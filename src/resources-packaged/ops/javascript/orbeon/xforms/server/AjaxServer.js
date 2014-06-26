@@ -21,21 +21,8 @@
     var AjaxServer = ORBEON.xforms.server.AjaxServer;
     var Controls = ORBEON.xforms.Controls;
     var Properties = ORBEON.util.Properties;
-
-    AjaxServer.Event = function(form, targetId, value, eventName, bubbles, cancelable, ignoreErrors, showProgress, progressMessage, additionalAttribs) {
-        // If no form is provided, infer the form based on that targetId, if one is provided
-        this.form = YAHOO.lang.isObject(form) ? form
-            : YAHOO.lang.isString(targetId) ? ORBEON.xforms.Controls.getForm(ORBEON.util.Dom.get(targetId)) : null;
-        this.targetId = YAHOO.lang.isUndefined(targetId) ? null: targetId;
-        this.value = YAHOO.lang.isUndefined(value) ? null: value;
-        this.eventName = YAHOO.lang.isUndefined(eventName) ? null: eventName;
-        this.bubbles = YAHOO.lang.isUndefined(bubbles) ? null: bubbles;
-        this.cancelable = YAHOO.lang.isUndefined(cancelable) ? null: cancelable;
-        this.ignoreErrors = YAHOO.lang.isUndefined(ignoreErrors) ? null: ignoreErrors;
-        this.showProgress = YAHOO.lang.isBoolean(showProgress) ? showProgress : true;
-        this.progressMessage = YAHOO.lang.isUndefined(progressMessage) ? null: progressMessage;
-        this.additionalAttribs = YAHOO.lang.isUndefined(additionalAttribs) ? null: additionalAttribs;
-    };
+    var StringUtils = ORBEON.util.String;
+    var Globals = ORBEON.xforms.Globals;
 
     /**
      * When an exception happens while we communicate with the server, we catch it and show an error in the UI.
@@ -146,6 +133,9 @@
         }
     };
 
+    AjaxServer.beforeSendingEvent = $.Callbacks();
+    AjaxServer.ajaxResponseReceived = $.Callbacks();
+
     AjaxServer.executeNextRequest = function(bypassRequestQueue) {
         bypassRequestQueue = typeof(bypassRequestQueue) == "boolean" && bypassRequestQueue == true;
 
@@ -154,14 +144,14 @@
                 && ORBEON.xforms.Globals.eventQueue.length > 0
                 && (bypassRequestQueue || ORBEON.xforms.Globals.executeEventFunctionQueued == 0)) {
 
-            // Populate map for efficiency
-            // TODO: could compute this once and for all
-            var eventsToFilter = {};
-            {
-                var eventsToFilterProperty = ORBEON.util.Properties.clientEventsFilter.get().split(" ");
-                for (var eventIndex = 0; eventIndex < eventsToFilterProperty.length; eventIndex++)
-                    eventsToFilter[eventsToFilterProperty[eventIndex]] = true;
-            }
+            // Filter events (typically used for xforms-focus/xxforms-blur events)
+            (function() {
+                var eventsToFilter = Properties.clientEventsFilter.get().split(" ");
+                Globals.eventQueue = _.filter(Globals.eventQueue, function(event) {
+                    var filterThisEvent = _.contains(eventsToFilter, event.eventName);
+                    return ! filterThisEvent;
+                });
+            })();
 
             var foundActivatingEvent = false;
             if (ORBEON.util.Properties.clientEventMode.get() == "deferred") {
@@ -184,7 +174,7 @@
 
                     // Check if we find a class on the target that tells us this is an activating event
                     // Do NOT consider a filtered event as an activating event
-                    if (event.targetId != null && eventsToFilter[event.eventName] == null) {
+                    if (event.targetId != null) {
                         var target = ORBEON.util.Dom.get(event.targetId);
                         if (target == null) {
                             // Target is not on the client. For most use cases, assume event should be dispatched right away.
@@ -249,49 +239,54 @@
                         // Extract information from event array
                         var event = ORBEON.xforms.Globals.eventQueue[eventIndex];
                         // Proceed with this event only if this is not one of the event we filter
-                        if (eventsToFilter[event.eventName] == null) {
-                            if (event.eventName == "xxforms-value") {
-                                // Value change is handled specially as values are collapsed
+                        if (event.eventName == "xxforms-value") {
+                            // Value change is handled specially as values are collapsed
 
-                                if (seenControlValue[event.targetId] == null) {
-                                    // Haven't yet seen this control in current block of events
+                            if (seenControlValue[event.targetId] == null) {
+                                // Haven't yet seen this control in current block of events
 
-                                    var serverValue = ORBEON.xforms.ServerValueStore.get(event.targetId);
-                                    if (YAHOO.util.Dom.hasClass(ORBEON.util.Dom.get(event.targetId), "xforms-upload") ||
-                                            (serverValue == null || serverValue != event.value)) {
+                                var serverValue = ORBEON.xforms.ServerValueStore.get(event.targetId);
+                                if (YAHOO.util.Dom.hasClass(ORBEON.util.Dom.get(event.targetId), "xforms-upload") ||
+                                        (serverValue == null || serverValue != event.value)) {
 
-                                        // Add event
-                                        seenControlValue[event.targetId] = event;
-                                        ORBEON.xforms.ServerValueStore.set(event.targetId, event.value);
-                                        newEvents.push(event);
-                                    }
-                                } else {
-                                    // Have seen this control already in current block of events
-
-                                    // Keep latest value
-                                    seenControlValue[event.targetId].value = event.value;
-                                    // Update server value
+                                    // Add event
+                                    seenControlValue[event.targetId] = event;
                                     ORBEON.xforms.ServerValueStore.set(event.targetId, event.value);
-                                }
-                            } else if (event.eventName == "xxforms-upload-progress") {
-                                // Collapse multiple upload progress requests only sending the one for the latest control
-                                if (firstUploadProgressEvent == null) {
-                                    firstUploadProgressEvent = event;
                                     newEvents.push(event);
-                                } else {
-                                    firstUploadProgressEvent.targetId = event.targetId;
                                 }
                             } else {
-                                // Any non-value change event is a boundary between event blocks
-                                seenControlValue = {};
+                                // Have seen this control already in current block of events
 
-                                // Add event
-                                newEvents.push(event);
+                                // Keep latest value
+                                seenControlValue[event.targetId].value = event.value;
+                                // Update server value
+                                ORBEON.xforms.ServerValueStore.set(event.targetId, event.value);
                             }
+                        } else if (event.eventName == "xxforms-upload-progress") {
+                            // Collapse multiple upload progress requests only sending the one for the latest control
+                            if (firstUploadProgressEvent == null) {
+                                firstUploadProgressEvent = event;
+                                newEvents.push(event);
+                            } else {
+                                firstUploadProgressEvent.targetId = event.targetId;
+                            }
+                        } else {
+                            // Any non-value change event is a boundary between event blocks
+                            seenControlValue = {};
+
+                            // Add event
+                            newEvents.push(event);
                         }
                     }
                     ORBEON.xforms.Globals.eventQueue = newEvents;
                 }
+
+                // Call listeners on events before being sent, giving them a sense to provide additional event properties
+                _.each(ORBEON.xforms.Globals.eventQueue, function(event) {
+                    AjaxServer.beforeSendingEvent.fire(event, function(properties) {
+                        _.extend(event.properties, properties);
+                    });
+                });
 
                 // Check again that we have events to send after collapsing
                 if (ORBEON.xforms.Globals.eventQueue.length > 0) {
@@ -301,11 +296,12 @@
                     var formID = ORBEON.xforms.Globals.requestForm.id;
 
                     // Remove from this list of ids that changed the id of controls for
-                    // which we have received the keyup corresponding to the keydown
-                    for (var id  in ORBEON.xforms.Globals.changedIdsRequest) {
-                        if (ORBEON.xforms.Globals.changedIdsRequest[id] == 0)
-                            ORBEON.xforms.Globals.changedIdsRequest[id] = null;
-                    }
+                    // which we have received the keyup corresponding to the keydown.
+                    // From ECMAScript 5.1: "Properties of the object being enumerated may be deleted during enumeration."
+                    _.each(ORBEON.xforms.Globals.changedIdsRequest, function(value, key) {
+                        if (value == 0)
+                            $(ORBEON.xforms.Globals.changedIdsRequest).removeProp(key);
+                    });
 
                     ORBEON.xforms.Globals.requestIgnoreErrors = true;
                     var sendInitialDynamicState = false;
@@ -371,67 +367,78 @@
 
                     // Add entity declaration for nbsp. We are adding this as this entity is generated by the FCK editor.
                     // The "unnecessary" concatenation is done to prevent IntelliJ from wrongly interpreting this
-                    requestDocumentString.push('<!' + 'DOCTYPE xxforms:event-request [<!ENTITY nbsp "&#160;">]>\n');
+                    requestDocumentString.push('<!' + 'DOCTYPE xxf:event-request [<!ENTITY nbsp "&#160;">]>\n');
 
                     var indent = "    ";
                     {
                         // Start request
-                        requestDocumentString.push('<xxforms:event-request xmlns:xxforms="http://orbeon.org/oxf/xml/xforms">\n');
+                        requestDocumentString.push('<xxf:event-request xmlns:xxf="http://orbeon.org/oxf/xml/xforms">\n');
 
                         // Add form UUID
                         requestDocumentString.push(indent);
-                        requestDocumentString.push('<xxforms:uuid>');
+                        requestDocumentString.push('<xxf:uuid>');
                         requestDocumentString.push(ORBEON.xforms.Document.getFromClientState(formID, "uuid"));
-                        requestDocumentString.push('</xxforms:uuid>\n');
+                        requestDocumentString.push('</xxf:uuid>\n');
 
                         // Increment and send sequence number if we have at least one event which is not a request for upload progress or session heartbeat
-                        // NOTE: Still send the element name even if empty as this is what the schema and server-side code expects
+                        var requestWithSequenceNumber = ! _.isUndefined(_.find(eventsToSend, function(event) {
+                            return event.eventName != "xxforms-upload-progress" && event.eventName != "xxforms-session-heartbeat"; }));
+                        // Still send the element name even if empty as this is what the schema and server-side code expects
                         requestDocumentString.push(indent);
-                        requestDocumentString.push('<xxforms:sequence>');
-                        if (_.detect(eventsToSend, function(event) { return event.eventName != "xxforms-upload-progress" && event.eventName != "xxforms-session-heartbeat"; })) {
+                        requestDocumentString.push('<xxf:sequence>');
+                        if (requestWithSequenceNumber) {
                             var currentSequenceNumber = ORBEON.xforms.Document.getFromClientState(formID, "sequence");
                             requestDocumentString.push(currentSequenceNumber);
-                            ORBEON.xforms.Document.storeInClientState(formID, "sequence", parseInt(currentSequenceNumber) + 1);
+                            AjaxServer.ajaxResponseReceived.add(function incrementSequenceNumber() {
+                                // Increment sequence number, now that we know the server processed our request
+                                //      If we were to do this after the request was processed, we might fail to increment the sequence
+                                //      if we were unable to process the response (i.e. JS error). Doing this here, before the
+                                //      response is processed, we incur the risk of incrementing the counter while the response is
+                                //      garbage and in fact maybe wasn't even sent back by the server, but by a front-end.
+                                var newSeq = parseInt(currentSequenceNumber) + 1;
+                                ORBEON.xforms.Document.storeInClientState(formID, "sequence", newSeq);
+                                AjaxServer.ajaxResponseReceived.remove(incrementSequenceNumber);
+                            })
                         }
-                        requestDocumentString.push('</xxforms:sequence>\n');
+                        requestDocumentString.push('</xxf:sequence>\n');
 
                         // Add static state
                         var staticState = ORBEON.xforms.Globals.formStaticState[formID].value;
                         if (staticState != null && staticState != "") {
                             requestDocumentString.push(indent);
-                            requestDocumentString.push('<xxforms:static-state>');
+                            requestDocumentString.push('<xxf:static-state>');
                             requestDocumentString.push(staticState);
-                            requestDocumentString.push('</xxforms:static-state>\n');
+                            requestDocumentString.push('</xxf:static-state>\n');
                         }
 
                         // Add dynamic state
                         var dynamicState = ORBEON.xforms.Globals.formDynamicState[formID].value;
                         if (dynamicState != null && dynamicState != "") {
                             requestDocumentString.push(indent);
-                            requestDocumentString.push('<xxforms:dynamic-state>');
+                            requestDocumentString.push('<xxf:dynamic-state>');
                             requestDocumentString.push(dynamicState);
-                            requestDocumentString.push('</xxforms:dynamic-state>\n');
+                            requestDocumentString.push('</xxf:dynamic-state>\n');
                         }
 
                         // Add initial dynamic state if needed
                         if (sendInitialDynamicState) {
                             requestDocumentString.push(indent);
-                            requestDocumentString.push('<xxforms:initial-dynamic-state>');
+                            requestDocumentString.push('<xxf:initial-dynamic-state>');
                             requestDocumentString.push(ORBEON.xforms.Document.getFromClientState(formID, "initial-dynamic-state"));
-                            requestDocumentString.push('</xxforms:initial-dynamic-state>\n');
+                            requestDocumentString.push('</xxf:initial-dynamic-state>\n');
                         }
 
                         // Keep track of the events we have handled, so we can later remove them from the queue
 
                         // Start action
                         requestDocumentString.push(indent);
-                        requestDocumentString.push('<xxforms:action>\n');
+                        requestDocumentString.push('<xxf:action>\n');
 
                         // Add events
                         _.each(eventsToSend, function(event) {
-                            // Create <xxforms:event> element
+                            // Create <xxf:event> element
                             requestDocumentString.push(indent + indent);
-                            requestDocumentString.push('<xxforms:event');
+                            requestDocumentString.push('<xxf:event');
                             requestDocumentString.push(' name="' + event.eventName + '"');
                             if (event.targetId != null)
                                 requestDocumentString.push(' source-control-id="' + event.targetId.substring(ORBEON.xforms.Globals.ns[formID].length) + '"');
@@ -452,17 +459,32 @@
                                     event.value = event.value.replace(XFORMS_REGEXP_INVALID_XML_CHAR, "");
                                 }
                                 requestDocumentString.push(event.value);
+                            } else if (! _.isEmpty(event.properties)) {
+                                // Only add properties when we don't have a value (in the future, the value should be
+                                // sent in a sub-element, so both a value and properties can be sent for the same event)
+                                requestDocumentString.push('\n');
+                                _.each(_.keys(event.properties), function(name) {
+                                    var value = event.properties[name];
+                                    var propertyParts = [
+                                        indent + indent + indent,
+                                        '<xxf:property name="' + StringUtils.escapeForMarkup(name) + '">',
+                                        StringUtils.escapeForMarkup(value),
+                                        '</xxf:property>\n'
+                                    ];
+                                    _.each(propertyParts, function(part) { requestDocumentString.push(part); });
+                                });
+                                requestDocumentString.push(indent + indent);
                             }
-                            requestDocumentString.push('</xxforms:event>\n');
+                            requestDocumentString.push('</xxf:event>\n');
                             remainingEvents = _.without(remainingEvents, event);
                         });
 
                         // End action
                         requestDocumentString.push(indent);
-                        requestDocumentString.push('</xxforms:action>\n');
+                        requestDocumentString.push('</xxf:action>\n');
 
                         // End request
-                        requestDocumentString.push('</xxforms:event-request>');
+                        requestDocumentString.push('</xxf:event-request>');
 
                         // New event queue now formed of the events we haven't just handled
                         ORBEON.xforms.Globals.eventQueue = remainingEvents;
@@ -532,6 +554,7 @@
      *
      */
     AjaxServer.handleFailureAjax = function(o) {
+        var formID = ORBEON.xforms.Globals.requestForm.id;
 
         if (o.responseXML && o.responseXML.documentElement && o.responseXML.documentElement.tagName.indexOf("error") != -1) {
             // If we get an error document as follows, we consider this to be a permanent error, we don't retry, and
@@ -542,20 +565,43 @@
             //      </error>
             ORBEON.xforms.Globals.requestInProgress = false;
             ORBEON.xforms.Globals.requestDocument = "";
-            var formID = ORBEON.xforms.Globals.requestForm.id;
             var title = ORBEON.util.Dom.getStringValue(ORBEON.util.Dom.getElementsByName(o.responseXML.documentElement, "title", null)[0]);
-            var body = ORBEON.util.Dom.getElementsByName(o.responseXML.documentElement, "body", null)[0]
+            var body = ORBEON.util.Dom.getElementsByName(o.responseXML.documentElement, "body", null)[0];
             var detailsFromBody = body != null ? ORBEON.util.Dom.getStringValue(body) : null;
             AjaxServer.showError(title, detailsFromBody, formID);
         } else {
-            AjaxServer.retryRequestAfterDelay(AjaxServer.asyncAjaxRequest);
+            var loginRegexp = ORBEON.util.Properties.loginPageDetectionRegexp.get();
+            if (loginRegexp != '' && new RegExp(loginRegexp).test(o.responseText)) {
+
+                // It seems we got a login page back, so display dialog and reload form
+                var dialogEl = $('#' + formID + ' .xforms-login-detected-dialog');
+
+                // Link dialog with title for ARIA
+                var title = dialogEl.find('h4');
+                if (_.isUndefined(title.attr('id'))) {
+                    var titleId = _.uniqueId('xf-');
+                    title.attr('id', titleId);
+                    dialogEl.attr('aria-labelledby', titleId);
+                }
+
+                dialogEl.find('button').one('click.xf', function() {
+                    // Reloading the page will redirect us to the login page if necessary
+                    window.location.href = window.location.href;
+                });
+                dialogEl.modal({
+                  backdrop: 'static', // Click on the background doesn't hide dialog
+                  keyboard: false     // Can't use esc to close the dialog
+                });
+            } else {
+                AjaxServer.retryRequestAfterDelay(AjaxServer.asyncAjaxRequest);
+            }
         }
     };
 
     AjaxServer.handleResponseAjax = function(o) {
 
         var responseXML = o.responseXML;
-        if (!YAHOO.lang.isUndefined(o.getResponseHeader) && YAHOO.lang.trim(o.getResponseHeader["Content-Type"]) == "text/html") {
+        if (! _.isUndefined(o.getResponseHeader) && YAHOO.lang.trim(o.getResponseHeader["Content-Type"]) == "text/html") {
 
             if (window.dojox && dojox.html && dojox.html.set) {
                 // Parse content we receive into a new div we create just for that purpose
@@ -615,33 +661,89 @@
                 ORBEON.xforms.Init.document();
             }
         } else {
-            if (o.responseText &&
-                    (!responseXML || (responseXML && responseXML.documentElement && responseXML.documentElement.tagName.toLowerCase() == "html"))) {
-                // The XML document does not come in o.responseXML: parse o.responseText.
-                // This happens in particular when we get a response after a background upload.
-                var xmlString = o.responseText.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+            var responseXmlIsHTML = responseXML && responseXML.documentElement && responseXML.documentElement.tagName.toLowerCase() == "html";
+            var formID = o.argument.formId;
+            var isResponseToBackgroundUpload = o.responseText && (!responseXML || responseXmlIsHTML);
+            if (isResponseToBackgroundUpload) {
+                // Background uploads
+                //      In this case, the server sends a xxf:event-response embedded in an HTML document:
+                //      <!DOCTYPE HTML><html><body>&lt;xxf:event-response ... </body></html>
+                //      When it happens, responseXML may be the HTML document, so we also test on the root element being 'html'
+                //      But, surprisingly, responseText only contains the text inside the body, i.e. &lt;xxf:event-response ...
+                //      So here we "unescape" the text inside <body>
+                // HOWEVER: If, by any chance, there is some trailing stuff after the closing </html>, as in
+                //      </xhtml><script/>, then, with FF and IE, we get &lt;/xxf:event-response&gt;<script/> and then
+                //      XML parsing fails. Some company proxies might insert scripts this way, so we better make sure
+                //      to parse only xxf:event-response.
+                var fragment =
+                    o.responseText.substring(
+                        o.responseText.indexOf("&lt;xxf:event-response"),
+                        o.responseText.indexOf("&lt;/xxf:event-response&gt;") + "&lt;/xxf:event-response&gt;".length);
+                var xmlString = fragment.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
                 responseXML = ORBEON.util.Dom.stringToDom(xmlString);
+            } else {
+                // Regular Ajax response
+
+                // On IE, don't rely on the browser's XML parsing, as it doesn't preserve white spaces
+                if (o.responseText && $.browser.msie)
+                    responseXML = ORBEON.util.Dom.stringToDom(o.responseText);
             }
 
             if (o.responseText != "" && responseXML && responseXML.documentElement && responseXML.documentElement.tagName.indexOf("event-response") != -1) {
 
                 // Everything is fine with the response
 
+                if (! isResponseToBackgroundUpload)
+                    AjaxServer.ajaxResponseReceived.fire();
+
                 // If neither of these two conditions is met, hide the modal progress panel:
-                //      a) The server tells us to do a submission or load, so we don't want to remove it otherwise
-                //         users could start interacting with a page which is going to be replaced shortly.
-                //      b) There is another Ajax request in the queue, which could be the one that triggered the
+                //      a) There is another Ajax request in the queue, which could be the one that triggered the
                 //         display of the modal progress panel, so we don't want to hide before that request ran.
+                //      b) The server tells us to do a submission or load, so we don't want to remove it otherwise
+                //         users could start interacting with a page which is going to be replaced shortly.
                 // We remove the modal progress panel before handling DOM response, as xxf:script may dispatch
                 // events and we don't want them to be filtered. If there are server events, we don't remove the
                 // panel until they have been processed, i.e. the request sending the server events returns.
-                if (! (AjaxServer.keepModelProgressPanelDisplayed(responseXML)
-                        || ORBEON.xforms.Globals.eventQueue.length > 0)) {
+                function doHideProgressDialog() {
+
+                    return ! (eventQueueHasShowProgressEvent()
+                              || serverSaysToKeepModelProgressPanelDisplayed());
+
+                    function eventQueueHasShowProgressEvent() {
+                        return _.some(ORBEON.xforms.Globals.eventQueue,
+                                      function(event) { return event.showProgress == true; });
+                    }
+
+                    /**
+                     * Keep the model progress panel if the server tells us to do a submission or load which isn't opened in another
+                     * window and for which the user didn't specify xxf:show-progress="false".
+                     *
+                     * The logic here corresponds to the following XPath:
+                     * exists((//xxf:submission, //xxf:load)[empty(@target) and empty(@show-progress)])
+                     */
+                    function serverSaysToKeepModelProgressPanelDisplayed() {
+                        if (responseXML && responseXML.documentElement
+                                    && responseXML.documentElement.tagName.indexOf("event-response") != -1) {
+                            var foundLoadOrSubmissionOrLoadWithNoTargetNoDownload = false;
+                            YAHOO.util.Dom.getElementsBy(function(element) {
+                                var localName = ORBEON.util.Utils.getLocalName(element);
+                                var hasTargetAttribute = ORBEON.util.Dom.getAttribute(element, "target") == null;
+                                if ((localName  == "submission" || localName == "load")) {
+                                    if (ORBEON.util.Dom.getAttribute(element, "target") == null && ORBEON.util.Dom.getAttribute(element, "show-progress") == null)
+                                        foundLoadOrSubmissionOrLoadWithNoTargetNoDownload = true;
+                                }
+                            }, null, responseXML.documentElement);
+                            return foundLoadOrSubmissionOrLoadWithNoTargetNoDownload;
+                        }
+                        return false;
+                    }
+                }
+
+                if (doHideProgressDialog()) {
                     ORBEON.util.Utils.hideModalProgressPanel();
                 }
 
-                var formID = o.argument.formId;
-                AjaxServer.handleResponseDom(responseXML, formID);
+                AjaxServer.handleResponseDom(responseXML, isResponseToBackgroundUpload, formID);
                 // Reset changes, as changes are included in this bach of events
                 ORBEON.xforms.Globals.changedIdsRequest = {};
                 // Notify listeners that we are done processing this request
@@ -661,35 +763,11 @@
     };
 
     /**
-     * Keep the model progress panel if the server tells us to do a submission or load which isn't opened in another
-     * window and for which the user didn't specify xxforms:show-progress="false".
-     *
-     * The logic here corresponds to the following XPath:
-     * exists((//xxf:submission, //xxf:load)[empty(@target) and empty(@show-progress)])
-     */
-    AjaxServer.keepModelProgressPanelDisplayed = function(responseXML) {
-        if (responseXML && responseXML.documentElement
-                    && responseXML.documentElement.tagName.indexOf("event-response") != -1) {
-            var foundLoadOrSubmissionOrLoadWithNoTargetNoDownload = false;
-            YAHOO.util.Dom.getElementsBy(function(element) {
-                var localName = ORBEON.util.Utils.getLocalName(element);
-                var hasTargetAttribute = ORBEON.util.Dom.getAttribute(element, "target") == null;
-                if ((localName  == "submission" || localName == "load")) {
-                    if (ORBEON.util.Dom.getAttribute(element, "target") == null && ORBEON.util.Dom.getAttribute(element, "show-progress") == null)
-                        foundLoadOrSubmissionOrLoadWithNoTargetNoDownload = true;
-                }
-            }, null, responseXML.documentElement);
-            return foundLoadOrSubmissionOrLoadWithNoTargetNoDownload;
-        }
-        return false;
-    };
-
-    /**
      * Process events in the DOM passed as parameter.
      *
      * @param responseXML       DOM containing events to process
      */
-    AjaxServer.handleResponseDom = function(responseXML, formID) {
+    AjaxServer.handleResponseDom = function(responseXML, isResponseToBackgroundUpload, formID) {
 
         try {
             var responseRoot = responseXML.documentElement;
@@ -697,12 +775,12 @@
             // Whether this response has triggered a load which will replace the current page.
             var newDynamicStateTriggersReplace = false;
 
-            var xmlNamespace = null; // xforms namespace
+            var xxfPrefix = null; // xforms namespace
             // Getting xforms namespace
             for (var j = 0; j < responseRoot.attributes.length; j++) {
                 if (responseRoot.attributes[j].nodeValue == XXFORMS_NAMESPACE_URI) {
                     var attrName = responseRoot.attributes[j].name;
-                    xmlNamespace = attrName.substr(attrName.indexOf(":") + 1);
+                    xxfPrefix = attrName.substr(attrName.indexOf(":") + 1);
                     break;
                 }
             }
@@ -728,7 +806,7 @@
 
                             case "control-values": {
                                 var controlValuesElement = actionElement.childNodes[actionIndex];
-                                var copyRepeatTemplateElements = ORBEON.util.Dom.getElementsByName(controlValuesElement, "copy-repeat-template", xmlNamespace);
+                                var copyRepeatTemplateElements = $(controlValuesElement).children(xxfPrefix + '\\:copy-repeat-template');
                                 var copyRepeatTemplateElementsLength = copyRepeatTemplateElements.length;
                                 for (var j = 0; j < copyRepeatTemplateElementsLength; j++) {
 
@@ -816,7 +894,7 @@
                                                 // Decrement nestedRepeatLevel when we we exit a nested repeat
                                                 if (YAHOO.util.Dom.hasClass(newTemplateNode, "xforms-repeat-begin-end") && templateNode.id.indexOf("repeat-end-") == 0)
                                                     nestedRepeatLevel--;
-                                                ORBEON.util.Utils.addSuffixToIdsAndRemoveDisabled(newTemplateNode, parentIndexes == "" ? String(suffix) : parentIndexes + XFORMS_SEPARATOR_2 + suffix, nestedRepeatLevel);
+                                                ORBEON.util.Utils.addSuffixToIdsAndRemoveDisabled(newTemplateNode, parentIndexes == "" ? String(suffix) : parentIndexes + XF_REPEAT_INDEX_SEPARATOR + suffix, nestedRepeatLevel);
                                                 // Increment nestedRepeatLevel when we enter a nested repeat
                                                 if (YAHOO.util.Dom.hasClass(newTemplateNode, "xforms-repeat-begin-end") && templateNode.id.indexOf("repeat-begin-") == 0)
                                                     nestedRepeatLevel++;
@@ -828,7 +906,7 @@
                                     ORBEON.xforms.Init.registerDraggableListenersOnRepeatElements();
                                 }
 
-                                var deleteRepeatTemplateElements = ORBEON.util.Dom.getElementsByName(controlValuesElement, "delete-repeat-elements", xmlNamespace);
+                                var deleteRepeatTemplateElements = $(controlValuesElement).children(xxfPrefix + '\\:delete-repeat-elements');
                                 var deleteRepeatTemplateElementsLength = deleteRepeatTemplateElements.length;
                                 for (var j = 0; j < deleteRepeatTemplateElementsLength; j++) {
 
@@ -895,7 +973,7 @@
                         }
                     }
 
-                    // Second handle the <xxforms:itemset> actions (we want to do this before we set the value of
+                    // Second handle the <xxf:itemset> actions (we want to do this before we set the value of
                     // controls as the value of the select might be in the new values of the itemset).
                     var controlsWithUpdatedItemsets = {};
                     for (var actionIndex = 0; actionIndex < actionElement.childNodes.length; actionIndex++) {
@@ -923,9 +1001,7 @@
                                             || YAHOO.util.Dom.hasClass(documentElement, "xforms-select1-appearance-minimal")) {
 
                                         // Case of list / combobox
-                                        var select = ORBEON.util.Utils.isNewXHTMLLayout()
-                                            ? documentElement.getElementsByTagName("select")[0]
-                                            : documentElement;
+                                        var select = documentElement.getElementsByTagName("select")[0];
                                         var options = select.options;
 
                                         // Remember selected values
@@ -941,9 +1017,9 @@
                                         // Utility function to generate an option
                                         function generateOption(label, value, clazz, selectedValues) {
                                             var selected = xformsArrayContains(selectedValues, value);
-                                            return '<option value="' + ORBEON.util.String.escapeAttribute(value) + '"'
+                                            return '<option value="' + ORBEON.util.String.escapeForMarkup(value) + '"'
                                                     + (selected ? ' selected="selected"' : '')
-                                                    + (clazz != null ? ' class="' + ORBEON.util.String.escapeAttribute(clazz) + '"' : '')
+                                                    + (clazz != null ? ' class="' + ORBEON.util.String.escapeForMarkup(clazz) + '"' : '')
                                                     + '>' + label + '</option>';
                                         }
 
@@ -952,11 +1028,11 @@
                                         var inOptgroup = false;
                                         function generateItem(itemElement) {
                                             var clazz = null;
-                                            if (! YAHOO.lang.isUndefined(itemElement.attributes) && ! YAHOO.lang.isUndefined(itemElement.attributes["class"])) {
+                                            if (! _.isUndefined(itemElement.attributes) && ! _.isUndefined(itemElement.attributes["class"])) {
                                                 // We have a class property
                                                 clazz = itemElement.attributes["class"];
                                             }
-                                            if (YAHOO.lang.isUndefined(itemElement.children)) { // a normal value
+                                            if (_.isUndefined(itemElement.children)) { // a normal value
                                                 sb[sb.length] =  generateOption(itemElement.label, itemElement.value, clazz, selectedValues);
                                             }
                                             else { // containing sub-items
@@ -964,8 +1040,8 @@
                                                 if (inOptgroup) // nested optgroups are not allowed, close the old one
                                                     sb[sb.length] = '</optgroup>';
                                                 // open optgroup
-                                                sb[sb.length] = '<optgroup label="' + ORBEON.util.String.escapeAttribute(itemElement.label) + '"'
-                                                    + (clazz != null ? ' class="' + ORBEON.util.String.escapeAttribute(clazz) + '"' : '')
+                                                sb[sb.length] = '<optgroup label="' + ORBEON.util.String.escapeForMarkup(itemElement.label) + '"'
+                                                    + (clazz != null ? ' class="' + ORBEON.util.String.escapeForMarkup(clazz) + '"' : '')
                                                     + '">';
                                                 inOptgroup = true;
                                                 // add subitems
@@ -993,9 +1069,7 @@
                                             var selectOpeningTag = select.outerHTML.substring(0, select.outerHTML.indexOf(">") + 1);
                                             select.outerHTML = selectOpeningTag + sb.join("") + "</select>";
                                             // Get again control, as it has been re-created
-                                            select = ORBEON.util.Dom.get(controlId);
-                                            if (ORBEON.util.Utils.isNewXHTMLLayout())
-                                                select = documentElement.getElementsByTagName("select")[0];
+                                            select = documentElement.getElementsByTagName("select")[0];
                                         } else {
                                             // Version for compliant browsers
                                             select.innerHTML = sb.join("");
@@ -1014,16 +1088,15 @@
                                         //  </span>
 
                                         // Get template
-                                        var template = YAHOO.util.Dom.hasClass(documentElement, "xforms-select")
+                                        var isFull = YAHOO.util.Dom.hasClass(documentElement, "xforms-select");
+                                        var template = isFull
                                                 ? ORBEON.util.Dom.get("xforms-select-full-template")
                                                 : ORBEON.util.Dom.get("xforms-select1-full-template");
                                         template = ORBEON.util.Dom.getChildElementByIndex(template, 0);
 
                                         // Get the span that contains the one span per checkbox/radio
                                         // This is the first span that has no class on it (we don't want to get a span for label, hint, help, alert)
-                                        var spanContainer = ORBEON.util.Utils.isNewXHTMLLayout()
-                                            ? _.detect(documentElement.getElementsByTagName("span"), function(span) { return span.className == ""; })
-                                            : documentElement;
+                                        var spanContainer = _.detect(documentElement.getElementsByTagName("span"), function(span) { return span.className == "xforms-items"; });
 
                                         // Remove spans and store current checked value
                                         var valueToChecked = {};
@@ -1041,15 +1114,31 @@
                                             var itemElement = itemsetTree[k];
 
                                             var templateClone = template.cloneNode(true);
-                                            spanContainer.appendChild(templateClone);
-                                            templateClone.innerHTML = new String(templateClone.innerHTML).replace(new RegExp("\\$xforms-template-label\\$", "g"), itemElement.label.replace(new RegExp("\\$", "g"), "$$$$"));
+
+                                            ORBEON.util.Utils.stringReplace(templateClone, "$xforms-template-label$", itemElement.label);
                                             ORBEON.util.Utils.stringReplace(templateClone, "$xforms-template-value$", itemElement.value);
-                                            var itemEffectiveId = ORBEON.util.Utils.appendToEffectiveId(controlId, "$$e" + itemIndex);
-                                            ORBEON.util.Utils.stringReplace(templateClone, "$xforms-item-effective-id$", itemEffectiveId);
-                                            ORBEON.util.Utils.stringReplace(templateClone, "$xforms-effective-id$", controlId);
-                                            if (! YAHOO.lang.isUndefined(itemElement.attributes) && ! YAHOO.lang.isUndefined(itemElement.attributes["class"])) {
+                                            var itemEffectiveId = ORBEON.util.Utils.appendToEffectiveId(controlId, XF_LHHAI_SEPARATOR + "e" + itemIndex);
+                                            ORBEON.util.Utils.stringReplace(templateClone, isFull ? "$xforms-item-id-select$" : "$xforms-item-id-select1$", itemEffectiveId);
+                                            ORBEON.util.Utils.stringReplace(templateClone, "$xforms-item-name$", controlId);
+
+                                            if (itemElement.help && itemElement.help != "") {
+                                                ORBEON.util.Utils.stringReplace(templateClone, "$xforms-template-help$", itemElement.help);
+                                            } else {
+                                                $(templateClone).find('.xforms-help').remove();
+                                            }
+
+                                            if (itemElement.hint && itemElement.hint != "") {
+                                                ORBEON.util.Utils.stringReplace(templateClone, "$xforms-template-hint$", itemElement.hint);
+                                            } else {
+                                                $(templateClone).find('.xforms-hint-region').removeAttr("class");
+                                                $(templateClone).find('.xforms-hint').remove();
+                                            }
+
+                                            if (! _.isUndefined(itemElement.attributes) && ! _.isUndefined(itemElement.attributes["class"])) {
                                                 templateClone.className += " " + itemElement.attributes["class"];
                                             }
+
+                                            spanContainer.appendChild(templateClone);
 
                                             // Restore checked state after copy
                                             var inputCheckboxOrRadio = templateClone.getElementsByTagName("input")[0];
@@ -1083,7 +1172,7 @@
                             // Update controls
                             case "control-values": {
                                 var controlValuesElement = actionElement.childNodes[actionIndex];
-                                var controlElements = ORBEON.util.Dom.getElementsByName(controlValuesElement, "control", xmlNamespace);
+                                var controlElements = $(controlValuesElement).children(xxfPrefix + '\\:control');
                                 var controlElementsLength = controlElements.length;
                                 // Update control value and MIPs
                                 for (var j = 0; j < controlElementsLength; j++) {
@@ -1165,52 +1254,51 @@
                                     // Update input control type
                                     // NOTE: This is not ideal: in the future, we would like a template-based mechanism instead.
                                     var recreatedInput = false;
-                                    if (newSchemaType != null && YAHOO.util.Dom.hasClass(documentElement, "xforms-input")) {
+                                    if (newSchemaType != null) {
 
-                                        // For each supported type, declares the recognized schema types and the class used in the DOM
-                                        var INPUT_TYPES = [
-                                            { type: "date",     schemaTypes: [ "{http://www.w3.org/2001/XMLSchema}date", "{http://www.w3.org/2002/xforms}date" ], className: "xforms-type-date" },
-                                            { type: "time",     schemaTypes: [ "{http://www.w3.org/2001/XMLSchema}time", "{http://www.w3.org/2002/xforms}time" ], className: "xforms-type-time" },
-                                            { type: "dateTime", schemaTypes: [ "{http://www.w3.org/2001/XMLSchema}dateTime", "{http://www.w3.org/2002/xforms}dateTime" ], className: "xforms-type-dateTime" },
-                                            { type: "boolean",  schemaTypes: [ "{http://www.w3.org/2001/XMLSchema}boolean", "{http://www.w3.org/2002/xforms}boolean" ], className: "xforms-type-boolean" },
-                                            { type: "string",   schemaTypes: null, className: "xforms-type-string" }
-                                        ];
+                                        if (YAHOO.util.Dom.hasClass(documentElement, "xforms-input")) {
 
-                                        var existingType = _.detect(INPUT_TYPES, function(type) { return type.schemaTypes == null || YAHOO.util.Dom.hasClass(documentElement, type.className); });
-                                        var newType =      _.detect(INPUT_TYPES, function(type) { return type.schemaTypes == null || _.include(type.schemaTypes, newSchemaType); });
-                                        if (newType != existingType) {
+                                            // For each supported type, declares the recognized schema types and the class used in the DOM
+                                            var INPUT_TYPES = [
+                                                { type: "date",     schemaTypes: [ "{http://www.w3.org/2001/XMLSchema}date", "{http://www.w3.org/2002/xforms}date" ], className: "xforms-type-date" },
+                                                { type: "time",     schemaTypes: [ "{http://www.w3.org/2001/XMLSchema}time", "{http://www.w3.org/2002/xforms}time" ], className: "xforms-type-time" },
+                                                { type: "dateTime", schemaTypes: [ "{http://www.w3.org/2001/XMLSchema}dateTime", "{http://www.w3.org/2002/xforms}dateTime" ], className: "xforms-type-dateTime" },
+                                                { type: "boolean",  schemaTypes: [ "{http://www.w3.org/2001/XMLSchema}boolean", "{http://www.w3.org/2002/xforms}boolean" ], className: "xforms-type-boolean" },
+                                                { type: "string",   schemaTypes: null, className: "xforms-type-string" }
+                                            ];
 
-                                            // Remember that this input has be recreated which means we need to update its value
-                                            recreatedInput = true;
-                                            // Clean-up document element by removing type classes
-                                            _.each(INPUT_TYPES, function(type) { YAHOO.util.Dom.removeClass(documentElement, type.className); });
-                                            YAHOO.util.Dom.removeClass(documentElement, "xforms-incremental");
-                                            // Minimal control content can be different
-                                            var isMinimal = YAHOO.util.Dom.hasClass(documentElement, "xforms-input-appearance-minimal");
+                                            var existingType = _.detect(INPUT_TYPES, function(type) { return type.schemaTypes == null || YAHOO.util.Dom.hasClass(documentElement, type.className); });
+                                            var newType =      _.detect(INPUT_TYPES, function(type) { return type.schemaTypes == null || _.include(type.schemaTypes, newSchemaType); });
+                                            if (newType != existingType) {
 
-                                            // Find the position of the last label before the control "actual content" and remove all elements that are not labels
-                                            // A value of -1 means that the content came before any label
-                                            var lastLabelPosition = null;
-                                            (function() {
-                                                var childElements = YAHOO.util.Dom.getChildren(documentElement);
-                                                for (var childIndex = 0; childIndex < childElements.length; childIndex++) {
-                                                    var childElement = childElements[childIndex];
-                                                    if (! YAHOO.util.Dom.hasClass(childElement, "xforms-label")
-                                                            && ! YAHOO.util.Dom.hasClass(childElement, "xforms-help")
-                                                            && ! YAHOO.util.Dom.hasClass(childElement, "xforms-hint")
-                                                            && ! YAHOO.util.Dom.hasClass(childElement, "xforms-alert")
-                                                            && ! YAHOO.util.Dom.hasClass(childElement, "xforms-help-image")) {
-                                                        documentElement.removeChild(childElement);
-                                                        if (lastLabelPosition == null)
-                                                            lastLabelPosition = childIndex - 1;
-                                                    }
-                                                }
-                                            })();
+                                                // Remember that this input has be recreated which means we need to update its value
+                                                recreatedInput = true;
+                                                // Clean-up document element by removing type classes
+                                                _.each(INPUT_TYPES, function(type) { YAHOO.util.Dom.removeClass(documentElement, type.className); });
+                                                // Minimal control content can be different
+                                                var isMinimal = YAHOO.util.Dom.hasClass(documentElement, "xforms-input-appearance-minimal");
 
-                                            function insertIntoDocument(nodes) {
-                                                if (ORBEON.util.Utils.isNewXHTMLLayout()) {
+                                                // Find the position of the last label before the control "actual content" and remove all elements that are not labels
+                                                // A value of -1 means that the content came before any label
+                                                var lastLabelPosition = null;
+                                                (function() {
                                                     var childElements = YAHOO.util.Dom.getChildren(documentElement);
-                                                    // New markup: insert after "last label" (we remembered the position of the label after which there is real content)
+                                                    for (var childIndex = 0; childIndex < childElements.length; childIndex++) {
+                                                        var childElement = childElements[childIndex];
+                                                        if (! YAHOO.util.Dom.hasClass(childElement, "xforms-label")
+                                                                && ! YAHOO.util.Dom.hasClass(childElement, "xforms-help")
+                                                                && ! YAHOO.util.Dom.hasClass(childElement, "xforms-hint")
+                                                                && ! YAHOO.util.Dom.hasClass(childElement, "xforms-alert")) {
+                                                            documentElement.removeChild(childElement);
+                                                            if (lastLabelPosition == null)
+                                                                lastLabelPosition = childIndex - 1;
+                                                        }
+                                                    }
+                                                })();
+
+                                                function insertIntoDocument(nodes) {
+                                                    var childElements = YAHOO.util.Dom.getChildren(documentElement);
+                                                    // Insert after "last label" (we remembered the position of the label after which there is real content)
                                                     if (childElements.length == 0) {
                                                         for (var nodeIndex = 0; nodeIndex < nodes.length; nodeIndex++)
                                                             documentElement.appendChild(nodes[nodeIndex]);
@@ -1225,91 +1313,86 @@
                                                         for (var nodeIndex = nodes.length - 1; nodeIndex >= 0; nodeIndex--)
                                                             YAHOO.util.Dom.insertAfter(nodes[nodeIndex], lhha);
                                                     }
-                                                } else {
-                                                    // Old markup: insert in container, which will be empty
-                                                    for (var nodeIndex = 0; nodeIndex < nodes.length; nodeIndex++)
-                                                        documentElement.appendChild(nodes[nodeIndex]);
+                                                }
+
+                                                function createInput(typeClassName, inputIndex) {
+                                                    var newInputElement = document.createElement("input");
+                                                    newInputElement.setAttribute("type", "text");
+                                                    newInputElement.className = "xforms-input-input " + typeClassName;
+                                                    newInputElement.id = ORBEON.util.Utils.appendToEffectiveId(controlId, "$xforms-input-" + inputIndex);
+                                                    // In portlet mode, name is not prefixed
+                                                    if (newInputElement.id.indexOf(ORBEON.xforms.Globals.ns[formID]) == 0)
+                                                        newInputElement.name = newInputElement.id.substring(ORBEON.xforms.Globals.ns[formID].length);
+                                                    else
+                                                        newInputElement.name = newInputElement.id; // should not happen as ns should be valid or ""
+                                                    return newInputElement;
+                                                }
+
+                                                var inputLabelElement = ORBEON.xforms.Controls.getControlLHHA(documentElement, "label");
+                                                if (newType.type == "string") {
+                                                    var newStringInput = createInput("xforms-type-string", 1);
+                                                    insertIntoDocument([newStringInput]);
+                                                    YAHOO.util.Dom.addClass(documentElement, "xforms-type-string");
+                                                    if (inputLabelElement != null) inputLabelElement.htmlFor = newStringInput.id;
+                                                } else if (newType.type == "date" && !isMinimal) {
+                                                    var newDateInput = createInput("xforms-type-date", 1);
+                                                    insertIntoDocument([newDateInput]);
+                                                    YAHOO.util.Dom.addClass(documentElement, "xforms-type-date");
+                                                    if (inputLabelElement != null) inputLabelElement.htmlFor = newDateInput.id;
+                                                } else if (newType.type == "date" && isMinimal) {
+                                                    // Create image element
+                                                    var image = document.createElement("img");
+                                                    image.setAttribute("src", ORBEON.xforms.Globals.calendarImageURL[formID]);
+                                                    image.className = "xforms-input-input xforms-type-date xforms-input-appearance-minimal";
+                                                    insertIntoDocument([image]);
+                                                    YAHOO.util.Dom.addClass(documentElement, "xforms-type-date");
+                                                    if (inputLabelElement != null) inputLabelElement.htmlFor = documentElement.id;
+                                                } else if (newType.type == "time") {
+                                                    var newTimeInput = createInput("xforms-type-time", 1);
+                                                    insertIntoDocument([newTimeInput]);
+                                                    YAHOO.util.Dom.addClass(documentElement, "xforms-type-time");
+                                                    if (inputLabelElement != null) inputLabelElement.htmlFor = newTimeInput.id;
+                                                } else if (newType.type == "dateTime") {
+                                                    var newDateTimeInput = createInput("xforms-type-date", 1);
+                                                    insertIntoDocument([newDateTimeInput, createInput("xforms-type-time", 2)]);
+                                                    YAHOO.util.Dom.addClass(documentElement, "xforms-type-dateTime");
+                                                    if (inputLabelElement != null) inputLabelElement.htmlFor = newDateTimeInput.id;
+                                                } else if (newType.type == "boolean") {
+
+                                                    // Make copy of the template
+                                                    var booleanTemplate = ORBEON.util.Dom.get("xforms-select-full-template");
+                                                    booleanTemplate = ORBEON.util.Dom.getChildElementByIndex(booleanTemplate, 0);
+                                                    var booleanTemplateClone = booleanTemplate.cloneNode(true);
+
+                                                    // Remove the label we have in the template for each individual checkbox/radio button
+                                                    // Do this because the checkbox label is actually not used, instead the control label is used
+                                                    var templateLabelElement = booleanTemplateClone.getElementsByTagName("label")[0];
+                                                    var templateInputElement = booleanTemplateClone.getElementsByTagName("input")[0];
+                                                    // Move <input> at level of <label> and get rid of label
+                                                    templateLabelElement.parentNode.replaceChild(templateInputElement, templateLabelElement);
+
+                                                    // Remove the disabled attribute from the template, which is there so tab would skip over form elements in template
+                                                    var booleanInput = ORBEON.util.Dom.getElementByTagName(booleanTemplateClone, "input");
+                                                    booleanInput.removeAttribute("disabled");
+
+                                                    // Replace placeholders
+                                                    insertIntoDocument([booleanTemplateClone]);
+                                                    ORBEON.util.Utils.stringReplace(booleanTemplateClone, "$xforms-template-value$", "true");
+                                                    var booleanEffectiveId = ORBEON.util.Utils.appendToEffectiveId(controlId, XF_LHHAI_SEPARATOR + "e0");
+                                                    ORBEON.util.Utils.stringReplace(booleanTemplateClone, "$xforms-item-id-select$", booleanEffectiveId);
+                                                    ORBEON.util.Utils.stringReplace(booleanTemplateClone, "$xforms-item-name$", controlId);
+
+                                                    // Update classes
+                                                    YAHOO.util.Dom.addClass(documentElement, "xforms-type-boolean");
+                                                    YAHOO.util.Dom.addClass(documentElement, "xforms-input-appearance-minimal");
+                                                    YAHOO.util.Dom.addClass(documentElement, "xforms-incremental");
+
+                                                    if (inputLabelElement != null) inputLabelElement.htmlFor = booleanEffectiveId;
                                                 }
                                             }
-
-                                            function createInput(typeClassName, inputIndex) {
-                                                var newInputElement = document.createElement("input");
-                                                newInputElement.setAttribute("type", "text");
-                                                newInputElement.className = "xforms-input-input " + typeClassName;
-                                                newInputElement.id = ORBEON.util.Utils.appendToEffectiveId(controlId, "$xforms-input-" + inputIndex);
-                                                // In portlet mode, name is not prefixed
-                                                if (newInputElement.id.indexOf(ORBEON.xforms.Globals.ns[formID]) == 0)
-                                                    newInputElement.name = newInputElement.id.substring(ORBEON.xforms.Globals.ns[formID].length);
-                                                else
-                                                    newInputElement.name = newInputElement.id; // should not happen as ns should be valid or ""
-                                                return newInputElement;
-                                            }
-
-                                            var inputLabelElement = ORBEON.xforms.Controls.getControlLHHA(documentElement, "label");
-                                            if (newType.type == "string") {
-                                                var newStringInput = createInput("xforms-type-string", 1);
-                                                insertIntoDocument([newStringInput]);
-                                                YAHOO.util.Dom.addClass(documentElement, "xforms-type-string");
-                                                if (inputLabelElement != null) inputLabelElement.htmlFor = newStringInput.id;
-                                            } else if (newType.type == "date" && !isMinimal) {
-                                                var newDateInput = createInput("xforms-type-date", 1);
-                                                insertIntoDocument([newDateInput]);
-                                                YAHOO.util.Dom.addClass(documentElement, "xforms-type-date");
-                                                if (inputLabelElement != null) inputLabelElement.htmlFor = newDateInput.id;
-                                            } else if (newType.type == "date" && isMinimal) {
-                                                // Create image element
-                                                var image = document.createElement("img");
-                                                image.setAttribute("src", ORBEON.xforms.Globals.calendarImageURL[formID]);
-                                                image.className = "xforms-input-input xforms-type-date xforms-input-appearance-minimal";
-                                                insertIntoDocument([image]);
-                                                YAHOO.util.Dom.addClass(documentElement, "xforms-type-date");
-                                                if (inputLabelElement != null) inputLabelElement.htmlFor = documentElement.id;
-                                            } else if (newType.type == "time") {
-                                                var newTimeInput = createInput("xforms-type-time", 1);
-                                                insertIntoDocument([newTimeInput]);
-                                                YAHOO.util.Dom.addClass(documentElement, "xforms-type-time");
-                                                if (inputLabelElement != null) inputLabelElement.htmlFor = newTimeInput.id;
-                                            } else if (newType.type == "dateTime") {
-                                                var newDateTimeInput = createInput("xforms-type-date", 1);
-                                                insertIntoDocument([newDateTimeInput, createInput("xforms-type-time", 2)]);
-                                                YAHOO.util.Dom.addClass(documentElement, "xforms-type-dateTime");
-                                                if (inputLabelElement != null) inputLabelElement.htmlFor = newDateTimeInput.id;
-                                            } else if (newType.type == "boolean") {
-
-                                                // Make copy of the template
-                                                var booleanTemplate = ORBEON.util.Dom.get("xforms-select-full-template");
-                                                booleanTemplate = ORBEON.util.Dom.getChildElementByIndex(booleanTemplate, 0);
-                                                var booleanTemplateClone = booleanTemplate.cloneNode(true);
-
-                                                // Remove the label we have in the template for each individual checkbox/radio button
-                                                // Do this because the checkbox label is actually not used, instead the control label is used
-                                                var templateLabelElement = booleanTemplateClone.getElementsByTagName("label")[0];
-                                                var templateInputElement = booleanTemplateClone.getElementsByTagName("input")[0];
-                                                // Move <input> at level of <label> and get rid of label
-                                                templateLabelElement.parentNode.replaceChild(templateInputElement, templateLabelElement);
-
-                                                // Remove the disabled attribute from the template, which is there so tab would skip over form elements in template
-                                                var booleanInput = ORBEON.util.Dom.getElementByTagName(booleanTemplateClone, "input");
-                                                booleanInput.removeAttribute("disabled");
-
-                                                // Replace placeholders
-                                                insertIntoDocument([booleanTemplateClone]);
-                                                ORBEON.util.Utils.stringReplace(booleanTemplateClone, "$xforms-template-value$", "true");
-                                                var booleanEffectiveId = ORBEON.util.Utils.appendToEffectiveId(controlId, "$$e0");
-                                                ORBEON.util.Utils.stringReplace(booleanTemplateClone, "$xforms-item-effective-id$", booleanEffectiveId);
-                                                ORBEON.util.Utils.stringReplace(booleanTemplateClone, "$xforms-effective-id$", controlId);
-
-                                                // Update classes
-                                                YAHOO.util.Dom.addClass(documentElement, "xforms-type-boolean");
-                                                YAHOO.util.Dom.addClass(documentElement, "xforms-input-appearance-minimal");
-                                                YAHOO.util.Dom.addClass(documentElement, "xforms-incremental");
-
-                                                if (inputLabelElement != null) inputLabelElement.htmlFor = booleanEffectiveId;
-                                            }
                                         }
-                                    } else if (newSchemaType != null) {
-                                        // Type has changed for any control but xforms:input
 
+                                        // Update type annotation
                                         var typePrefix = "xforms-type-";
 
                                         // Remove existing type classes
@@ -1322,9 +1405,15 @@
                                         }
 
                                         // Add new class
-                                        var typeResult = /}(.*)/.exec(newSchemaType);
-                                        if (typeResult != null && typeResult.length >= 2)
-                                            YAHOO.util.Dom.addClass(documentElement, typePrefix + typeResult[1]);
+                                        var typeResult = /{(.*)}(.*)/.exec(newSchemaType);
+                                        if (typeResult != null && typeResult.length == 3) {
+                                            var typeNamespace = typeResult[1];
+                                            var typeLocalName = typeResult[2];
+                                            var isBuiltIn = typeNamespace == 'http://www.w3.org/2001/XMLSchema'
+                                                         || typeNamespace == 'http://www.w3.org/2002/xforms';
+                                            var newClass = typePrefix + (isBuiltIn ? '' : 'custom-') + typeLocalName;
+                                            $(documentElement).addClass(newClass);
+                                        }
                                     }
 
                                     // Handle readonly
@@ -1348,15 +1437,19 @@
                                     // Update value
                                     if (isLeafControl) {
                                         if (YAHOO.util.Dom.hasClass(documentElement, "xforms-upload")) {
-                                            // Additional attributes for xforms:upload
-                                            // <xxforms:control id="xforms-control-id"
+                                            // Additional attributes for xf:upload
+                                            // <xxf:control id="xforms-control-id"
                                             //    state="empty|file"
+                                            //    accept=".txt"
                                             //    filename="filename.txt" mediatype="text/plain" size="23kb"/>
-                                            var state = ORBEON.util.Dom.getAttribute(controlElement, "state");
-                                            var filename = ORBEON.util.Dom.getAttribute(controlElement, "filename");
-                                            var mediatype = ORBEON.util.Dom.getAttribute(controlElement, "mediatype");
-                                            var size = ORBEON.util.Dom.getAttribute(controlElement, "size");
-                                            ORBEON.xforms.Controls.setCurrentValue(documentElement, newControlValue, state, filename, mediatype, size);
+                                            ORBEON.xforms.Controls.setCurrentValue(
+                                                documentElement,
+                                                newControlValue,
+                                                ORBEON.util.Dom.getAttribute(controlElement, "state"),
+                                                ORBEON.util.Dom.getAttribute(controlElement, "filename"),
+                                                ORBEON.util.Dom.getAttribute(controlElement, "mediatype"),
+                                                ORBEON.util.Dom.getAttribute(controlElement, "size"),
+                                                ORBEON.util.Dom.getAttribute(controlElement, "accept"));
                                         } else if (YAHOO.util.Dom.hasClass(documentElement, "xforms-output")
                                                     || YAHOO.util.Dom.hasClass(documentElement, "xforms-static")) {
                                             // Output-only control, just set the value
@@ -1368,7 +1461,7 @@
                                         } else {
                                             var currentValue = ORBEON.xforms.Controls.getCurrentValue(documentElement);
                                             if (currentValue != null) {
-                                                previousServerValue = ORBEON.util.String.normalizeSerializedHTML(previousServerValue);
+                                                previousServerValue = previousServerValue == null ? null : ORBEON.util.String.normalizeSerializedHTML(previousServerValue);
                                                 currentValue = ORBEON.util.String.normalizeSerializedHTML(currentValue);
                                                 newControlValue = ORBEON.util.String.normalizeSerializedHTML(newControlValue);
 
@@ -1397,24 +1490,24 @@
                                                             // so not to override a change done by the user since the control value was last sent to the server
                                                             && (previousServerValue == null || currentValue == previousServerValue)
                                                         ) ||
-                                                        // Special xforms:input attributes
+                                                        // Special xf:input attributes
                                                         (isInputOrSecret && (inputSize != null || maxlength != null || inputAutocomplete != null)) ||
-                                                        // Special xforms:textarea attributes
+                                                        // Special xf:textarea attributes
                                                         (isTextarea && (maxlength != null || textareaCols != null || textareaRows != null));
                                                 if (doUpdate) {
                                                     if (isInputOrSecret) {
-                                                        // Additional attributes for xforms:input
+                                                        // Additional attributes for xf:input
                                                         ORBEON.xforms.Controls.setCurrentValue(documentElement, newControlValue, inputSize, maxlength, inputAutocomplete);
                                                     } else if (isTextarea && YAHOO.util.Dom.hasClass(documentElement, "xforms-mediatype-text-html")) {
                                                         ORBEON.xforms.Controls.setCurrentValue(documentElement, newControlValue);
                                                     } else if (isTextarea) {
-                                                        // Additional attributes for xforms:textarea
+                                                        // Additional attributes for xf:textarea
                                                         ORBEON.xforms.Controls.setCurrentValue(documentElement, newControlValue, maxlength, textareaCols, textareaRows);
                                                     } else {
                                                         // Other control just have a new value
                                                         ORBEON.xforms.Controls.setCurrentValue(documentElement, newControlValue);
                                                     }
-                                                    // Store the server value as the client sees it, not as the server sees it. There can be a different in the following cases:
+                                                    // Store the server value as the client sees it, not as the server sees it. There can be a difference in the following cases:
                                                     //
                                                     // 1) For HTML editors, the HTML might change once we put it in the DOM.
                                                     // 2) For select/select1, if the server sends an out-of-range value, the actual value of the field won't be the out
@@ -1434,26 +1527,14 @@
                                         if (typeof xformsValueChangedListener != "undefined") {
                                             xformsValueChangedListener(controlId, newControlValue);
                                         }
-
-                                        // Mark field field as visited when its value changes, unless the new value is given to us when the field becomes relevant
-                                        // This is a heuristic that works when a section is shown for the first time, but won't work in many cases. This will be changed
-                                        // by handling this on the server-side with custom MIPS.
-                                        if (YAHOO.util.Dom.hasClass(documentElement, "xforms-output") && relevant == null) {
-                                            YAHOO.util.Dom.addClass(documentElement, "xforms-visited");
-                                            if (YAHOO.util.Dom.hasClass(documentElement, "xforms-invalid"))
-                                                YAHOO.util.Dom.addClass(documentElement, "xforms-invalid-visited");
-                                        }
                                     }
 
                                     // Update the required-empty/required-full even if the required has not changed or
                                     // is not specified as the value may have changed
-                                    var isRequiredEmpty;
-                                    if (!isStaticReadonly && !YAHOO.util.Dom.hasClass(documentElement, "xforms-group")) {
-                                        // We don't get the value for groups, so we are not calling this method as it would otherwise
-                                        // incorrectly add the class xforms-required-empty on groups.
-                                        isRequiredEmpty = ORBEON.xforms.Controls.updateRequiredEmpty(documentElement, newControlValue);
-                                    } else {
-                                        isRequiredEmpty = false;
+                                    if (! isStaticReadonly) {
+                                        var emptyAttr = $(controlElement).attr("empty");
+                                        if (!_.isUndefined(emptyAttr))
+                                            ORBEON.xforms.Controls.updateRequiredEmpty(documentElement, emptyAttr);
                                     }
 
                                     // Store new label message in control attribute
@@ -1473,21 +1554,28 @@
                                     if (newAlert != null)
                                         ORBEON.xforms.Controls.setAlertMessage(documentElement, newAlert);
                                     // Store validity, label, hint, help in element
-                                    var newValid = ORBEON.util.Dom.getAttribute(controlElement, "valid");
-                                    if (newValid != null)
-                                        ORBEON.xforms.Controls.setValid(documentElement, newValid);
+                                    var newLevel = ORBEON.util.Dom.getAttribute(controlElement, "level");
+                                    if (newLevel != null)
+                                        ORBEON.xforms.Controls.setConstraintLevel(documentElement, newLevel);
 
                                     // Handle progress for upload controls
-                                    if (progressState != null && progressReceived != null && progressExpected != null
-                                            && progressState != "" && progressReceived != "" && progressExpected != "")
-                                        ORBEON.xforms.Page.getControl(documentElement).progress(progressState, parseInt(progressReceived), parseInt(progressExpected));
+                                    if (progressState != null && progressState != "")
+                                        ORBEON.xforms.Page.getControl(documentElement).progress(
+                                            progressState,
+                                            progressReceived != null && progressReceived != "" ? parseInt(progressReceived) : null,
+                                            progressExpected != null && progressExpected != "" ? parseInt(progressExpected) : null);
+
+                                    // Handle visited flag
+                                    var newVisited = ORBEON.util.Dom.getAttribute(controlElement, "visited");
+                                    if (newVisited)
+                                        ORBEON.xforms.Controls.updateVisited(documentElement, newVisited == 'true');
 
                                     // Notification event if the type changed
                                     if (recreatedInput) Controls.typeChangedEvent.fire({control: documentElement});
                                 }
 
                                 // Handle innerHTML updates
-                                var innerElements = ORBEON.util.Dom.getElementsByName(controlValuesElement, "inner-html", xmlNamespace);
+                                var innerElements = $(controlValuesElement).children(xxfPrefix + '\\:inner-html');
                                 var innerElementsLength = innerElements.length;
                                 for (var j = 0; j < innerElementsLength; j++) {
                                     var innerElement = innerElements[j];
@@ -1496,6 +1584,9 @@
                                     var documentElement = document.getElementById(controlId);
                                     if (documentElement != null) {
                                         // Found container
+                                        // Detaching children to avoid nodes becoming disconnected
+                                        // http://wiki.orbeon.com/forms/doc/contributor-guide/browser#TOC-In-IE-nodes-become-disconnected-when-removed-from-the-DOM-with-an-innerHTML
+                                        $(documentElement).children().detach();
                                         documentElement.innerHTML = innerHTML;
                                         ORBEON.xforms.FullUpdate.onFullUpdateDone(controlId);
                                     } else {
@@ -1546,7 +1637,7 @@
                                 }
 
                                 // Handle updates to HTML attributes
-                                var attributeElements = ORBEON.util.Dom.getElementsByName(controlValuesElement, "attribute", xmlNamespace);
+                                var attributeElements = $(controlValuesElement).children(xxfPrefix + '\\:attribute');
                                 var attributeElementslength = attributeElements.length;
                                 for (var j = 0; j < attributeElementslength; j++) {
                                     var attributeElement = attributeElements[j];
@@ -1554,13 +1645,13 @@
                                     var forAttribute = ORBEON.util.Dom.getAttribute(attributeElement, "for");
                                     var nameAttribute = ORBEON.util.Dom.getAttribute(attributeElement, "name");
                                     var htmlElement = ORBEON.util.Dom.get(forAttribute);
-                                    if (htmlElement != null) {// use case: xhtml:html/@lang but HTML fragment produced
+                                    if (htmlElement != null) {// use case: xh:html/@lang but HTML fragment produced
                                         ORBEON.util.Dom.setAttribute(htmlElement, nameAttribute, newAttributeValue);
                                     }
                                 }
 
                                 // Handle text updates
-                                var textElements = ORBEON.util.Dom.getElementsByName(controlValuesElement, "text", xmlNamespace);
+                                var textElements = $(controlValuesElement).children(xxfPrefix + '\\:text');
                                 var textElementslength = textElements.length;
                                 for (var j = 0; j < textElementslength; j++) {
                                     var textElement = textElements[j];
@@ -1575,7 +1666,7 @@
                                 }
 
                                 // Model item properties on a repeat item
-                                var repeatIterationElements = ORBEON.util.Dom.getElementsByName(controlValuesElement, "repeat-iteration", xmlNamespace);
+                                var repeatIterationElements = $(controlValuesElement).children(xxfPrefix + '\\:repeat-iteration');
                                 var repeatIterationElementslength = repeatIterationElements.length;
                                 for (var j = 0; j < repeatIterationElementslength; j++) {
                                     var repeatIterationElement = repeatIterationElements[j];
@@ -1588,8 +1679,8 @@
                                         ORBEON.xforms.Controls.setRepeatIterationRelevance(repeatId, iteration, relevant == "true" ? true : false);
                                 }
 
-                                // "div" elements for xforms:switch and xxforms:dialog
-                                var divsElements = ORBEON.util.Dom.getElementsByName(controlValuesElement, "div", xmlNamespace);
+                                // "div" elements for xf:switch and xxf:dialog
+                                var divsElements = $(controlValuesElement).children(xxfPrefix + '\\:div');
                                 var divElementsLength = divsElements.length;
                                 for (var j = 0; j < divElementsLength; j++) {
                                     var divElement = divsElements[j];
@@ -1601,75 +1692,7 @@
                                     var yuiDialog = ORBEON.xforms.Globals.dialogs[controlVisibilityChangeId];
                                     if (yuiDialog == null) {
                                         // This is a case
-                                        var caseBeginId = "xforms-case-begin-" + controlVisibilityChangeId;
-                                        var caseBegin = ORBEON.util.Dom.get(caseBeginId);
-                                        var caseBeginParent = caseBegin.parentNode;
-                                        var foundCaseBegin = false;
-                                        for (var childId = 0; caseBeginParent.childNodes.length; childId++) {
-                                            var cursor = caseBeginParent.childNodes[childId];
-                                            if (!foundCaseBegin) {
-                                                if (cursor.id == caseBegin.id) foundCaseBegin = true;
-                                                else continue;
-                                            }
-                                            if (cursor.nodeType == ELEMENT_TYPE) {
-                                                // Change visibility by switching class
-                                                if (cursor.id == "xforms-case-end-" + controlVisibilityChangeId) break;
-                                                var doAnimate = cursor.id != "xforms-case-begin-" + controlVisibilityChangeId && // don't animate case-begin/end
-                                                        YAHOO.util.Dom.hasClass(cursor, "xxforms-animate") // only animate if class present
-                                                        && !(YAHOO.env.ua.ie != 0 && YAHOO.env.ua.ie <= 7); // simply disable animation for IE 6/7 as they behave badly
-                                                if (doAnimate) {
-
-                                                    function hideOverflowDuringAnim(anim) {
-                                                        cursor.style.overflow = "hidden";
-                                                        anim.onComplete.subscribe(_.bind(function(cursor) {
-                                                            cursor.style.overflow = "";
-                                                        }, this, cursor));
-                                                    }
-
-                                                    if (visible) {
-                                                        // Figure out what its natural height is
-                                                        cursor.style.height = "auto";
-                                                        var region = YAHOO.util.Dom.getRegion(cursor);
-                                                        var fullHeight = region.bottom - region.top;
-
-                                                        // Set height back to 0 and animate back to natural height
-                                                        cursor.style.height = 0;
-
-                                                        YAHOO.util.Dom.addClass(cursor, "xforms-case-selected");
-                                                        YAHOO.util.Dom.removeClass(cursor, "xforms-case-deselected");
-                                                        YAHOO.util.Dom.removeClass(cursor, "xforms-case-deselected-subsequent");
-
-                                                        var anim = new YAHOO.util.Anim(cursor, { height: {  to: fullHeight } }, .2);
-                                                        hideOverflowDuringAnim(anim);
-                                                        anim.onComplete.subscribe(_.bind(function(cursor) {
-                                                            // Set back the height to auto when the animation is finished
-                                                            // This is also needed because the natural height might have changed during animation
-                                                            cursor.style.height = "auto";
-                                                        }, this, cursor));
-                                                        anim.animate();
-                                                    } else {
-                                                        var anim = new YAHOO.util.Anim(cursor, { height: { to: 0 } }, 0.2);
-                                                        hideOverflowDuringAnim(anim);
-                                                        anim.onComplete.subscribe(_.bind(function(cursor) {
-                                                            // Only close case once the animation terminates
-                                                            YAHOO.util.Dom.addClass(cursor, "xforms-case-deselected-subsequent");
-                                                            YAHOO.util.Dom.removeClass(cursor, "xforms-case-selected");
-                                                        }, this, cursor));
-                                                        anim.animate();
-                                                    }
-                                                } else {
-                                                    if (visible) {
-                                                        YAHOO.util.Dom.addClass(cursor, "xforms-case-selected");
-                                                        YAHOO.util.Dom.removeClass(cursor, "xforms-case-deselected");
-                                                        YAHOO.util.Dom.removeClass(cursor, "xforms-case-deselected-subsequent");
-                                                        ORBEON.util.Dom.nudgeAfterDelay(cursor);
-                                                    } else {
-                                                        YAHOO.util.Dom.addClass(cursor, "xforms-case-deselected-subsequent");
-                                                        YAHOO.util.Dom.removeClass(cursor, "xforms-case-selected");
-                                                    }
-                                                }
-                                            }
-                                        }
+                                        ORBEON.xforms.Controls.toggleCase(controlVisibilityChangeId, visible);
                                     } else {
                                         // This is a dialog
                                         if (visible) {
@@ -1690,7 +1713,7 @@
                             // Change highlighted section in repeat
                             case "repeat-indexes": {
                                 var repeatIndexesElement = actionElement.childNodes[actionIndex];
-                                var newRepeatIndexes = new Array();
+                                var newRepeatIndexes = {};
                                 // Extract data from server response
                                 for (var j = 0; j < repeatIndexesElement.childNodes.length; j++) {
                                     if (ORBEON.util.Utils.getLocalName(repeatIndexesElement.childNodes[j]) == "repeat-index") {
@@ -1798,10 +1821,37 @@
                                     // Display loading indicator unless the server tells us not to display it
                                     newDynamicStateTriggersReplace = true;
                                 }
-                                // Set the action to the URL of the current page, so the URL seen by the client is always the URL
-                                // of a page to which we didn't do a submission replace="all"
-                                if (requestForm.action.indexOf("xforms-server-submit") == -1)
-                                    requestForm.action = window.location.href;
+
+                                /**
+                                 * Set the action to the URL of the current page.
+                                 *
+                                 * We can't (or don't know how to) set the URL to the URL to which we did a submission
+                                 * replace="all", so the best we can do it to set it to the current URL.
+                                 *
+                                 * We don't do it when the server generated a <form action="…"> that contains
+                                 * xforms-server-submit, which can happen in cases (e.g. running in a portal) where for
+                                 * some reason submitting to the URL of the page wouldn't work.
+                                 *
+                                 * When the target is an iframe, we add a ?t=id to work around a Chrome bug happening
+                                 * when doing a POST to the same page that was just loaded, gut that the POST returns
+                                 * a PDF. See:
+                                 *
+                                 *     https://code.google.com/p/chromium/issues/detail?id=330687
+                                 *     https://github.com/orbeon/orbeon-forms/issues/1480
+                                 */
+                                if (requestForm.action.indexOf("xforms-server-submit") == -1) {
+                                    var isTargetAnIframe = _.isString(target) && $('#' + target).prop('tagName') == 'IFRAME';
+                                    var a = $('<a>');
+                                    a.prop('href', window.location.href);
+                                    if (isTargetAnIframe) {
+                                        var param = "t=" + _.uniqueId();
+                                        var search = a.prop('search');
+                                        var newSearch = (search == '' || search == '?') ? '?' + param : search + '&' + param;
+                                        a.prop('search', newSearch);
+                                    }
+                                    requestForm.action = a.prop('href');
+                                }
+
                                 if (target == null) {
                                     // Reset as this may have been changed before by asyncAjaxRequest
                                     requestForm.removeAttribute("target");
@@ -1832,7 +1882,7 @@
                                 var resource = ORBEON.util.Dom.getAttribute(loadElement, "resource");
                                 var show = ORBEON.util.Dom.getAttribute(loadElement, "show");
                                 var target = ORBEON.util.Dom.getAttribute(loadElement, "target");
-                                var showProcess = ORBEON.util.Dom.getAttribute(loadElement, "show-progress");
+                                var showProgress = ORBEON.util.Dom.getAttribute(loadElement, "show-progress");
 
                                 if (resource.indexOf("javascript:") == 0) {
                                     // JavaScript URL
@@ -1840,7 +1890,7 @@
                                 } else  if (show == "replace") {
                                     if (target == null) {
                                         // Display loading indicator unless the server tells us not to display it
-                                        if (resource.charAt(0) != '#' && showProcess != "false")
+                                        if (resource.charAt(0) != '#' && showProgress != "false")
                                             newDynamicStateTriggersReplace = true;
                                         try {
                                             window.location.href = resource;
@@ -1914,10 +1964,10 @@
 
                         // Create HTML with message
                         details += "<li>" + message;
-                        if (file) details += " in " + ORBEON.util.String.escapeHTMLMinimal(file);
-                        if (line) details += " line " + ORBEON.util.String.escapeHTMLMinimal(line);
-                        if (col) details += " column " + ORBEON.util.String.escapeHTMLMinimal(col);
-                        if (exception) details += " (" + ORBEON.util.String.escapeHTMLMinimal(exception) + ")";
+                        if (file) details += " in " + ORBEON.util.String.escapeForMarkup(file);
+                        if (line) details += " line " + ORBEON.util.String.escapeForMarkup(line);
+                        if (col) details += " column " + ORBEON.util.String.escapeForMarkup(col);
+                        if (exception) details += " (" + ORBEON.util.String.escapeForMarkup(exception) + ")";
                         details += "</li>";
                     }
                     details += "</ul>";
@@ -1937,7 +1987,8 @@
             // Don't rethrow exception: we want to code that runs after the Ajax response is handled to run, so we have a chance to recover from this error
         } finally {
             // We can safely set this to false here, as if there is a request executed right after this, requestInProgress is set again to true by executeNextRequest().
-            ORBEON.xforms.Globals.requestInProgress = false;
+            if (! isResponseToBackgroundUpload)
+                ORBEON.xforms.Globals.requestInProgress = false;
         }
     };
 

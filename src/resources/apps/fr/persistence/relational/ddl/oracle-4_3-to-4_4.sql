@@ -1,0 +1,32 @@
+alter table orbeon_form_definition        rename column last_modified  to last_modified_time;
+alter table orbeon_form_definition        rename column username       to last_modified_by;
+alter table orbeon_form_definition_attach rename column last_modified  to last_modified_time;
+alter table orbeon_form_definition_attach rename column username       to last_modified_by;
+alter table orbeon_form_data              rename column last_modified  to last_modified_time;
+alter table orbeon_form_data              rename column username       to last_modified_by;
+alter table orbeon_form_data_attach       rename column last_modified  to last_modified_time;
+alter table orbeon_form_data_attach       rename column username       to last_modified_by;
+alter table orbeon_form_data              add           username       varchar2(255);
+alter table orbeon_form_data              add           groupname      varchar2(255);
+alter table orbeon_form_data_attach       add           username       varchar2(255);
+alter table orbeon_form_data_attach       add           groupname      varchar2(255);
+
+alter table orbeon_form_definition        add           form_version   int;
+alter table orbeon_form_definition_attach add           form_version   int;
+alter table orbeon_form_data              add           form_version   int;
+alter table orbeon_form_data_attach       add           form_version   int;
+update      orbeon_form_definition        set           form_version = 1;
+update      orbeon_form_definition_attach set           form_version = 1;
+update      orbeon_form_data              set           form_version = 1;
+update      orbeon_form_data_attach       set           form_version = 1;
+alter table orbeon_form_definition        modify        form_version   int not null;
+alter table orbeon_form_definition_attach modify        form_version   int not null;
+alter table orbeon_form_data              modify        form_version   int not null;
+alter table orbeon_form_data_attach       modify        form_version   int not null;
+
+alter table orbeon_form_data              add           draft          char(1);
+alter table orbeon_form_data_attach       add           draft          char(1);
+update      orbeon_form_data              set           draft = 'N';
+update      orbeon_form_data_attach       set           draft = 'N';
+alter table orbeon_form_data              modify        draft          char(1) not null;
+alter table orbeon_form_data_attach       modify        draft          char(1) not null;

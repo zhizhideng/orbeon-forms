@@ -11,13 +11,11 @@
 
   The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
   -->
-<xbl:xbl xmlns:xhtml="http://www.w3.org/1999/xhtml"
-         xmlns:xforms="http://www.w3.org/2002/xforms"
+<xbl:xbl xmlns:xh="http://www.w3.org/1999/xhtml"
+         xmlns:xf="http://www.w3.org/2002/xforms"
          xmlns:xs="http://www.w3.org/2001/XMLSchema"
          xmlns:ev="http://www.w3.org/2001/xml-events"
-         xmlns:xi="http://www.w3.org/2001/XInclude"
-         xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
-         xmlns:xxforms="http://orbeon.org/oxf/xml/xforms"
+         xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
          xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
          xmlns:saxon="http://saxon.sf.net/"
          xmlns:xbl="http://www.w3.org/ns/xbl"
@@ -29,13 +27,20 @@
     <!--
         Selection control appearing like a box containing rows of checkboxes.
      -->
-    <xbl:binding id="fr-box-select-binding" element="fr|box-select">
+    <xbl:binding id="fr-box-select-binding" element="fr|box-select" xxbl:mode="lhha binding value">
 
         <!-- Orbeon Form Builder Component Metadata -->
         <metadata xmlns="http://orbeon.org/oxf/xml/form-builder">
-            <display-name lang="en">Box Selector</display-name>
-            <display-name lang="fr">Sélection dans une boîte</display-name>
+            <display-name lang="en">Scrollable Checkboxes</display-name>
+            <display-name lang="es">Lista de Casillas de Verificación</display-name>
+            <display-name lang="fi">Vieritettävät valintaruudut</display-name>
+            <display-name lang="fr">Cases à cocher défilantes</display-name>
             <display-name lang="ru">Контейнер с галочками</display-name>
+            <display-name lang="de">Scrollbare Ankreuzfelder</display-name>
+            <display-name lang="it">Caselle scrollabili</display-name>
+            <display-name lang="sv">Rullbara kryssrutor</display-name>
+            <display-name lang="nl">Schuifbare keuzevakjes</display-name>
+            <display-name lang="pt">Lista de Caixas de Verificação</display-name>
             <icon lang="en">
                 <small-icon>/forms/orbeon/builder/images/checkbox.png</small-icon>
                 <large-icon>/forms/orbeon/builder/images/checkbox.png</large-icon>
@@ -43,74 +48,44 @@
             <editors static-itemset="true"/>
             <template>
                  <fr:box-select>
-                     <xforms:label ref=""/>
-                     <xforms:hint ref=""/>
-                     <xforms:help ref=""/>
-                     <xforms:alert ref=""/>
-                     <xforms:itemset ref="">
-                        <xforms:label ref="label"/>
-                        <xforms:value ref="value"/>
-                    </xforms:itemset>
+                     <xf:label ref=""/>
+                     <xf:hint ref=""/>
+                     <xf:help ref=""/>
+                     <xf:alert ref=""/>
+                     <xf:itemset ref="">
+                        <xf:label ref="label"/>
+                        <xf:value ref="value"/>
+                    </xf:itemset>
                 </fr:box-select>
             </template>
         </metadata>
 
         <xbl:resources>
             <xbl:style>
-                .xbl-fr-box-select ul {
-                    list-style-type: none;
-                    padding: .1em;
-                    margin: 0;
-                    border: 1px solid black;
-                    height: 6em;
-                    width: 15em;
+                .xbl-fr-box-select {
+                    display: inline-block;
+                    box-sizing: border-box;
+                    -moz-box-sizing: border-box;
+                    width: 100%;
+                    *width: 96%;/* for IE7, due to missing box-sizing support */
+                }
+                .xbl-fr-box-select .xforms-select-appearance-full .xforms-items {
+                    display: block;
+                    box-sizing: border-box;
+                    -moz-box-sizing: border-box;
+                    border: 1px solid gray;
+                    height: 78px;
+                    width: 100%;
                     overflow-y: scroll;
                     background-color: white;
-                }
-                .xbl-fr-box-select ul .xforms-repeat-selected-item-1 { background-color: transparent}
-                .xbl-fr-box-select .fr-component-group { display: inline-block; display: -moz-inline-block }
-                .xbl-fr-box-select ul li { list-style-type: none; margin-left: .2em; margin-top: .2em }
-                .xbl-fr-box-select ul { position: relative }
-
-                #doc .fr-grid .xbl-fr-box-select .xforms-select-appearance-full span label,
-                        #doc4 .fr-grid .xbl-fr-box-select .xforms-select-appearance-full span label {
-                    width: auto;
+                    *height: 70px;/* for IE7, due to missing box-sizing support */
                 }
             </xbl:style>
         </xbl:resources>
-        <!-- NOTE: use XSLT so we can fetch attributes from under the itemset -->
-        <xbl:template xxbl:transform="oxf:xslt">
-            <xforms:group xbl:attr="model context ref bind" xsl:version="2.0" xxbl:scope="outer">
-                <xbl:content includes="fr|box-select > xforms|label, fr|box-select > xforms|help, fr|box-select > xforms|hint, fr|box-select > xforms|alert"/>
-
-                <xforms:group class="fr-component-group">
-
-                    <!-- Variable pointing to external single-node binding -->
-                    <xxforms:variable name="result" select="." as="node()?"/>
-
-                    <!-- The tabindex prevents the ul from being able to get the focus on Firefox. Because of the
-                         overflow-y: scroll, it seems that this element can be tabbed to on Firefox, which is also
-                         a problem when using screen readers (JAWS), as the screen readers don't know how to read
-                         that element. -->
-                    <xhtml:ul tabindex="-1">
-                        <xforms:repeat ref="{/*/xforms:itemset/(@ref, @nodeset)}">
-                            <xxforms:variable name="position" select="position()" as="xs:integer"/>
-                            <xxforms:variable name="label" select="{/*/xforms:itemset/xforms:label/(@ref | @value)}" as="xs:string"/>
-                            <xxforms:variable name="value" select="{/*/xforms:itemset/xforms:value/(@ref | @value)}" as="xs:string"/>
-
-                            <xhtml:li>
-                                <xforms:select ref="$result" appearance="full">
-                                    <xforms:item>
-                                        <xforms:label value="$label"/>
-                                        <xforms:value value="$value"/>
-                                    </xforms:item>
-                                </xforms:select>
-                            </xhtml:li>
-
-                        </xforms:repeat>
-                    </xhtml:ul>
-                </xforms:group>
-            </xforms:group>
+        <xbl:template>
+            <xf:select appearance="full" ref="xxf:binding('fr-box-select-binding')">
+                <xbl:content include=":root > xf|itemset, :root > xf|item, :root > xf|choice"/>
+            </xf:select>
         </xbl:template>
     </xbl:binding>
 </xbl:xbl>

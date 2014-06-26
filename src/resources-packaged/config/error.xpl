@@ -41,14 +41,14 @@
 
     <!-- Apply theme -->
     <p:processor name="oxf:url-generator">
-		<p:input name="config" href="aggregate('config', #request#xpointer(p:property('oxf.epilogue.theme.error')))"/>
-		<p:output name="data" id="theme"/>
-	</p:processor>
+        <p:input name="config" href="aggregate('config', #request#xpointer(p:property('oxf.epilogue.theme.error')))"/>
+        <p:output name="data" id="theme"/>
+    </p:processor>
 
     <p:processor name="oxf:unsafe-xslt">
         <p:input name="data" href="#document"/>
         <p:input name="request" href="#request"/>
-		<p:input name="config" href="#theme"/>
+        <p:input name="config" href="#theme"/>
         <p:output name="data" id="themed"/>
     </p:processor>
 
@@ -59,18 +59,7 @@
     </p:processor>
 
     <!-- Convert to HTML -->
-    <p:processor name="oxf:qname-converter">
-        <p:input name="config">
-            <config>
-                <match>
-                    <uri>http://www.w3.org/1999/xhtml</uri>
-                </match>
-                <replace>
-                    <uri/>
-                    <prefix/>
-                </replace>
-            </config>
-        </p:input>
+    <p:processor name="oxf:plain-html-converter">
         <p:input name="data" href="#rewritten-data"/>
         <p:output name="data" id="html-data"/>
     </p:processor>
@@ -78,10 +67,7 @@
     <p:processor name="oxf:html-converter">
         <p:input name="config">
             <config>
-                <!--<public-doctype>-//W3C//DTD HTML 4.01 Transitional//EN</public-doctype>-->
-                <public-doctype>-//W3C//DTD HTML 4.01//EN</public-doctype>
-                <system-doctype>http://www.w3.org/TR/html4/strict.dtd</system-doctype>
-                <version>4.01</version>
+                <version>5.0</version>
                 <encoding>utf-8</encoding>
                 <indent>true</indent>
                 <indent-amount>0</indent-amount>

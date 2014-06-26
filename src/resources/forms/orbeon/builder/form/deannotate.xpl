@@ -24,22 +24,19 @@
                             xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                             xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
                             xmlns:fb="http://orbeon.org/oxf/xml/form-builder"
-                            xmlns:xhtml="http://www.w3.org/1999/xhtml"
-                            xmlns:xforms="http://www.w3.org/2002/xforms"
-                            xmlns:xxforms="http://orbeon.org/oxf/xml/xforms"
-                            xmlns:xbl="http://www.w3.org/ns/xbl"
-                            xmlns:dataModel="java:org.orbeon.oxf.fb.DataModel">
+                            xmlns:xh="http://www.w3.org/1999/xhtml"
+                            xmlns:xf="http://www.w3.org/2002/xforms"
+                            xmlns:ev="http://www.w3.org/2001/xml-events"
+                            xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+                            xmlns:xbl="http://www.w3.org/ns/xbl">
 
-                <xsl:import href="oxf:/oxf/xslt/utils/copy.xsl"/>
+                <xsl:import href="oxf:/oxf/xslt/utils/copy-modes.xsl"/>
 
                 <xsl:variable name="metadata"
-                              select="/*/xhtml:head/xforms:model[@id = 'fr-form-model']/xforms:instance[@id = 'fr-form-metadata']/*"/>
-
-                <xsl:variable name="is-custom-instance"
-                              select="$metadata/form-instance-mode = 'custom'"/>
+                              select="/*/xh:head/xf:model[@id = 'fr-form-model']/xf:instance[@id = 'fr-form-metadata']/*"/>
 
                 <!-- HTML title -->
-                <xsl:template match="xhtml:head/xhtml:title">
+                <xsl:template match="xh:head/xh:title">
                     <xsl:copy>
                         <xsl:copy-of select="@*"/>
                         <!-- Use the first title found -->
@@ -47,52 +44,87 @@
                     </xsl:copy>
                 </xsl:template>
 
-                <!-- Remove temporary fb-readonly instance -->
-                <xsl:template match="xforms:instance[@id = 'fb-readonly']"/>
-
                 <!-- Restore read-only instances -->
-                <xsl:template match="xforms:instance[@fb:readonly = 'true']">
+                <xsl:template match="xf:instance[@fb:readonly = 'true']">
                     <xsl:copy>
-                        <xsl:attribute name="xxforms:readonly" select="'true'"/>
+                        <xsl:attribute name="xxf:readonly" select="'true'"/>
                         <xsl:apply-templates select="@* except @fb:readonly | node()"/>
                     </xsl:copy>
                 </xsl:template>
 
-                <!-- xf:group → fr:view -->
-                <xsl:template match="xforms:group[tokenize(@class, '\s+') = 'fb-view']">
-                    <fr:view>
-                        <fr:body>
-                            <xsl:apply-templates select="xforms:group[tokenize(@class, '\s+') = 'fb-body']/node()"/>
-                        </fr:body>
-                    </fr:view>
-                </xsl:template>
-
-                <!-- Remove @edit-ref and @xxf:update, fb:view → fr:view, fb:section → fr:section -->
-                <xsl:template match="xhtml:body//fb:view | xhtml:body//fb:section | xhtml:body//fr:grid">
-                    <xsl:element name="fr:{local-name()}">
-                        <xsl:apply-templates select="@* except (@edit-ref, @xxforms:update) | node()"/>
+                <!-- Restore namespace on actions and services -->
+                <xsl:template match="xf:model/fb:*[p:classes() = ('fr-service', 'fr-database-service')] | xf:model/fb:action[ends-with(@id, '-binding')]">
+                    <xsl:element name="xf:{local-name()}">
+                        <xsl:apply-templates select="@* | node()"/>
                     </xsl:element>
                 </xsl:template>
 
-                <!-- Restore binds pointing to fb-readonly -->
-                <xsl:template match="xforms:bind/@ref[$is-custom-instance] | xforms:bind/@nodeset[$is-custom-instance]">
-                    <xsl:attribute name="{name()}" select="dataModel:deAnnotatedBindRef(.)"/>
+                <!-- Restore event handlers -->
+                <xsl:template match="@fb:event">
+                    <xsl:attribute name="ev:{local-name()}" select="."/>
                 </xsl:template>
 
-                <!-- Convert MIP names -->
-                <xsl:template match="xforms:bind/@fb:relevant | xforms:bind/@fb:readonly | xforms:bind/@fb:required | xforms:bind/@fb:constraint | xforms:bind/@fb:calculate">
+                <xsl:template match="xf:group[p:has-class('fb-body')]">
+                    <fr:body>
+                        <xsl:copy-of select="namespace::*"/>
+                        <xsl:apply-templates select="node() except *[@class = 'fb-annotation']"/>
+                    </fr:body>
+                </xsl:template>
+
+                <!-- Remove @edit-ref and @xxf:update, handle section @open, fb:view → fr:view -->
+                <xsl:template match="xh:body//fb:view | xh:body//fr:section | xh:body//fr:grid">
+                    <xsl:element name="fr:{local-name()}">
+                        <!-- Restore @open if needed -->
+                        <xsl:if test="self::fr:section and @fb:open">
+                            <xsl:attribute name="open" select="@fb:open"/>
+                        </xsl:if>
+                        <!-- Process everything else -->
+                        <xsl:apply-templates select="@* except (@edit-ref, @xxf:update, @open, @fb:open) | node()"/>
+                    </xsl:element>
+                </xsl:template>
+
+                <!-- Convert MIP names (attributes and nested elements) -->
+                <xsl:template match="xf:bind/@fb:relevant | xf:bind/@fb:readonly | xf:bind/@fb:required | xf:bind/@fb:constraint | xf:bind/@fb:calculate">
                     <xsl:attribute name="{local-name()}" select="."/>
                 </xsl:template>
-                <xsl:template match="xforms:bind/@fb:default">
-                    <xsl:attribute name="xxforms:{local-name()}" select="."/>
+                <xsl:template match="xf:bind/@fb:default">
+                    <xsl:attribute name="xxf:{local-name()}" select="."/>
+                </xsl:template>
+                <xsl:template match="xf:bind/fb:relevant | xf:bind/fb:readonly | xf:bind/fb:required | xf:bind/fb:constraint | xf:bind/fb:calculate">
+                    <xsl:element name="xf:{local-name()}">
+                        <xsl:apply-templates select="@* | node()"/>
+                    </xsl:element>
+                </xsl:template>
+                <xsl:template match="xf:bind/fb:default">
+                    <xsl:element name="xxf:{local-name()}">
+                        <xsl:apply-templates select="@* | node()"/>
+                    </xsl:element>
                 </xsl:template>
 
+                <!-- Restore xxf:custom-mips -->
+                <xsl:template match="xh:head/xf:model[@id = 'fr-form-model']/@xxf:custom-mips">
+                    <xsl:variable name="tokens" select="p:split()[. != 'fb:required']" xmlns:p="http://www.orbeon.com/oxf/pipeline"/>
+                    <xsl:if test="exists($tokens)">
+                        <xsl:attribute name="xxf:custom-mips" select="string-join($tokens, ' ')"/>
+                    </xsl:if>
+                </xsl:template>
+
+                <!-- Remove model actions -->
+                <xsl:template match="xh:head/xf:model[@id = 'fr-form-model']/*[p:has-class('fb-annotation')]"/>
+
                 <!-- Remove automatic grid and td ids -->
-                <xsl:template match="xhtml:body//fr:grid/@id[starts-with(., 'tmp-') and ends-with(., '-tmp')]"/>
-                <xsl:template match="xhtml:body//fr:grid//*:td/@id[starts-with(., 'tmp-') and ends-with(., '-tmp')]"/>
+                <xsl:template match="xh:body//fr:grid/@id[starts-with(., 'tmp-') and ends-with(., '-tmp')]"/>
+                <xsl:template match="xh:body//fr:grid//*:td/@id[starts-with(., 'tmp-') and ends-with(., '-tmp')]"/>
 
                 <!-- Remove xbl:xbl containing section templates bindings -->
-                <xsl:template match="xbl:xbl[xbl:binding[tokenize(@class, '\s+') = 'fr-section-component']]"/>
+                <xsl:template match="xbl:xbl[xbl:binding[p:has-class('fr-section-component')]]"/>
+
+                <!-- Restore fr:buttons -->
+                <xsl:template match="xf:group[p:has-class('fr-buttons')]">
+                    <fr:buttons>
+                        <xsl:apply-templates select="node()"/>
+                    </fr:buttons>
+                </xsl:template>
 
             </xsl:stylesheet>
         </p:input>

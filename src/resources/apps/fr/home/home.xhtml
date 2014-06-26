@@ -11,84 +11,858 @@
 
   The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
   -->
-<xhtml:html xmlns:xs="http://www.w3.org/2001/XMLSchema"
-      xmlns:xforms="http://www.w3.org/2002/xforms"
-      xmlns:ev="http://www.w3.org/2001/xml-events"
-      xmlns:xxforms="http://orbeon.org/oxf/xml/xforms"
-      xmlns:xi="http://www.w3.org/2001/XInclude"
-      xmlns:f="http://orbeon.org/oxf/xml/formatting"
-      xmlns:xhtml="http://www.w3.org/1999/xhtml"
-      xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
-      xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-      xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
-      xmlns:widget="http://orbeon.org/oxf/xml/widget"
-      xmlns:form-runner="java:org.orbeon.oxf.fr.FormRunner">
+<xh:html xmlns:xh="http://www.w3.org/1999/xhtml"
+         xmlns:xs="http://www.w3.org/2001/XMLSchema"
+         xmlns:xf="http://www.w3.org/2002/xforms"
+         xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+         xmlns:xi="http://www.w3.org/2001/XInclude"
+         xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
+         xmlns:saxon="http://saxon.sf.net/"
+         xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
+         xmlns:frf="java:org.orbeon.oxf.fr.FormRunner"
+         xmlns:fbf="java:org.orbeon.oxf.fb.FormBuilder"
+         xmlns:process="java:org.orbeon.oxf.fr.process.SimpleProcess"
 
-    <xhtml:head>
-        <xhtml:link rel="stylesheet" href="/apps/fr/style/form-runner-home.css" type="text/css" media="all"/>
-        <xforms:model id="fr-form-model" xxforms:xpath-analysis="true">
-            <!-- NOTE: Necessary as referenced in view.xsl -->
-            <xforms:instance id="fr-form-instance">
+         lang="{xxf:instance('fr-fr-language-instance')}"
+         xml:lang="{xxf:instance('fr-fr-language-instance')}">
+
+    <xh:head>
+        <xh:title><xf:output ref="$fr-resources/home/title"/></xh:title>
+        <xh:link rel="stylesheet" href="/apps/fr/style/form-runner-home.css" type="text/css" media="all"/>
+        <!-- This page needs access to Form Builder permission -->
+        <xi:include href="oxf:/apps/fr/includes/permissions-model.xml" xxi:omit-xml-base="true"/>
+        <!-- FR Home page XForms model -->
+        <xf:model id="fr-form-model" xxf:xpath-analysis="true">
+
+            <!-- Read and normalize property only if we are the PE version -->
+            <xf:var
+                xmlns:version="java:org.orbeon.oxf.common.Version"
+                name="production-server-uri"
+                value="if (version:isPE())
+                       then for $p in frf:dropTrailingSlash(normalize-space(xxf:property('oxf.fr.production-server-uri')))
+                            return if ($p) then $p else ()
+                       else ()"/>
+
+            <!-- Entry point -->
+            <xf:action event="xforms-ready fr-initialize">
+                <xf:setvalue ref="username" value="xxf:get-session-attribute('fr-home-username')"/>
+                <xf:setvalue ref="password" value="xxf:get-session-attribute('fr-home-password')"/>
+
+                <xf:var name="has-saved-credentials" value="normalize-space(username) and normalize-space(password)"/>
+
+                <xf:dispatch name="fr-clear" targetid="fr-form-model"/>
+
+                <xf:action type="xpath">
+                    if (not($production-server-uri)) then
+                        process:runProcessByName('oxf.fr.home.process', 'load-local')
+                    else if ($has-saved-credentials) then
+                        process:runProcess('oxf.fr.home.process', 'load-remote')
+                    else
+                        process:runProcessByName('oxf.fr.home.process', 'ask-credentials')
+                </xf:action>
+            </xf:action>
+
+            <xf:action event="fr-clear">
+                <!-- Clear selection -->
+                <xf:setvalue ref="selection"/>
+
+                <!-- Don't keep potentially large instances -->
+                <xf:insert ref="instance('fr-form')" origin="xxf:element('dummy')"/>
+                <xf:send submission="reset-toolbox"/>
+
+                <!-- Following doesn't work because instance is readonly and insert code thinks it's mutating -->
+                <!-- Ideal would be an xxf:reset-instance(s) action -->
+                <!--<xf:insert context="instance('fr-components')/root()" origin="xxf:element('dummy')"/>-->
+            </xf:action>
+
+            <xf:instance id="fr-form-instance">
                 <ui>
-                    <user-roles/>
-                </ui>
-            </xforms:instance>
-            <xforms:instance id="fr-forms"><forms/></xforms:instance>       <!-- Forms metadata returned by service -->
+                    <selection/>
 
-            <xforms:submission id="get-forms" method="get" resource="/fr/service/persistence/form" replace="instance" instance="fr-forms"/>
-            <xforms:action ev:event="xforms-model-construct-done">
-                <xforms:send submission="get-forms"/>
-                <xforms:action iterate="instance('fr-forms')/form">
-                    <xforms:insert context="." origin="xxforms:attribute('operations', string-join(form-runner:authorizedOperationsOnForm(.), ' '))"/>
-                </xforms:action>
-            </xforms:action>
-        </xforms:model>
-        <xhtml:title>
-            <xforms:output ref="$fr-resources/home/title"/>
-        </xhtml:title>
-    </xhtml:head>
-    <xhtml:body>
-        <fr:view>
-            <fr:body>
-                <fr:datatable width="100%">
-                    <xforms:repeat nodeset="instance('fr-forms')/form[@operations != '']">
-                        <xhtml:tr>
-                            <xhtml:td fr:sortable="true" fr:sortType="text">
-                                <xforms:output value="application-name">
-                                    <xforms:label>Application</xforms:label>
-                                </xforms:output>
-                            </xhtml:td>
-                            <xhtml:td fr:sortable="true" fr:sortType="text">
-                                <xforms:output value="form-name">
-                                    <xforms:label>Form</xforms:label>
-                                </xforms:output>
-                            </xhtml:td>
-                            <xhtml:td fr:sortable="true" fr:sortType="text">
-                                <xforms:output value="title">
-                                    <xforms:label>Title</xforms:label>
-                                </xforms:output>
-                            </xhtml:td>
-                            <xhtml:td>
-                                <xforms:group ref=".[tokenize(@operations, '\s') = ('*', 'update', 'read', 'delete')]">
-                                    <xhtml:a href="/fr/{application-name}/{form-name}/summary">
-                                        <xhtml:img width="16" height="16" src="/apps/fr/style/images/silk/magnifier.png"/>
-                                        View form data
-                                    </xhtml:a>
-                                </xforms:group>
-                            </xhtml:td>
-                            <xhtml:td>
-                                <xforms:group ref=".[tokenize(@operations, '\s') = ('*', 'create')]">
-                                    <xhtml:a href="/fr/{application-name}/{form-name}/new">
-                                        <xhtml:img width="16" height="16" src="/apps/fr/style/images/silk/add.png"/>
-                                        Fill new form
-                                    </xhtml:a>
-                                </xforms:group>
-                            </xhtml:td>
-                        </xhtml:tr>
-                    </xforms:repeat>
-                </fr:datatable>
-            </fr:body>
-            <fr:bottom/>
+                    <error/>
+
+                    <initializing>true</initializing>
+                    <remote-successful>false</remote-successful>
+                    <any-has-admin-permission/>
+                    <!-- NOTE: At this point, we don't have information about the remote forms permissions. So we just
+                         assume that we have the same permission that we have local forms. -->
+                    <!--<any-has-remote-admin-permission/>-->
+
+                    <local-unpublish-action/>
+                    <local-publish-action/>
+                    <remote-unpublish-action/>
+                    <remote-publish-action/>
+                    <local-to-remote-action/>
+                    <remote-to-local-action/>
+                    <summary-action/>
+                    <new-action/>
+                    <local-upgrade-action/>
+                    <remote-upgrade-action/>
+
+                    <local-unpublish-select/>
+                    <local-publish-select/>
+                    <remote-unpublish-select/>
+                    <remote-publish-select/>
+                    <local-newer-select/>
+                    <remote-newer-select/>
+
+                    <username/>
+                    <password/>
+                </ui>
+            </xf:instance>
+
+            <xf:var name="selection"                value="xxf:split(selection)"/>
+            <xf:var name="any-has-admin-permission" value="any-has-admin-permission = 'true'"/>
+            <xf:var name="remote-successful"        value="remote-successful = 'true'"/>
+
+            <!-- Binds for admin tasks -->
+            <xf:bind ref="instance('fr-form-instance')[$any-has-admin-permission]">
+                <xf:bind ref="local-unpublish-action"  readonly="not(exists($selection) and frf:canUnpublishLocal(../selection, $forms))"/>
+                <xf:bind ref="local-publish-action"    readonly="not(exists($selection) and frf:canPublishLocal(../selection, $forms))"/>
+                <xf:bind ref="remote-unpublish-action" readonly="not(exists($selection) and frf:canUnpublishRemote(../selection, $forms))"/>
+                <xf:bind ref="remote-publish-action"   readonly="not(exists($selection) and frf:canPublishRemote(../selection, $forms))"/>
+                <xf:bind ref="local-to-remote-action"  readonly="not($remote-successful and exists($selection) and frf:canPublishLocalToRemote(../selection, $forms))"/>
+                <xf:bind ref="remote-to-local-action"  readonly="not(exists($selection) and frf:canPublishRemoteToLocal(../selection, $forms))"/>
+                <xf:bind ref="summary-action"          readonly="not(count(xxf:split(../selection)) = 1 and frf:canNavigateSummary(../selection, $forms))"/>
+                <xf:bind ref="new-action"              readonly="not(count(xxf:split(../selection)) = 1 and frf:canNavigateNew(../selection, $forms))"/>
+                <xf:bind ref="local-upgrade-action"    readonly="not(exists($selection) and frf:canUpgradeLocal(../selection, $forms))"/>
+                <xf:bind ref="remote-upgrade-action"   readonly="not(exists($selection) and frf:canUpgradeRemote(../selection, $forms))"/>
+                
+                <xf:bind ref="local-unpublish-select"  readonly="not(frf:canSelectUnpublishedLocal(../selection, $forms))"/>
+                <xf:bind ref="local-publish-select"    readonly="not(frf:canSelectPublishedLocal(../selection, $forms))"/>
+                <xf:bind ref="remote-unpublish-select" readonly="not(frf:canSelectUnpublishedRemote(../selection, $forms))"/>
+                <xf:bind ref="remote-publish-select"   readonly="not(frf:canSelectPublishedRemote(../selection, $forms))"/>
+                <xf:bind ref="local-newer-select"      readonly="not(frf:canSelectLocalNewer(../selection, $forms))"/>
+                <xf:bind ref="remote-newer-select"     readonly="not(frf:canSelectRemoteNewer(../selection, $forms))"/>
+
+                <xf:bind ref="username | password" required="true()" calculate="normalize-space()" readonly="false()"/>
+            </xf:bind>
+
+            <!-- Forms metadata -->
+            <xf:instance id="fr-metadata"><forms/></xf:instance>
+
+            <xf:var name="forms" value="instance('fr-metadata')/form"/>
+
+            <xf:bind ref="instance('fr-metadata')/form/(last-modified-time | remote-last-modified-time)" type="xs:dateTime"/>
+
+            <xf:instance id="fr-metadata-local"><forms/></xf:instance>
+            <xf:instance id="fr-metadata-remote"><forms/></xf:instance>
+
+            <xf:submission
+                id="read-local-metadata"
+                method="get"
+                serialization="none"
+                resource="/fr/service/persistence/form"
+                replace="instance"
+                targetref="instance('fr-metadata-local')">
+
+                <xf:insert event="xforms-submit" ref="instance('fr-metadata-local')" origin="xxf:element('forms')"/>
+                <xf:setvalue event="xforms-submit-done" ref="instance()/initializing">false</xf:setvalue>
+            </xf:submission>
+
+            <xf:submission
+                id="read-remote-metadata"
+                xxf:username="{instance()/username}"
+                xxf:password="{instance()/password}"
+                method="get"
+                serialization="none"
+                resource="{$production-server-uri}/fr/service/persistence/form"
+                replace="instance"
+                targetref="instance('fr-metadata-remote')">
+                <xf:insert event="xforms-submit" ref="instance('fr-metadata-remote')" origin="xxf:element('forms')"/>
+                <xf:setvalue event="xforms-submit-done" ref="instance()/remote-successful">true</xf:setvalue>
+            </xf:submission>
+
+            <xf:action event="store-credentials" type="xpath">
+                xxf:set-session-attribute('fr-home-username', username),
+                xxf:set-session-attribute('fr-home-password', password)
+            </xf:action>
+
+            <xf:action event="process-results">
+
+                <xf:insert ref="instance('fr-metadata')" origin="xxf:element('forms')"/>
+
+                <!-- Create root element -->
+                <xf:var name="temp" value="xxf:element('forms')"/>
+
+                <!-- Join remote data if present -->
+                <xf:insert
+                    context="$temp"
+                    origin="frf:joinLocalAndRemoteMetadata(
+                                instance('fr-metadata-local')/*,
+                                instance('fr-metadata-remote')/*,
+                                xxf:instance('fb-permissions')
+                            )"/>
+
+                <xf:insert ref="instance('fr-metadata-local')"  origin="xxf:element('forms')"/>
+                <xf:insert ref="instance('fr-metadata-remote')" origin="xxf:element('forms')"/>
+
+                <xf:insert
+                    context="instance('fr-metadata')"
+                    origin="xxf:sort($temp/form, if (last-modified-time) then xs:dateTime(last-modified-time) else xs:dateTime(remote-last-modified-time), 'text', 'descending')"/>
+
+                <!-- Only show admin ops column if at least one form has op -->
+                <xf:var name="has-admin"        value="saxon:expression('xxf:split(@operations) = ''admin''')"/>
+                <xf:var name="has-remote-admin" value="saxon:expression('exists(remote-last-modified-time)')"/>
+
+                <xf:setvalue ref="instance()/any-has-admin-permission" value="xxf:exists(instance('fr-metadata')/form, $has-admin)"/>
+            </xf:action>
+
+            <xf:instance id="fr-remote-metadata"><forms/></xf:instance>
+
+            <!-- Scope variable with Form Runner resources -->
+            <xf:var name="fr-resources" model="fr-resources-model" value="$fr-fr-resources"/>
+            <xf:var name="fr-lang"      model="fr-resources-model" value="$fr-lang"/>
+
+            <!-- Start process in reaction to action button -->
+            <xf:action
+                    event="DOMActivate"
+                    observer="fr-publish-local-button   fr-publish-remote-button
+                              fr-unpublish-local-button fr-unpublish-remote-button
+                              fr-local-to-remote-button fr-remote-to-local-button
+                              fr-upgrade-local-button   fr-upgrade-remote-button"
+                    type="xpath">
+                process:runProcessByName('oxf.fr.home.process', substring-before(substring-after(event('xxf:observerid'), 'fr-'), '-button'))
+            </xf:action>
+
+            <!-- Open confirmation dialog in response to process event -->
+            <xxf:show
+                    event="
+                        confirm-local-publish   confirm-local-unpublish
+                        confirm-remote-publish  confirm-remote-unpublish
+                        confirm-local-to-remote confirm-remote-to-local
+                        confirm-local-upgrade   confirm-remote-upgrade"
+                    dialog="publish-confirmation-dialog">
+
+                <xf:property
+                    name="message"
+                    value="xxf:format-message($fr-resources/home/messages/publish-confirmation, (
+                               if (event('xxf:type') = ('confirm-local-upgrade', 'confirm-remote-upgrade'))
+                               then 2
+                               else if (event('xxf:type') = ('confirm-local-unpublish', 'confirm-remote-unpublish'))
+                               then 1
+                               else 0,
+                               count($selection)
+                           ))"/>
+            </xxf:show>
+
+            <!-- Response to process event -->
+            <xf:action
+                    event="
+                        local-publish   local-unpublish
+                        remote-publish  remote-unpublish
+                        local-to-remote remote-to-local
+                        local-upgrade   remote-upgrade">
+
+                <xf:var name="local-read"          value="event('xxf:type') = ('local-publish',   'local-unpublish', 'local-to-remote', 'local-upgrade')"/>
+                <xf:var name="local-write"         value="event('xxf:type') = ('local-publish',   'local-unpublish', 'remote-to-local', 'local-upgrade')"/>
+                <xf:var name="toggle-to-publish"   value="event('xxf:type') = ('local-publish',   'remote-publish')"/>
+                <xf:var name="toggle-to-unpublish" value="event('xxf:type') = ('local-unpublish', 'remote-unpublish')"/>
+                <xf:var name="force-attachments"   value="event('xxf:type') = ('local-to-remote', 'remote-to-local')"/>
+                <xf:var name="upgrade"             value="event('xxf:type') = ('local-upgrade',   'remote-upgrade')"/>
+
+                <!-- Invalidate all instances so we don't find stale component libraries in cache -->
+                <xxf:invalidate-instances/>
+
+                <!-- Iterate until there is an error -->
+                <xf:setvalue ref="error"/>
+                <xf:action iterate="$selection" if="instance()/error = ''">
+
+                    <xf:var name="app"  value="xxf:split(., '/')[1]"/>
+                    <xf:var name="form" value="xxf:split(., '/')[2]"/>
+
+                    <xf:send submission="read-form">
+                        <xf:property name="base-uri" value="if ($local-read) then '' else $production-server-uri"/>
+                        <xf:property name="app"      value="$app"/>
+                        <xf:property name="form"     value="$form"/>
+                        <xf:property name="username" value="if ($local-read) then '' else instance()/username"/>
+                        <xf:property name="password" value="if ($local-read) then '' else instance()/password"/>
+                    </xf:send>
+
+                    <xf:action if="instance()/error = ''">
+                        <xf:action if="$toggle-to-publish or $toggle-to-unpublish">
+                            <xf:var
+                                name="metadata"
+                                value="instance('fr-form')/xh:head/xf:model/xf:instance[@id = 'fr-form-metadata']/metadata"/>
+
+                            <xf:delete
+                                ref="$metadata/available"/>
+                            <xf:insert
+                                if="$toggle-to-unpublish"
+                                context="$metadata"
+                                ref="*"
+                                origin="xxf:element('available', 'false')"/>
+                        </xf:action>
+
+                        <!-- If we upgrade the form definition: retrieve toolbox -->
+                        <xf:send if="$upgrade" submission="read-toolbox">
+                            <xf:property name="app"  value="$app"/>
+                            <xf:property name="form" value="$form"/>
+                        </xf:send>
+
+                        <!-- If we upgrade the form definition: annotate, deannotate, and add components -->
+                        <xf:action if="instance()/error = ''" type="xpath">
+                            for $form-maybe-upgraded in
+                                if ($upgrade)
+                                   then
+                                       xxf:call-xpl(
+                                           'oxf:/forms/orbeon/builder/form/add-template-bindings.xpl',
+                                           (
+                                               'data',
+                                               'bindings'
+                                           ),
+                                           (
+                                              xxf:call-xpl(
+                                                   'oxf:/forms/orbeon/builder/form/deannotate.xpl',
+                                                   'data',
+                                                   xxf:call-xpl(
+                                                       'oxf:/forms/orbeon/builder/form/annotate.xpl',
+                                                       (
+                                                           'data',
+                                                           'bindings'
+                                                       ),
+                                                       (
+                                                           instance('fr-form'),
+                                                           xxf:element('components')
+                                                       ),
+                                                       'data'
+                                                   ),
+                                                   'data'
+                                               ),
+                                               instance('fr-components')
+                                           ),
+                                           'data'
+                                       )
+                                   else
+                                       instance('fr-form')
+                            return
+                                frf:publish(
+                                    $form-maybe-upgraded,
+                                    if ($local-write) then '' else $production-server-uri,
+                                    $app,
+                                    $form,
+                                    if (not($local-write)) then instance()/username else (),
+                                    if (not($local-write)) then instance()/password else (),
+                                    $force-attachments
+                                )
+                        </xf:action>
+                    </xf:action>
+                </xf:action>
+
+                <!-- Update the view -->
+                <xf:dispatch name="fr-initialize" targetid="fr-form-model"/>
+
+            </xf:action>
+
+            <!-- Form definition -->
+            <xf:instance id="fr-form"><dummy/></xf:instance>
+
+            <xf:submission
+                id="read-form"
+                method="get"
+                serialization="none"
+                resource="{event('base-uri')}/fr/service/persistence/crud/{event('app')}/{event('form')}/form/form.xhtml"
+                xxf:username="{instance()/username}"
+                xxf:password="{instance()/password}"
+                replace="instance"
+                instance="fr-form"/>
+
+            <!-- Components (see also Form Builder model.xml) -->
+            <!-- NOTE: Bother caching as we invalidate all instances first, and then we might go through many libraries,
+                 therefore emptying the cache. -->
+            <!-- NOTE: This is not ideal, because toolbox.xpl expects both app/form names, and this means we can't
+                 properly cache libraries anymore. Ideally we should be able to cache per library -->
+            <xf:instance id="fr-components"><dummy/></xf:instance>
+
+            <xf:submission
+                id="read-toolbox"
+                serialization="none"
+                method="get"
+                resource="/fr/service/custom/orbeon/builder/toolbox?application={event('app')}&amp;form={event('form')}"
+                replace="instance"
+                instance="fr-components"
+                xxf:readonly="true"/>
+
+            <xf:submission
+                id="reset-toolbox"
+                ref="xxf:element('dummy')"
+                method="put"
+                resource="echo:"
+                replace="instance"
+                instance="fr-components"
+                xxf:readonly="true"/>
+
+            <xf:action event="xforms-submit-error" observer="read-form read-toolbox">
+
+                <xf:setvalue
+                    ref="error"
+                    value="'true'"/>
+
+                <xf:action type="xpath">
+                    process:runProcess('oxf.fr.home.process', 'error-message("database-error")')
+                </xf:action>
+            </xf:action>
+
+            <!-- Paging information -->
+            <xf:instance id="fr-paging-instance" xxf:expose-xpath-types="true">
+                <paging xmlns="">
+                    <total/>
+                    <search-total/>
+                    <page-size>20</page-size>
+                    <page-number>1</page-number>
+                    <page-count/>
+                    <from>0</from>
+                    <to>0</to>
+                    <prev-trigger/>
+                    <next-trigger/>
+                </paging>
+            </xf:instance>
+
+            <!-- Calculations for page navigation -->
+            <xf:bind ref="instance('fr-paging-instance')">
+                <xf:bind ref="* except (prev-trigger, next-trigger)" type="xs:integer"/>
+                <xf:bind ref="total"        calculate="count(instance('fr-metadata')/*)"/>
+                <xf:bind ref="search-total" calculate="../total"/>
+                <xf:bind ref="page-size"    calculate="(xxf:property('oxf.fr.home.page-size'), 20)[. castable as xs:integer][1]"/>
+                <xf:bind ref="page-count"   calculate="(../search-total + ../page-size - 1) idiv ../page-size"/>
+                <xf:bind ref="from"         calculate="if (../search-total = 0) then 0 else (../page-number - 1) * ../page-size + 1"/>
+                <xf:bind ref="to"           calculate="min((../page-number * ../page-size, ../search-total))"/>
+                <xf:bind ref="prev-trigger" readonly="../search-total = 0 or xs:integer(../page-number) le 1"/>
+                <xf:bind ref="next-trigger" readonly="../search-total = 0 or xs:integer(../search-total) le xs:integer(../to)"/>
+            </xf:bind>
+
+        </xf:model>
+    </xh:head>
+    <xh:body>
+        <fr:view fluid="true">
+            <fr:navbar/>
+            <fr:row>
+                <!-- Make sure not to show during initialization otherwise the alert appears at the top behind the modal dialog -->
+                <xf:group ref=".[empty($forms) and instance()/initializing = 'false']">
+                    <xf:output class="alert" value="$fr-resources/home/messages/no-forms"/>
+                </xf:group>
+                <xf:group ref=".[exists($forms)]">
+
+                    <xf:group ref=".[$any-has-admin-permission]" class="btn-toolbar" xmlns="http://www.w3.org/1999/xhtml" xxf:element="div">
+                        <div class="btn-group">
+
+                            <button class="btn dropdown-toggle" data-toggle="dropdown">
+                                <xf:output value="$fr-resources/home/buttons/select"/>
+                                <span class="caret"/>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <xf:trigger appearance="minimal">
+                                        <xf:label ref="$fr-resources/home/buttons/all"/>
+                                        <xf:setvalue event="DOMActivate" ref="instance()/selection"
+                                            value="string-join(for $f in $forms[xxf:split(@operations) = 'admin'] return concat($f/application-name, '/', $f/form-name), ' ')"/>
+                                    </xf:trigger>
+                                </li>
+                                <li>
+                                    <xf:trigger appearance="minimal">
+                                        <xf:label ref="$fr-resources/home/buttons/none"/>
+                                        <xf:setvalue event="DOMActivate" ref="instance()/selection"/>
+                                    </xf:trigger>
+                                </li>
+
+                                <li class="divider"/>
+                                <li class="{if (xxf:readonly(local-unpublish-select)) then 'disabled' else ()}">
+                                    <xf:trigger appearance="minimal" ref="local-unpublish-select">
+                                        <xf:label ref="$fr-resources/home/buttons/unpublished-local"/>
+                                        <xf:setvalue event="DOMActivate" ref="instance()/selection"
+                                            value="string-join(for $f in $forms[xxf:split(@operations) = 'admin' and frf:isLocalUnavailable(.)] return concat($f/application-name, '/', $f/form-name), ' ')"/>
+                                    </xf:trigger>
+                                </li>
+                                <li class="{if (xxf:readonly(local-publish-select)) then 'disabled' else ()}">
+                                    <xf:trigger appearance="minimal" ref="local-publish-select">
+                                        <xf:label ref="$fr-resources/home/buttons/published-local"/>
+                                        <xf:setvalue event="DOMActivate" ref="instance()/selection"
+                                            value="string-join(for $f in $forms[xxf:split(@operations) = 'admin' and frf:isLocalAvailable(.)] return concat($f/application-name, '/', $f/form-name), ' ')"/>
+                                    </xf:trigger>
+                                </li>
+                                <li class="divider"/>
+                                <li class="{if (xxf:readonly(remote-unpublish-select)) then 'disabled' else ()}">
+                                    <xf:trigger appearance="minimal" ref="remote-unpublish-select">
+                                        <xf:label ref="$fr-resources/home/buttons/unpublished-remote"/>
+                                        <xf:setvalue event="DOMActivate" ref="instance()/selection"
+                                            value="string-join(for $f in $forms[xxf:split(@operations) = 'admin' and frf:isRemoteUnavailable(.)] return concat($f/application-name, '/', $f/form-name), ' ')"/>
+                                    </xf:trigger>
+                                </li>
+                                <li class="{if (xxf:readonly(remote-publish-select)) then 'disabled' else ()}">
+                                    <xf:trigger appearance="minimal" ref="remote-publish-select">
+                                        <xf:label ref="$fr-resources/home/buttons/published-remote"/>
+                                        <xf:setvalue event="DOMActivate" ref="instance()/selection"
+                                            value="string-join(for $f in $forms[xxf:split(@operations) = 'admin' and frf:isRemoteAvailable(.)] return concat($f/application-name, '/', $f/form-name), ' ')"/>
+                                    </xf:trigger>
+                                </li>
+                                <li class="divider"/>
+                                <li class="{if (xxf:readonly(local-newer-select)) then 'disabled' else ()}">
+                                    <xf:trigger appearance="minimal" ref="local-newer-select">
+                                        <xf:label ref="$fr-resources/home/buttons/newer-local"/>
+                                        <xf:setvalue event="DOMActivate" ref="instance()/selection"
+                                            value="string-join(for $f in $forms[xxf:split(@operations) = 'admin' and frf:isLocalNewer(.)] return concat($f/application-name, '/', $f/form-name), ' ')"/>
+                                    </xf:trigger>
+                                </li>
+                                <li class="{if (xxf:readonly(remote-newer-select)) then 'disabled' else ()}">
+                                    <xf:trigger appearance="minimal" ref="remote-newer-select">
+                                        <xf:label ref="$fr-resources/home/buttons/newer-remote"/>
+                                        <xf:setvalue event="DOMActivate" ref="instance()/selection"
+                                            value="string-join(for $f in $forms[xxf:split(@operations) = 'admin' and frf:isRemoteNewer(.)] return concat($f/application-name, '/', $f/form-name), ' ')"/>
+                                    </xf:trigger>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="btn-group">
+
+                            <button class="btn dropdown-toggle" data-toggle="dropdown">
+                                <xf:output value="$fr-resources/home/buttons/operation"/>
+                                <span class="caret"/>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li class="{if (xxf:readonly(local-publish-action)) then 'disabled' else ()}">
+                                    <xf:trigger appearance="minimal" ref="local-publish-action" id="fr-publish-local-button">
+                                        <xf:label ref="$fr-resources/home/buttons/publish-local"/>
+                                    </xf:trigger>
+                                </li>
+                                <li class="{if (xxf:readonly(local-unpublish-action)) then 'disabled' else ()}">
+                                    <xf:trigger appearance="minimal" ref="local-unpublish-action" id="fr-unpublish-local-button">
+                                        <xf:label ref="$fr-resources/home/buttons/unpublish-local"/>
+                                    </xf:trigger>
+                                </li>
+                                <li class="divider"/>
+                                <li class="{if (xxf:readonly(remote-publish-action)) then 'disabled' else ()}">
+                                    <xf:trigger appearance="minimal" ref="remote-publish-action" id="fr-publish-remote-button">
+                                        <xf:label ref="$fr-resources/home/buttons/publish-remote"/>
+                                    </xf:trigger>
+                                </li>
+                                <li class="{if (xxf:readonly(remote-unpublish-action)) then 'disabled' else ()}">
+                                    <xf:trigger appearance="minimal" ref="remote-unpublish-action" id="fr-unpublish-remote-button">
+                                        <xf:label ref="$fr-resources/home/buttons/unpublish-remote"/>
+                                    </xf:trigger>
+                                </li>
+                                <li class="divider"/>
+                                <li class="{if (xxf:readonly(local-to-remote-action)) then 'disabled' else ()}">
+                                    <xf:trigger appearance="minimal" ref="local-to-remote-action" id="fr-local-to-remote-button">
+                                        <xf:label ref="$fr-resources/home/buttons/push-to-remote"/>
+                                    </xf:trigger>
+                                </li>
+                                <li class="{if (xxf:readonly(remote-to-local-action)) then 'disabled' else ()}">
+                                    <xf:trigger appearance="minimal" ref="remote-to-local-action" id="fr-remote-to-local-button">
+                                        <xf:label ref="$fr-resources/home/buttons/pull-from-remote"/>
+                                    </xf:trigger>
+                                </li>
+                                <li class="divider"/>
+                                <li class="{if (xxf:readonly(summary-action)) then 'disabled' else ()}">
+                                    <xf:trigger appearance="minimal" ref="summary-action" id="fr-summary-button">
+                                        <xf:label ref="$fr-resources/home/buttons/navigate-summary"/>
+                                        <xf:load event="DOMActivate" resource="/fr/{xxf:split($selection[1], '/')[1]}/{xxf:split($selection[1], '/')[2]}/summary"/>
+                                    </xf:trigger>
+                                </li>
+                                <li class="{if (xxf:readonly(new-action)) then 'disabled' else ()}">
+                                    <xf:trigger appearance="minimal" ref="summary-action" id="fr-new-button">
+                                        <xf:label ref="$fr-resources/home/buttons/navigate-new"/>
+                                        <xf:load event="DOMActivate" resource="/fr/{xxf:split($selection[1], '/')[1]}/{xxf:split($selection[1], '/')[2]}/new"/>
+                                    </xf:trigger>
+                                </li>
+                                <li class="divider"/>
+                                <li class="{if (xxf:readonly(local-upgrade-action)) then 'disabled' else ()}">
+                                    <xf:trigger appearance="minimal" ref="local-upgrade-action" id="fr-upgrade-local-button">
+                                        <xf:label ref="$fr-resources/home/buttons/upgrade-local"/>
+                                    </xf:trigger>
+                                </li>
+                                <li class="{if (xxf:readonly(remote-upgrade-action)) then 'disabled' else ()}">
+                                    <xf:trigger appearance="minimal" ref="remote-upgrade-action" id="fr-upgrade-remote-button">
+                                        <xf:label ref="$fr-resources/home/buttons/upgrade-remote"/>
+                                    </xf:trigger>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <xf:trigger class="btn-group" xxf:modal="true">
+                            <xf:label mediatype="text/html" ref="$fr-resources/buttons/refresh"/>
+                            <xf:dispatch event="DOMActivate" name="fr-initialize" targetid="fr-form-model"/>
+                        </xf:trigger>
+                    </xf:group>
+
+                    <div class="pagination" xmlns="http://www.w3.org/1999/xhtml">
+                        <ul>
+                            <li class="{if (xxf:readonly(instance('fr-paging-instance')/prev-trigger)) then 'disabled' else ''}">
+                                <xf:trigger ref="instance('fr-paging-instance')/prev-trigger" appearance="minimal" class="fr-navigate-first">
+                                    <!-- https://github.com/orbeon/orbeon-forms/issues/1042 -->
+                                    <xf:label>
+                                        <xh:i class="icon-step-backward"/>&#x200b;
+                                    </xf:label>
+                                    <xf:action event="DOMActivate">
+                                        <xf:setvalue ref="instance('fr-paging-instance')/page-number" value="1"/>
+                                        <xf:setindex repeat="forms-repeat" index="1"/>
+                                    </xf:action>
+                                </xf:trigger>
+                            </li>
+                            <li class="{if (xxf:readonly(instance('fr-paging-instance')/prev-trigger)) then 'disabled' else ''}">
+                                <xf:trigger ref="instance('fr-paging-instance')/prev-trigger" appearance="minimal" class="fr-navigate-prev">
+                                    <xf:label>
+                                        <xh:i class="icon-chevron-left"/>&#x200b;
+                                    </xf:label>
+                                    <xf:action event="DOMActivate">
+                                        <xf:setvalue ref="instance('fr-paging-instance')/page-number" value=". - 1"/>
+                                        <xf:setindex repeat="forms-repeat" index="1"/>
+                                    </xf:action>
+                                </xf:trigger>
+                            </li>
+                            <!-- Some results -->
+                            <xf:group class="fr-paging-numbers" ref=".[xs:integer(instance('fr-paging-instance')/search-total) gt 0]">
+                                <li>
+                                    <span>
+                                        <xf:output value="max((instance('fr-paging-instance')/from, 0))"/>
+                                        <xf:output value="$fr-resources/summary/paging/to"/>
+                                        <xf:output value="max((instance('fr-paging-instance')/to, 0))"/>
+                                        <xf:output value="$fr-resources/summary/paging/of"/>
+                                        <xf:output value="instance('fr-paging-instance')/search-total"/>
+                                    </span>
+                                </li>
+                            </xf:group>
+                            <xf:group class="fr-paging-numbers" ref=".[xs:integer(instance('fr-paging-instance')/search-total) = 0]">
+                                <!-- No results -->
+                            </xf:group>
+                            <li class="{if (xxf:readonly(instance('fr-paging-instance')/next-trigger)) then 'disabled' else ''}">
+                                <xf:trigger ref="instance('fr-paging-instance')/next-trigger" appearance="minimal" class="fr-navigate-next">
+                                    <xf:label>
+                                        <xh:i class="icon-chevron-right"/>&#x200b;
+                                    </xf:label>
+                                    <xf:action event="DOMActivate">
+                                        <xf:setvalue ref="instance('fr-paging-instance')/page-number" value=". + 1"/>
+                                        <xf:setindex repeat="forms-repeat" index="1"/>
+                                    </xf:action>
+                                </xf:trigger>
+                            </li>
+                            <li class="{if (xxf:readonly(instance('fr-paging-instance')/next-trigger)) then 'disabled' else ''}">
+                                <xf:trigger ref="instance('fr-paging-instance')/next-trigger" appearance="minimal" class="fr-navigate-last">
+                                    <xf:label>
+                                        <xh:i class="icon-step-forward"/>&#x200b;
+                                    </xf:label>
+                                    <xf:action event="DOMActivate">
+                                        <xf:setvalue ref="instance('fr-paging-instance')/page-number" value="instance('fr-paging-instance')/page-count"/>
+                                        <xf:setindex repeat="forms-repeat" index="1"/>
+                                    </xf:action>
+                                </xf:trigger>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <xf:group xxf:update="full">
+                        <xh:table class="fr-forms-table table table-bordered table-condensed table-striped table-hover">
+                            <xh:thead>
+                                <xf:group ref=".[$remote-successful]">
+                                    <xf:group ref=".[$any-has-admin-permission]">
+                                        <xh:th/>
+                                    </xf:group>
+                                    <xh:th colspan="{if ($any-has-admin-permission) then 2 else 1}"><xf:output value="$fr-resources/home/titles/local"/></xh:th>
+                                    <xh:th colspan="{if ($any-has-admin-permission) then 2 else 1}"><xf:output value="$fr-resources/home/titles/remote"/></xh:th>
+                                    <xh:th colspan="3"><xf:output value="$fr-resources/home/titles/form-identification"/></xh:th>
+                                </xf:group>
+                                <xh:tr>
+                                    <xf:group ref=".[$any-has-admin-permission]">
+                                        <xh:th/>
+                                        <xh:th><xf:output value="$fr-resources/home/titles/status"/></xh:th>
+                                    </xf:group>
+                                    <xh:th><xf:output value="$fr-resources/home/titles/last-modified"/></xh:th>
+                                    <xf:group ref=".[$remote-successful]">
+                                        <xf:group ref=".[$any-has-admin-permission]">
+                                            <xh:th><xf:output value="$fr-resources/home/titles/status"/></xh:th>
+                                        </xf:group>
+                                        <xh:th><xf:output value="$fr-resources/home/titles/last-modified"/></xh:th>
+                                    </xf:group>
+                                    <xh:th><xf:output value="$fr-resources/home/titles/app"/></xh:th>
+                                    <xh:th><xf:output value="$fr-resources/home/titles/form"/></xh:th>
+                                    <xh:th><xf:output value="$fr-resources/home/titles/title"/></xh:th>
+                                </xh:tr>
+                            </xh:thead>
+                            <xh:tbody>
+                                <xf:repeat ref="$forms[position() ge instance('fr-paging-instance')/from and position() le instance('fr-paging-instance')/to]" id="forms-repeat">
+                                    <xf:var name="current"              value="."/>
+                                    <xf:var name="local-available"      value="frf:isLocalAvailable(.)"/>
+                                    <xf:var name="local-unavailable"    value="frf:isLocalUnavailable(.)"/>
+                                    <xf:var name="remote-available"     value="frf:isRemoteAvailable(.)"/>
+                                    <xf:var name="remote-unavailable"   value="frf:isRemoteUnavailable(.)"/>
+                                    <xf:var name="ops"                  value="xxf:split(@operations)"/>
+                                    <xf:var name="can-navigate-summary" value="$local-available and $ops = ('*', 'update', 'read', 'delete')"/>
+                                    <xf:var name="can-navigate-new"     value="$local-available and $ops = ('*', 'create')"/>
+                                    <xf:var name="link"                 value="if ($can-navigate-summary or $can-navigate-new)
+                                                                               then concat('/fr/', application-name, '/', form-name, '/', if ($can-navigate-summary) then 'summary' else 'new')
+                                                                               else ()"/>
+                                    <xh:tr>
+                                        <xf:group ref=".[$any-has-admin-permission]">
+                                            <xh:td class="fr-home-select">
+                                                <xf:select
+                                                    appearance="full"
+                                                    ref="instance()/selection[$ops = 'admin']"
+                                                    id="document-selection">
+                                                    <xf:item>
+                                                        <xf:label/>
+                                                        <xf:value context="$current" value="concat(application-name, '/', form-name)"/>
+                                                    </xf:item>
+                                                </xf:select>
+                                            </xh:td>
+                                            <xh:td class="fr-home-status">
+                                                <xf:output
+                                                    ref=".[$ops = 'admin' and ($local-available or $local-unavailable)]"
+                                                    class="label{if ($local-available) then ' label-success' else ''}"
+                                                    value="if ($local-available) then $fr-resources/home/labels/available else $fr-resources/home/labels/unavailable"/>
+                                                <xf:output
+                                                    ref=".[form-name = 'library']"
+                                                    class="label label-info"
+                                                    value="$fr-resources/home/labels/library"/>
+                                                <xf:output
+                                                    ref=".[adjust-dateTime-to-timezone(last-modified-time) gt adjust-dateTime-to-timezone(remote-last-modified-time)]"
+                                                    class="label label-warning"
+                                                    value="$fr-resources/home/labels/newer"/>
+                                            </xh:td>
+                                        </xf:group>
+                                        <xh:td class="fr-home-modified">
+                                            <xf:output
+                                                    ref="last-modified-time"
+                                                    value="
+                                                        for $v in adjust-dateTime-to-timezone(xs:dateTime(.))
+                                                            return
+                                                                if (current-dateTime() - $v lt xs:dayTimeDuration('P1D'))
+                                                                then format-dateTime($v, $fr-resources/common/formats/within-day, xxf:lang(), (), ())
+                                                                else if (year-from-dateTime(current-dateTime()) = year-from-dateTime($v))
+                                                                then format-dateTime($v, $fr-resources/common/formats/day-this-year, xxf:lang(), (), ())
+                                                                else format-dateTime($v, $fr-resources/common/formats/short-date, xxf:lang(), (), ())"/>
+                                        </xh:td>
+                                        <xf:group ref=".[$remote-successful]">
+                                            <xf:group ref=".[$any-has-admin-permission]">
+                                                <xh:td class="fr-home-status">
+                                                    <xf:output
+                                                        ref=".[$ops = 'admin' and ($remote-available or $remote-unavailable)]"
+                                                        class="label{if ($remote-available) then ' label-success' else ''}"
+                                                        value="if ($remote-available) then $fr-resources/home/labels/available else $fr-resources/home/labels/unavailable"/>
+                                                    <xf:output
+                                                        ref=".[form-name = 'library' and ($remote-available or $remote-unavailable)]"
+                                                        class="label label-info"
+                                                        value="$fr-resources/home/labels/library"/>
+                                                    <xf:output
+                                                        ref=".[adjust-dateTime-to-timezone(remote-last-modified-time) gt adjust-dateTime-to-timezone(last-modified-time)]"
+                                                        class="label label-warning"
+                                                        value="$fr-resources/home/labels/newer"/>
+                                                </xh:td>
+                                            </xf:group>
+                                            <xh:td class="fr-home-modified">
+                                                <xf:output
+                                                    ref="remote-last-modified-time"
+                                                    value="
+                                                        for $v in adjust-dateTime-to-timezone(xs:dateTime(.))
+                                                            return
+                                                                if (current-dateTime() - $v lt xs:dayTimeDuration('P1D'))
+                                                                then format-dateTime($v, $fr-resources/common/formats/within-day, xxf:lang(), (), ())
+                                                                else if (year-from-dateTime(current-dateTime()) = year-from-dateTime($v))
+                                                                then format-dateTime($v, $fr-resources/common/formats/day-this-year, xxf:lang(), (), ())
+                                                                else format-dateTime($v, $fr-resources/common/formats/short-date, xxf:lang(), (), ())"/>
+                                            </xh:td>
+                                        </xf:group>
+                                        <xh:td>
+                                            <xh:a href="{$link}" target="_blank" class="{if ($link) then '' else 'xforms-hidden'}">
+                                                <xf:output ref=".[$link]" value="application-name"/>
+                                            </xh:a>
+                                            <xf:output ref=".[not($link)]" value="application-name"/>
+                                        </xh:td>
+                                        <xh:td>
+                                            <xh:a href="{$link}" target="_blank" class="{if ($link) then '' else 'xforms-hidden'}">
+                                                <xf:output ref=".[$link]" value="form-name"/>
+                                            </xh:a>
+                                            <xf:output ref=".[not($link)]" value="form-name"/>
+                                        </xh:td>
+                                        <xh:td>
+                                            <xf:var name="title" value="(title[@xml:lang = $fr-lang], title)[1]"/>
+                                            <xh:a href="{$link}" target="_blank" class="{if ($link) then '' else 'xforms-hidden'}">
+                                                <xf:output ref=".[$link]" value="$title"/>
+                                            </xh:a>
+                                            <xf:output ref=".[not($link)]" value="$title"/>
+                                        </xh:td>
+                                    </xh:tr>
+                                </xf:repeat>
+                            </xh:tbody>
+                        </xh:table>
+                    </xf:group>
+                </xf:group>
+            </fr:row>
+            <fr:row>
+                <!--xxx<xf:output value="string-join(for $i in instance('fr-paging-instance')/* return (name($i), string($i)), ' ')"/>-->
+                <!--xxx <xf:output value="saxon:serialize(instance('fr-metadata'), 'xml')"/>-->
+                <fr:version/>
+            </fr:row>
         </fr:view>
-    </xhtml:body>
-</xhtml:html>
+
+        <!-- Confirmation dialog -->
+        <fr:alert-dialog id="publish-confirmation-dialog" close="true">
+            <fr:label ref="$fr-resources/home/titles/publish-confirmation"/>
+            <!-- Message is dynamically set -->
+            <fr:negative-choice>
+                <xf:action event="DOMActivate" type="xpath">
+                    process:runProcessByName('oxf.fr.home.process', 'confirmation-cancel')
+                </xf:action>
+            </fr:negative-choice>
+            <fr:positive-choice xxf:modal="true">
+                <xf:action event="DOMActivate" type="xpath">
+                    process:runProcessByName('oxf.fr.home.process', 'confirmation-ok')
+                </xf:action>
+            </fr:positive-choice>
+        </fr:alert-dialog>
+
+        <!-- Credentials dialog -->
+        <xxf:dialog id="fr-credentials-dialog" level="modal" close="true" draggable="true" class="fr-dialog fr-credentials-dialog">
+
+            <xf:label ref="$fr-resources/home/titles/credentials"/>
+
+            <xh:img src="/ops/images/xforms/warning_64.png" alt="" class="fr-dialog-icon"/>
+            <xh:div class="fr-dialog-credentials-fields">
+                <fr:grid>
+                    <xh:tr>
+                        <xh:td>
+                            <xf:input ref="username">
+                                <xf:label ref="$fr-resources/home/labels/username"/>
+                            </xf:input>
+                        </xh:td>
+                    </xh:tr>
+                    <xh:tr>
+                        <xh:td>
+                            <xf:secret ref="password">
+                                <xf:label ref="$fr-resources/home/labels/password"/>
+                            </xf:secret>
+                        </xh:td>
+                    </xh:tr>
+                </fr:grid>
+            </xh:div>
+            <xh:div class="fr-dialog-buttons">
+                <xf:trigger id="cancel-button" xxf:modal="true">
+                    <xf:label ref="$fr-resources/home/buttons/cancel"/>
+                </xf:trigger>
+                <xf:trigger appearance="xxf:primary" id="connect-button" xxf:modal="true">
+                    <xf:label ref="$fr-resources/home/buttons/connect"/>
+                </xf:trigger>
+            </xh:div>
+
+            <xf:action event="DOMActivate">
+                <xf:action if="event('xxf:targetid') = 'cancel-button'">
+                    <xxf:hide event="DOMActivate" dialog="fr-credentials-dialog"/>
+                </xf:action>
+                <xf:action if="not(event('xxf:targetid') = 'cancel-button') and valid((username, password))">
+                    <xxf:hide dialog="fr-credentials-dialog">
+                        <xf:property name="fr-connect" value="true()"/>
+                    </xxf:hide>
+                </xf:action>
+                <xf:action if="not(event('xxf:targetid') = 'cancel-button') and not(valid((username, password)))">
+                    <xxf:setvisited control="fr-credentials-dialog" recurse="true"/>
+                </xf:action>
+            </xf:action>
+
+            <xf:action event="xxforms-dialog-close">
+                <xf:action type="xpath">
+                    process:runProcessByName('oxf.fr.home.process', if (event('fr-connect')) then 'credentials-ok' else 'credentials-cancel')
+                </xf:action>
+            </xf:action>
+
+        </xxf:dialog>
+    </xh:body>
+</xh:html>

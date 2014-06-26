@@ -24,10 +24,10 @@
 
         dynamicItemset: null,       // Do we need to wait for the itemset to change before we update the auto-complete?
         yuiAutoComplete: null,      // YUI object for the auto-complete
-        searchControl: null,        // xforms:input control in which users type
+        searchControl: null,        // xf:input control in which users type
         searchField: null,          // Form field in which users type
         valueSelectedTrigger: null,  // Bridge to tell XForms users selected a value
-        externalValueInput : null,  // xforms:input containing the external value
+        externalValueInput : null,  // xf:input containing the external value
         justMadeSelection: false,   // Reset to false when an Ajax response arrives
         suggestionRequested: false, // Whether users requested the suggestion menu to open by clicking on the button
 
@@ -100,12 +100,13 @@
                 // If the user just selected something before which triggered an Ajax query, don't show the suggestion list
                 // as users expect the suggestion list to close after making a selection (clicking or pressing enter)
                 ! this.justMadeSelection
-                // Update the list only of the control has the focus, as updating the list will show the suggestion list
+                // Update the list only if the control has the focus, as updating the list will show the suggestion list
                 // and we only want to show the suggestion list if the user happens to be in that field
                 && ORBEON.xforms.Globals.currentFocusControlId == this.searchControl.id);
             if (doUpdateSuggestionList) {
                 // Tell YUI this control has the focus; we set the focus on the input, but the YUI focus handler is sometimes called too late
                 this.yuiAutoComplete._bFocused = true;
+                this.yuiAutoComplete._nKeyCode = null;  // See https://github.com/orbeon/orbeon-forms/issues/436
                 this.yuiAutoComplete._populateList(query, { results: newList }, { query: query });
             }
             this.justMadeSelection = false;
@@ -156,7 +157,7 @@
             var result = [];
 
             // YUI autocomplete give us an escaped string
-            query = unescape(query);
+            query = decodeURIComponent(query);
             // Look again for the element, as on IE the <select> is recreated when the itemset changes, and so can't be cached
             var select1Container = YD.getElementsByClassName("fr-autocomplete-select1", null, this.container)[0];
             var select1Element = OD.getElementByTagName(select1Container, "select");

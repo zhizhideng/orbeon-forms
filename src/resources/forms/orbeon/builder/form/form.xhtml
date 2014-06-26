@@ -14,555 +14,628 @@
 <xh:html xmlns:xh="http://www.w3.org/1999/xhtml"
       xmlns:xf="http://www.w3.org/2002/xforms"
       xmlns:xs="http://www.w3.org/2001/XMLSchema"
-      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xmlns:ev="http://www.w3.org/2001/xml-events"
       xmlns:xi="http://www.w3.org/2001/XInclude"
       xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
       xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
       xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
       xmlns:fb="http://orbeon.org/oxf/xml/form-builder"
-      xmlns:saxon="http://saxon.sf.net/"
-      xmlns:xbl="http://www.w3.org/ns/xbl"
-      xmlns:controlOps="java:org.orbeon.oxf.fb.ControlOps"
-      xmlns:xformsUtils="java:org.orbeon.oxf.xforms.XFormsUtils">
+      xmlns:secure="java:org.orbeon.oxf.util.SecureUtils"
+      xmlns:fbf="java:org.orbeon.oxf.fb.FormBuilder">
     <xh:head>
-        <xh:title>Orbeon Form Builder</xh:title>
         <!-- CSS -->
         <xh:link rel="stylesheet" type="text/css" href="/ops/yui/assets/skins/sam/resize.css"/>
         <xh:link rel="stylesheet" type="text/css" href="/ops/yui/assets/skins/sam/layout.css"/>
         <xh:link rel="stylesheet" href="/forms/orbeon/builder/resources/form-builder.css" type="text/css"/>
 
-        <xh:script type="text/javascript" src="/ops/jquery/jquery-1.7.1.min.js"/>
-        <xh:script type="text/javascript" src="/forms/orbeon/builder/resources/accordion-menu-v2.js"/>
-        <xh:script type="text/javascript" src="/forms/orbeon/builder/resources/grid/events.js"/>
-        <xh:script type="text/javascript" src="/forms/orbeon/builder/resources/grid/action-icons.js"/>
-        <xh:script type="text/javascript" src="/forms/orbeon/builder/resources/grid/placeholders.js"/>
-        <xh:script type="text/javascript" src="/forms/orbeon/builder/resources/grid/static-upload.js"/>
-        <xh:script type="text/javascript" src="/forms/orbeon/builder/resources/grid/style.js"/>
-        <xh:script type="text/javascript">
-            var fbAccordionMenuOptions = {
-                dependent: false,
-                openedIds: ['fb-toolbox-controls-dt' ],// ,'fb-toolbox-i18n-dt'
-                seconds: 0.2,
-                easeOut: false,
-                animation:true
-            };
-            new AccordionMenu.setting('fb-toolbox-dl', fbAccordionMenuOptions);
-        </xh:script>
+        <xh:script type="text/javascript" src="/forms/orbeon/builder/resources/cell/events.js"/>
+        <xh:script type="text/javascript" src="/forms/orbeon/builder/resources/cell/action-icons.js"/>
+        <xh:script type="text/javascript" src="/forms/orbeon/builder/resources/cell/placeholders.js"/>
+        <xh:script type="text/javascript" src="/forms/orbeon/builder/resources/cell/control-resources-editor/actions.js"/>
+        <xh:script type="text/javascript" src="/forms/orbeon/builder/resources/cell/control-resources-editor/events.js"/>
+        <xh:script type="text/javascript" src="/forms/orbeon/builder/resources/cell/control-resources-editor/placeholders.js"/>
+        <xh:script type="text/javascript" src="/forms/orbeon/builder/resources/cell/static-upload.js"/>
+        <xh:script type="text/javascript" src="/forms/orbeon/builder/resources/section-grid-repeat/position.js"/>
+        <xh:script type="text/javascript" src="/forms/orbeon/builder/resources/section-grid-repeat/section-editor.js"/>
+        <xh:script type="text/javascript" src="/forms/orbeon/builder/resources/section-grid-repeat/grid-repeat-editor.js"/>
 
-        <!-- Script to handle dynamic layout -->
-        <xh:script type="text/javascript" src="/ops/yui/resize/resize.js"/>
-        <xh:script type="text/javascript" src="/ops/yui/layout/layout.js"/>
-        <xh:script type="text/javascript">
-            (function() {
-                var Dom = YAHOO.util.Dom,
-                    Event = YAHOO.util.Event;
-
-                Event.onDOMReady(function() {
-                    var layoutElement = ORBEON.util.Dom.get("fb-layout");
-                    layoutElement.style.height = YAHOO.util.Dom.getViewportHeight() + "px";
-
-                    var layout = new YAHOO.widget.Layout(layoutElement, {
-                        units: [
-                            { position: 'top', height: 33 + 12, body: 'top1' },
-                            { position: 'bottom', height: 39 + 12, resize: false, body: 'bottom1' },
-                            { position: 'left', width: 200, resize: false, body: 'left1', scroll: true },
-                            { position: 'center', body: 'center1', scroll: true }
-                        ]
-                    });
-
-                    YAHOO.widget.Overlay.windowResizeEvent.subscribe(function() {
-                        layout.set('height', YAHOO.util.Dom.getViewportHeight());
-                        layout.set('width', YAHOO.util.Dom.getViewportWidth());
-                        layout.resize();
-                    });
-
-                    layout.render();
-
-                    // Only make content visible after initialization to prevent expensive relayout
-                    YAHOO.util.Dom.setStyle("left1", "display", "block");
-                    YAHOO.util.Dom.setStyle("center1", "display", "block");
-                });
-            })();
-        </xh:script>
-
-        <!-- Include main XForms model -->
-        <xi:include href="oxf:/forms/orbeon/builder/form/model.xml" xxi:omit-xml-base="true"/>
+        <xi:include href="oxf:/apps/fr/includes/permissions-model.xml" xxi:omit-xml-base="true"/>
+        <xi:include href="oxf:/forms/orbeon/builder/form/model.xml"    xxi:omit-xml-base="true"/>
     </xh:head>
     <xh:body>
-        <xh:div id="fb-layout">
-            <xh:div id="top1" class="fb-top">
-                <fr:logo/>
-                <fr:title/>
-                <fr:language-selector/>
-                <fr:form-builder-doc/>
-                <fr:messages/>
-            </xh:div>
-            <xh:div id="bottom1" class="fb-bottom">
-                <xh:div>
 
-                    <fr:status-icons/>
+        <!-- For the summary page -->
+        <xh:div class="xforms-hidden">
+            <xf:output id="application-name-control" bind="application-name-bind" class="fr-summary fr-search">
+                <xf:label ref="$form-resources/application-name/label"/>
+            </xf:output>
+            <xf:output id="form-name-control" bind="form-name-bind" class="fr-summary fr-search">
+                <xf:label ref="$form-resources/form-name/label"/>
+            </xf:output>
+            <xf:output id="title-control" bind="title-bind" class="fr-summary fr-search">
+                <xf:label ref="$form-resources/title/label"/>
+            </xf:output>
+            <xf:output id="description-control" bind="description-bind" class="fr-summary fr-search">
+                <xf:label ref="$form-resources/description/label"/>
+            </xf:output>
+        </xh:div>
 
-                    <xh:div class="fr-buttons">
-                        <!-- Back/Close -->
-                        <fr:close-button/>
-
-                        <!-- Test form -->
-                        <xf:group model="fr-error-summary-model" ref="instance('fr-error-summary-instance')/trigger" id="fb-test-button-group">
-                            <xf:trigger id="fb-test-button">
-                                <xf:label>
-                                    <xh:img src="/apps/fr/style/images/pixelmixer/gear_16.png" alt=""/>
-                                    <xh:span><xf:output value="$fr-resources/detail/labels/test"/></xh:span>
-                                </xf:label>
-                                <xf:action ev:event="DOMActivate">
-                                    <xxf:script>
-                                        <!-- Dialog set to 90% of the viewport width/height -->
-                                        var dialogWidth = YAHOO.util.Dom.getViewportWidth() * .9;
-                                        var dialogHeight = YAHOO.util.Dom.getViewportHeight() * .9;
-                                        <!-- Get references to elements in the dialog -->
-                                        var testDialog = YAHOO.util.Dom.get("fb-test-dialog");
-                                        var testDialogBody = YAHOO.util.Dom.getElementsByClassName("bd", null, testDialog)[0];
-                                        var closeButton = YAHOO.util.Dom.getElementsByClassName("xbl-fr-button", null, testDialogBody)[0];
-                                        var iframe = YAHOO.util.Dom.get("fb-test-iframe");
-                                        <!-- Set width/height of dialog -->
-                                        testDialog.style.width = dialogWidth + "px";
-                                        testDialogBody.style.height = dialogHeight + "px";
-                                        <!-- Height of iframe set to leave enough space to the close button -->
-                                        iframe.style.height = (dialogHeight - 35) + "px";
-                                        <!-- Reset the displayed page as the iframe might show the result from a previous test -->
-                                        iframe.contentWindow.location.href = "about:blank";
-                                        ORBEON.xforms.Document.dispatchEvent("fb-test-button-group", "show-fb-test-dialog");
-                                    </xxf:script>
-                                </xf:action>
-                            </xf:trigger>
-                            <xf:action ev:event="show-fb-test-dialog">
-                                <xxf:show dialog="fb-test-dialog"/>
-                                <xf:send submission="fb-test-form-submission"/>
-                            </xf:action>
-                        </xf:group>
-
-                        <!-- Publish form -->
-                        <xf:group model="fr-persistence-model" ref="instance('fr-triggers-instance')/publish">
-                            <xf:trigger id="fb-publish-button" ref=".">
-                                <xf:label>
-                                    <xh:img src="/apps/fr/style/images/pixelmixer/globe_16.png" alt=""/>
-                                    <xh:span><xf:output value="$fr-resources/detail/labels/publish"/></xh:span>
-                                </xf:label>
-                                <xf:action ev:event="DOMActivate">
-                                    <xxf:show dialog="fb-publish-dialog"/>
-                                </xf:action>
-                            </xf:trigger>
-                        </xf:group>
-
-                        <!-- "Save" from Form Runner -->
-                        <fr:save-button/>
-
-                        <!-- Save as -->
-                        <xf:trigger id="fr-save-as-button" ref="instance('fb-triggers-instance')/save-as">
-                            <xf:label>
-                                <xh:img width="16" height="16" src="/apps/fr/style/images/silk/database_add.png" alt=""/>
-                                <xh:span><xf:output value="$fr-resources/detail/labels/save-as-document"/></xh:span>
-                            </xf:label>
-                            <xf:action ev:event="DOMActivate">
-                                <!-- Open the dialog in "save-as" mode -->
-                                <xf:dispatch name="fb-show-dialog" targetid="fb-form-editor$dialog-form-settings">
-                                    <xxf:context name="mode" value="'save-as'"/>
-                                </xf:dispatch>
-                            </xf:action>
-                        </xf:trigger>
-                    </xh:div>
-
-                    <div class="fr-clear"/>
+        <xh:div class="fb-navbar navbar navbar-fixed-top">
+            <xh:div class="navbar-inner">
+                <xh:div class="container">
+                    <xh:img src="/apps/fr/style/orbeon-navbar-logo.png" alt=""/>
+                    <xh:h1 class="brand">Form Builder</xh:h1>
+                    <xh:ul class="nav">
+                        <xh:li>
+                            <xh:a tabindex="-1" href="http://wiki.orbeon.com/forms/doc/user-guide/form-builder-user-guide" target="_blank">Form Builder User Guide</xh:a>
+                        </xh:li>
+                        <xh:li>
+                            <xh:a tabindex="-1" href="http://www.orbeon.com/" target="_blank">Form Builder Screencast</xh:a>
+                        </xh:li>
+                        <xh:li>
+                            <fr:language-selector/>
+                        </xh:li>
+                    </xh:ul>
                 </xh:div>
             </xh:div>
-            <!-- Initially hide to prevent expensive relayout upon load -->
-            <xh:div id="left1" style="display: none">
-                <!-- Toolbox -->
-                <xi:include href="oxf:/forms/orbeon/builder/form/toolbox.xml" xxi:omit-xml-base="true"/>
+        </xh:div>
+
+        <xh:div class="fb-bottom">
+
+            <fr:status-icons/>
+            <fr:messages/>
+
+            <!-- XPath errors in edited form -->
+            <xh:div class="fb-xpath-errors">
+                <xf:output
+                    class="alert"
+                    ref="instance('fb-variables')/xpath-errors[xs:integer(.) gt 0]"
+                    value="xxf:format-message($form-resources/messages/xpath-errors, xs:integer(.))"/>
             </xh:div>
-            <!-- Initially hide to prevent expensive relayout upon load -->
-            <xh:div id="center1" style="display: none">
 
-                <fr:view>
-                    <xf:label>Orbeon Form Builder</xf:label>
-                    <fr:header>
-                        <!-- Logo -->
-                        <xf:group id="fb-logo-group" class="fr-logo">
-                            <xf:label ref="$form-resources/logo/label" class="fr-hidden"/>
-                            <fr:image-attachment bind="logo-bind" class="fr-attachment">
-                                <!-- Only show hint if there is no attachment -->
-                                <xf:hint ref="$form-resources/logo/hint[not(normalize-space(context()))]"/>
-                                <!-- Store all the details -->
-                                <xf:filename ref="@filename"/>
-                                <xf:mediatype ref="@mediatype"/>
-                                <xxf:size ref="@size"/>
-                            </fr:image-attachment>
-                        </xf:group>
+            <xh:div class="fr-buttons">
 
-                        <!-- Form settings -->
-                        <xf:trigger appearance="minimal" id="fb-form-settings-trigger">
-                            <xf:label><xh:img src="/apps/fr/style/images/silk/cog.png" alt="" title="{$form-resources/dialog-form-settings/open/label}"/></xf:label>
-                            <xf:action ev:event="DOMActivate">
-                                <!-- Open the dialog in "edit" mode -->
-                                <xf:dispatch name="fb-show-dialog" targetid="fb-form-editor$dialog-form-settings">
-                                    <xxf:context name="app" value="xxf:bind('application-name-bind')"/>
-                                    <xxf:context name="form" value="xxf:bind('form-name-bind')"/>
-                                    <xxf:context name="mode" value="'edit'"/>
-                                </xf:dispatch>
-                            </xf:action>
-                        </xf:trigger>
-                        <xh:div class="fr-hidden">
-                            <!-- Application name and form name for the summary page -->
-                            <xf:output id="application-name-control" bind="application-name-bind" class="fr-summary fr-search fr-static">
-                                <xf:label ref="$form-resources/application-name/label"/>
-                            </xf:output>
-                            <xf:output id="form-name-control" bind="form-name-bind" class="fr-summary fr-search fr-static">
-                                <xf:label ref="$form-resources/form-name/label"/>
-                            </xf:output>
-                        </xh:div>
+                <xf:var
+                    name="buttons-names"
+                    value="xxf:split(xxf:property('oxf.fr.detail.buttons.orbeon.builder'))"/>
 
-                        <!-- Add/remove language -->
-                        <xf:group class="fb-language-triggers" ref=".[xpl:isPE()]" xmlns:xpl="java:org.orbeon.oxf.pipeline.api.FunctionLibrary">
-                            <xf:trigger appearance="minimal">
-                                <xf:label><xh:img src="/apps/fr/style/images/silk/add.png" alt="" title="{$form-resources/dialog-add-language/add-language/label}"/></xf:label>
-                                <xxf:show ev:event="DOMActivate" dialog="fb-add-language-dialog" neighbor="fb-resources-language-select"/>
-                            </xf:trigger>
-                            <xf:trigger appearance="minimal" id="fb-language-remove" ref=".[count($resources/resource) gt 1]">
-                                <xf:label><xh:img src="/apps/fr/style/images/silk/delete.png" alt="" title="{$form-resources/dialog-add-language/remove-language/label}"/></xf:label>
-                                <xf:action ev:event="DOMActivate">
-                                    <!-- Ask confirmation -->
-                                    <xxf:show dialog="fb-confirmation-dialog">
-                                        <xxf:context name="fr:message"
-                                                         value="concat($form-resources/messages/delete-resources, ' ''',
-                                                                     xxf:instance('fr-languages-instance')/language[@code = $fb-lang]/(if (@native-name != @english-name) then concat(@native-name, ' (', @english-name, ')') else @native-name),
-                                                                     '''?')"/>
-                                        <xxf:context name="fr:confirmation-target" value="'fb-language-remove'"/>
-                                    </xxf:show>
-                                </xf:action>
-                                <xf:action ev:event="fb-confirmation-yes">
-                                    <!-- Delete resources for this language -->
-                                    <xf:delete ref="$resources/resource[@xml:lang = $fb-lang]"/>
-                                    <xf:delete ref="$metadata-instance/title[@xml:lang = $fb-lang]"/>
-                                    <xf:delete ref="$metadata-instance/description[@xml:lang = $fb-lang]"/>
-                                    <xf:setvalue ref="$fb-lang" value="$resources/resource[1]/@xml:lang"/>
+                <xf:repeat ref="$buttons-names">
+                    <xf:var name="button-name" value="."/>
+                    <xf:var name="primary"     value="position() = last()"/>
+                    <xf:var name="class"       value="concat('xforms-trigger-appearance-xxforms-',
+                                                             if ($primary) then 'primary'
+                                                             else 'default')"/>
 
-                                    <!-- Force RRR when the value changes. The value change doesn't cause a rebuild, therefore the binds don't update. -->
-                                    <xf:rebuild model="fr-form-model"/>
-                                    <xf:recalculate model="fr-form-model"/>
-                                    <xf:revalidate model="fr-form-model"/>
-                                </xf:action>
-                            </xf:trigger>
-                        </xf:group>
+                    <fr:process-button
+                        name="{$button-name}"
+                        ref="xxf:instance('fb-triggers-instance')/(if ($button-name = 'publish') then publish else other)"
+                        class="{$class}"/>
 
-                        <!-- Language selector -->
-                        <xh:div class="fr-language-choice">
-                            <fr:link-select1 id="fb-resources-language-select" ref="$fb-lang">
-                                <xf:itemset ref="$resources/resource">
-                                    <xf:label value="xxf:instance('fr-languages-instance')/language[@code = context()/@xml:lang]/@native-name"/>
-                                    <xf:value ref="@xml:lang"/>
-                                </xf:itemset>
+                </xf:repeat>
 
-                                <!-- Force RRR when the value changes. The value change doesn't cause a rebuild, therefore the binds don't update. -->
-                                <xf:action ev:event="xforms-value-changed">
-                                    <xf:rebuild model="fr-form-model"/>
-                                    <xf:recalculate model="fr-form-model"/>
-                                    <xf:revalidate model="fr-form-model"/>
-                                    <xf:refresh model="fr-form-model"/>
-                                </xf:action>
-
-                            </fr:link-select1>
-                        </xh:div>
-
-                    </fr:header>
-                    <fr:top>
-                        <!-- Form title and description -->
-                        <fr:inplace-input id="title-control" bind="title-bind" class="fr-summary fr-search fb-title-control fr-form-title">
-                            <xf:label ref="$form-resources/title/label"/>
-                            <xf:hint ref="$form-resources/title/hint"/>
-                            <xf:alert ref="$form-resources/title/alert"/>
-                        </fr:inplace-input>
-                        <fr:inplace-input id="description-control" bind="description-bind" class="fr-summary fr-search fb-description-control fr-form-description">
-                            <xf:label ref="$form-resources/description/label"/>
-                            <xf:hint ref="$form-resources/description/hint"/>
-                        </fr:inplace-input>
-                        <xh:div class="fr-clear"/>
-                    </fr:top>
-                    <fr:bottom>
-                        <xh:div class="fr-buttons">
-                            <xh:div class="fr-buttons-placeholder">
-                                <xh:div>
-                                    <xf:output value="$fr-resources/detail/messages/buttons-placeholder"/>
-                                </xh:div>
-                            </xh:div>
-                        </xh:div>
-                    </fr:bottom>
-                    <fr:footer>
-                        <xh:div/>
-                    </fr:footer>
-                    <fr:body>
-
-                        <xxf:var name="dialogs-closed" value="instance('fb-variables')/dialogs-open = 0"/>
-
-                        <!-- Cut/copy/paste shortcuts -->
-                        <xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="control" xxf:text="x" name="DOMActivate" targetid="cut-trigger"/>
-                        <xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="control" xxf:text="c" name="DOMActivate" targetid="copy-trigger"/>
-                        <xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="control" xxf:text="v" name="DOMActivate" targetid="paste-trigger"/>
-
-                        <!-- Buttons shortcuts -->
-                        <xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="control" xxf:text="w" name="DOMActivate" targetid="fr-back-button"/>
-                        <xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="control" xxf:text="t" name="DOMActivate" targetid="fb-test-button"/>
-                        <xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="control" xxf:text="p" name="DOMActivate" targetid="fb-publish-button"/>
-                        <xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="control" xxf:text="s" name="DOMActivate" targetid="fr-save-button"/>
-                        <xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="control shift" xxf:text="s" name="DOMActivate" targetid="fr-save-as-button"/>
-
-                        <!-- Open dialogs shortcuts -->
-                        <xxf:show if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="alt" xxf:text="e" dialog="fb-source-editor-dialog"/>
-                        <xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="alt" xxf:text="i" name="DOMActivate" targetid="fb-edit-details-trigger"/>
-                        <xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="alt" xxf:text="v" name="DOMActivate" targetid="fb-edit-validation-trigger"/>
-
-                        <!-- Move section -->
-                        <xf:action ev:observer="#document" ev:event="keypress" xxf:modifiers="control alt" xxf:text="&#39;" type="xpath" xmlns:sectionOps="java:org.orbeon.oxf.fb.SectionOps">
-                            sectionOps:moveSectionRight($current-td/ancestor::*:section[1])
-                        </xf:action>
-                        <xf:action ev:observer="#document" ev:event="keypress" xxf:modifiers="control alt" xxf:text="&#37;" type="xpath" xmlns:sectionOps="java:org.orbeon.oxf.fb.SectionOps">
-                            sectionOps:moveSectionLeft($current-td/ancestor::*:section[1])
-                        </xf:action>
-                        <xf:action ev:observer="#document" ev:event="keypress" xxf:modifiers="control alt" xxf:text="&#38;" type="xpath" xmlns:sectionOps="java:org.orbeon.oxf.fb.SectionOps">
-                            sectionOps:moveSectionUp($current-td/ancestor::*:section[1])
-                        </xf:action>
-                        <xf:action ev:observer="#document" ev:event="keypress" xxf:modifiers="control alt" xxf:text="&#40;" type="xpath" xmlns:sectionOps="java:org.orbeon.oxf.fb.SectionOps">
-                            sectionOps:moveSectionDown($current-td/ancestor::*:section[1])
-                        </xf:action>
-
-                        <!-- Insert controls shortcuts -->
-                        <!--<xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="Control" xxf:text="n" name="DOMActivate" targetid="insert-new-section-trigger"/>-->
-                        <!--<xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="Control" xxf:text="g" name="DOMActivate" targetid="insert-new-grid-trigger"/>-->
-
-                        <!-- Cursor right, left, up, down -->
-                        <!--<xf:message ev:observer="#document" ev:event="keypress" xxf:text="&#39;"/>-->
-                        <!--<xf:message ev:observer="#document" ev:event="keypress" xxf:text="&#37;"/>-->
-                        <!--<xf:message ev:observer="#document" ev:event="keypress" xxf:text="&#38;"/>-->
-                        <!--<xf:message ev:observer="#document" ev:event="keypress" xxf:text="&#40;"/>-->
-
-                        <!-- IE warning -->
-                        <xf:group ref=".[xxf:instance('fr-parameters-instance')/mode != 'new' and xxf:instance('fb-user-agent-instance')/is-supported-browser = 'false']">
-                            <xf:switch>
-                                <xf:case id="fb-ie-warning-case-on">
-                                    <xf:var name="minimal-ie-version" value="xs:integer(xxf:instance('fb-user-agent-instance')/minimal-ie-version)"/>
-                                    <xh:div class="fb-ie-warning">
-                                        It appears that you are using Internet Explorer
-                                        <xf:output value="$minimal-ie-version - 1"/> or earlier. Form Builder is likely not working
-                                        properly with this browser. We recommend you upgrade to Internet Explorer
-                                        <xf:output value="$minimal-ie-version"/> or newer, or use
-                                        <a href="http://www.google.com/chrome">Google Chrome</a>,
-                                        <a href="http://www.mozilla.com/firefox/">Firefox</a>,
-                                        <a href="http://www.apple.com/safari/">Safari</a>, or
-                                        <a href="http://www.opera.com/">Opera</a>.
-                                        If we made a mistake and you are not using Internet Explorer
-                                        <xf:output value="$minimal-ie-version - 1"/>
-                                        or earlier, please
-                                        <a href="mailto:info@orbeon.com?subject=Form Builder Internet Explorer Version">let us know</a>.
-
-                                        <xf:trigger appearance="minimal">
-                                            <xf:label>[close]</xf:label>
-                                            <xf:toggle ev:event="DOMActivate" case="fb-ie-warning-case-off"/>
-                                        </xf:trigger>
-                                    </xh:div>
-                                </xf:case>
-                                <xf:case id="fb-ie-warning-case-off"/>
-                            </xf:switch>
-                        </xf:group>
-
-                        <!-- Component holding some common form edition functions -->
-                        <fb:form-editor ref="instance('fb-form-instance')" id="fb-form-editor"/>
-
-                        <!--  Cell editor -->
-                        <xh:div class="fb-cell-editor">
-                            <xf:var name="td" value="instance('fb-form-instance')//*:td[@id = $selected-cell]"/>
-                            <xf:var name="grid" value="$td/ancestor::*:grid[1]"/>
-                            <xf:var name="control" value="$td/*[1]"/>
-                            <xf:var name="control-id" value="$control/@id"/>
-                            <xf:var name="has-control" value="exists($control-id)"/>
-                            <xxf:var name="fb-resources" value="xxf:get-variable('fr-resources-model', 'fr-form-resources')"/>
-
-                            <xh:span class="fb-grid-cell-icons">
-                                <!-- Expand cell down -->
-                                <xf:trigger appearance="minimal" id="fb-expand-trigger">
-                                    <xf:label><xh:img src="/apps/fr/style/images/silk/arrow_down.png" alt="{$fb-resources/expand-icon/label}" title="{$fb-resources/expand-icon/label}"/></xf:label>
-
-                                    <!-- TODO: can we move these handlers up so that they are not duplicated? -->
-                                    <xf:action ev:event="DOMActivate">
-
-                                        <xxf:var name="confirm" value="gridOps:expandCellTouchesControl($td)" xmlns:gridOps="java:org.orbeon.oxf.fb.GridOps"/>
-
-                                        <!-- Ask confirmation -->
-                                        <xf:dispatch if="$confirm" name="fr-show" targetid="fb-form-editor$dialog-confirmation">
-                                            <xxf:context name="message" value="$fb-resources/messages/expand-cell"/>
-                                            <xxf:context name="positive-targetid" value="xxf:effective-id('fb-expand-trigger')"/>
-                                        </xf:dispatch>
-                                        <xf:action if="not($confirm)">
-                                            <!-- We are automatically confirmed as there is no control to delete -->
-                                            <xf:dispatch name="fr-positive" target="fb-expand-trigger"/>
-                                        </xf:action>
-                                    </xf:action>
-                                    <xf:action ev:event="fr-positive" type="xpath" xmlns:gridOps="java:org.orbeon.oxf.fb.GridOps">
-                                        gridOps:expandCell($td)
-                                    </xf:action>
-                                </xf:trigger>
-                                <!-- Shrink -->
-                                <xf:trigger appearance="minimal" id="fb-shrink-trigger">
-                                    <xf:label><xh:img src="/apps/fr/style/images/silk/arrow_up.png" alt="{$fb-resources/shrink-icon/label}" title="{$fb-resources/shrink-icon/label}"/></xf:label>
-                                    <xf:action ev:event="DOMActivate" type="xpath" xmlns:gridOps="java:org.orbeon.oxf.fb.GridOps">
-                                        gridOps:shrinkCell($td)
-                                    </xf:action>
-                                </xf:trigger>
-                                <!-- Delete control -->
-                                <xf:trigger appearance="minimal" id="fb-delete-trigger">
-                                    <xf:label><xh:img src="/apps/fr/style/images/silk/bin.png" alt="{$fb-resources/delete-control-icon/label}" title="{$fb-resources/delete-control-icon/label}"/></xf:label>
-                                    <xf:action ev:event="DOMActivate" type="xpath">
-                                        controlOps:deleteCellContent($td)
-                                    </xf:action>
-                                </xf:trigger>
-                            </xh:span>
-                            <xh:span class="fb-grid-control-icons">
-                                <!-- Edit details for any control -->
-                                <xf:trigger appearance="minimal" id="fb-edit-details-trigger">
-                                    <xf:label><xh:img alt="{$fb-resources/control-details-icon/label}" title="{$fb-resources/control-details-icon/label}" src="/apps/fr/style/images/silk/cog.png"/></xf:label>
-                                    <xf:dispatch ev:event="DOMActivate" name="fb-show-dialog" targetid="fb-form-editor$dialog-control-details">
-                                        <xxf:context name="control-id" value="$control/@id"/>
-                                    </xf:dispatch>
-                                </xf:trigger>
-
-                                <!-- Edit validation for any control -->
-                                <xf:trigger appearance="minimal" id="fb-edit-validation-trigger">
-                                    <xf:label><xh:img class="fb-control-alert" alt="{$fb-resources/validation-settings-icon/label}" title="{$fb-resources/validation-settings-icon/label}" src="/apps/fr/style/images/silk/exclamation.png"/></xf:label>
-                                    <xf:dispatch ev:event="DOMActivate" name="fb-show-dialog" targetid="fb-form-editor$dialog-validation-details">
-                                        <xxf:context name="control-id" value="$control/@id"/>
-                                    </xf:dispatch>
-                                </xf:trigger>
-
-                                <!--&lt;!&ndash; Change appearance for selection controls &ndash;&gt;-->
-                                <!--<xf:group ref=".[xf:select1 | xf:select]">-->
-                                    <!--<xf:trigger appearance="minimal">-->
-                                        <!--<xf:label>-->
-                                            <!--<xh:img src="/apps/fr/style/update.gif" alt="{$fb-resources/switch-appearance-icon/label}" title="{$fb-resources/switch-appearance-icon/label}"/>-->
-                                        <!--</xf:label>-->
-                                        <!--<xf:action ev:event="DOMActivate">-->
-                        <!---->
-                                            <!--&lt;!&ndash; select1 minimal -> compact -> full -> select compact -> full &ndash;&gt;-->
-                        <!---->
-                                            <!--<xf:setvalue ref="$variables/done">false</xf:setvalue>-->
-                                            <!--<xf:action if="xf:select1 and xf:select1/@appearance = 'full'">-->
-                                                <!--&lt;!&ndash; Switch to xf:select &ndash;&gt;-->
-                        <!---->
-                                                <!--&lt;!&ndash; Create xf:select, copy all attributes and children elements, and delete xf:select1 &ndash;&gt;-->
-                                                <!--<xf:insert ref="xf:select1" origin="xxf:element('xf:select')"/>-->
-                                                <!--<xf:insert context="xf:select" origin="../xf:select1/(@*, *)"/>-->
-                                                <!--<xf:delete ref="xf:select1"/>-->
-                                                <!--<xf:setvalue ref="xf:select/@appearance" value="'compact'"/>-->
-                        <!---->
-                                                <!--<xf:setvalue ref="$variables/done">true</xf:setvalue>-->
-                                            <!--</xf:action>-->
-                                            <!--<xf:action if="$variables/done != 'true' and xf:select and xf:select/@appearance = 'full'">-->
-                                                <!--&lt;!&ndash; Switch to xf:select1 &ndash;&gt;-->
-                        <!---->
-                                                <!--&lt;!&ndash; Create xf:select1, copy all attributes and children elements, and delete xf:select &ndash;&gt;-->
-                                                <!--<xf:insert ref="xf:select" origin="xxf:element('xf:select1')"/>-->
-                                                <!--<xf:insert context="xf:select1" origin="../xf:select/(@*, *)"/>-->
-                                                <!--<xf:delete ref="xf:select"/>-->
-                                                <!--<xf:setvalue ref="xf:select1/@appearance" value="'minimal'"/>-->
-                        <!---->
-                                                <!--<xf:setvalue ref="$variables/done">true</xf:setvalue>-->
-                                            <!--</xf:action>-->
-                                            <!--<xf:action if="$variables/done != 'true' and xf:select1">-->
-                                                <!--&lt;!&ndash; Simply update the appearance of xf:select1 &ndash;&gt;-->
-                                                <!--<xf:setvalue ref="xf:select1/@appearance"-->
-                                                                 <!--value="if (. = 'minimal') then 'compact' else if (. = 'compact') then 'full' else ."/>-->
-                                            <!--</xf:action>-->
-                                            <!--<xf:action if="$variables/done != 'true' and xf:select">-->
-                                                <!--&lt;!&ndash; Simply update the appearance of xf:select &ndash;&gt;-->
-                                                <!--<xf:setvalue ref="xf:select/@appearance"-->
-                                                                 <!--value="if (. = 'compact') then 'full' else ."/>-->
-                                            <!--</xf:action>-->
-                        <!---->
-                                            <!--<xf:action if="xf:select1/@appearance = 'minimal'">-->
-                                                <!--&lt;!&ndash; Make sure there is the [Select...] item &ndash;&gt;-->
-                                                <!--<xf:insert ref="xf:select1/xf:itemset[1]" position="before"-->
-                                                    <!--origin="instance('fb-controls-template')//xf:select1[@appearance = 'minimal']/xf:item"/>-->
-                                            <!--</xf:action>-->
-                                            <!--<xf:action if="not(xf:select1/@appearance = 'minimal')">-->
-                                                <!--&lt;!&ndash; Make sure there is NO [Select...] &ndash;&gt;-->
-                                                <!--<xf:delete ref="xf:select1/xf:item[1]"/>-->
-                                            <!--</xf:action>-->
-                        <!---->
-                                        <!--</xf:action>-->
-                                    <!--</xf:trigger>-->
-                                <!--</xf:group>-->
-                            </xh:span>
-
-                            <!-- Label editor -->
-                            <xf:output id="fb-placeholder-label" ref="$form-resources/enter-label/label"/>
-                            <xf:group ref=".[exists($control/xf:label/@ref)]" appearance="xxf:internal">
-                                <xf:input xxf:autocomplete="off" id="fb-edit-label" class="fb-edit-label" ref="$current-resources/*[name() = controlOps:controlName($control-id)]/label">
-                                    <xf:label appearance="minimal" ref="$form-resources/type-label/label"/>
-                                </xf:input>
-                            </xf:group>
-
-                            <!-- Hint editor -->
-                            <xf:output id="fb-placeholder-hint" ref="$form-resources/enter-hint/label"/>
-                            <xf:group ref=".[exists($control/xf:hint/@ref)]" appearance="xxf:internal">
-                                <xf:input xxf:autocomplete="off" id="fb-edit-hint" class="fb-edit-hint" ref="$current-resources/*[name() = controlOps:controlName($control-id)]/hint">
-                                    <xf:label appearance="minimal" ref="$form-resources/type-hint/label"/>
-                                </xf:input>
-                            </xf:group>
-
-                            <!-- Itemset editor -->
-                            <xf:trigger appearance="minimal" class="fb-edit-items" id="fb-edit-items-trigger">
-                                <xf:label>
-                                    <xh:img src="/apps/fr/style/images/silk/text_list_bullets.png" alt=""/>
-                                    <xh:span><xf:output value="$fb-resources/edit-items/label"/></xh:span>
-                                </xf:label>
-                                <xf:dispatch ev:event="DOMActivate" name="fb-show-dialog" targetid="fb-form-editor$dialog-itemsets">
-                                    <xxf:context name="control-id" value="$control/@id"/>
-                                    <xxf:context name="control-type" value="$control/local-name()"/>
-                                </xf:dispatch>
-                            </xf:trigger>
-
-                            <!--
-                                Upload control for static image
-                                    Binding
-                                        The upload is bound to the node bound to the current control. To find it, we use xxf:binding($id)
-                                        instead of building an XPath expression to the node, as this wouldn't work when using a custom
-                                        instance. When the control is in a repeat, the upload control needs to be bound to the node
-                                        corresponding to the current iteration, so we need the control effective id. The control effective
-                                        id is constructed from the effective id of the cell and the static id of the control by
-                                        xformsUtils:getRelatedEffectiveId().
-                                    Two upload controls
-                                        We have two upload controls: one is guaranteed not to be empty and other is guaranteed to be empty.
-                                        They are bound to the current node first, and if that node is not empty/non-empty, they are bound
-                                        instead to a dummy empty/non-empty node. This is because we want the upload to be bound to the
-                                        current node when user interact with it, but we also need to be able to show empty/non-empty
-                                        versions of the upload when user mouse over other cells.
-                            -->
-                            <xf:var name="control-effective-id" value="controlOps:buildControlEffectiveIdOrEmpty(instance('fb-form-instance'), $control-id)"/>
-                            <xf:var name="bound-item" value="xxf:binding(concat('/', $control-effective-id))"/>
-                            <xf:upload class="fb-static-upload" id="fb-static-upload-empty" ref="$bound-item[string(.) = ''], instance('fb-static-upload')/empty"/>
-                            <xf:upload class="fb-static-upload" id="fb-static-upload-non-empty" ref="$bound-item[string(.) != ''], instance('fb-static-upload')/non-empty"/>
-                        </xh:div>
-
-                        <xf:group id="fb-details-group">
-                            <!-- Don't leak events -->
-                            <xf:action ev:event="#all" ev:propagate="stop"/>
-                            <!-- Display the form being edited -->
-                            <xxf:dynamic id="fb" ref="instance('fb-form-instance')"/>
-                        </xf:group>
-
-                        <!--<fr:xforms-inspector xmlns:fr="http://orbeon.org/oxf/xml/form-runner"/>-->
-
-                    </fr:body>
-                </fr:view>
             </xh:div>
         </xh:div>
+
+        <xi:include href="oxf:/forms/orbeon/builder/form/toolbox.xml" xxi:omit-xml-base="true"/>
+
+        <xh:div class="fb-main">
+            <xh:div class="fb-main-inner">
+
+                <xh:div class="navbar navbar-inverse">
+                    <xh:div class="navbar-inner">
+                        <xh:div class="container">
+                            <!-- Custom logo upload is removed in 4.0 -->
+                            <xf:var name="logo" value="xxf:property(string-join(('oxf.fr.default-logo.uri', bind('application-name-bind'), bind('form-name-bind')), '.'))"/>
+                            <xf:group ref=".[normalize-space($logo)]">
+                                <xh:img src="{$logo}" alt=""/>
+                            </xf:group>
+                            <fr:title ref="bind('title-bind')"/>
+
+                            <!-- Form settings -->
+                            <xf:trigger appearance="minimal" class="fb-navbar-trigger pull-right">
+                                <xf:label><xh:i class="icon-wrench icon-white" title="{$form-resources/dialog-form-settings/open/label}"/></xf:label>
+                                <xf:action ev:event="DOMActivate">
+                                    <!-- Open the dialog in "edit" mode -->
+                                    <xxf:show dialog="dialog-form-settings">
+                                        <xf:property name="app"         value="bind('application-name-bind')"/>
+                                        <xf:property name="form"        value="bind('form-name-bind')"/>
+                                        <xf:property name="title"       value="bind('title-bind')"/>
+                                        <xf:property name="description" value="bind('description-bind')"/>
+                                        <xf:property name="logo"        value="bind('logo-bind')"/>
+                                        <xf:property name="mode"        value="'edit'"/>
+                                    </xxf:show>
+                                </xf:action>
+                            </xf:trigger>
+
+                            <!-- Edit Source -->
+                            <xf:trigger appearance="minimal" class="fb-navbar-trigger pull-right" ref="instance('fb-metadata-instance')/toolbox/edit-source">
+                                <xf:label><xh:i class="icon-edit icon-white" title="{$form-resources/edit-source/label}"/></xf:label>
+                                <xxf:show ev:event="DOMActivate" dialog="fb-source-editor-dialog"/>
+                            </xf:trigger>
+
+                            <!-- Add/remove language -->
+                            <!--suppress XmlUnusedNamespaceDeclaration -->
+                            <xf:group class="fb-language-triggers pull-right" ref=".[xpl:isPE()]" xmlns:xpl="java:org.orbeon.oxf.pipeline.api.FunctionLibrary">
+                                <xf:trigger appearance="minimal">
+                                    <xf:label><xh:i class="icon-plus-sign icon-white" title="{$form-resources/dialog-add-language/add-language/label}"/></xf:label>
+                                    <xxf:show ev:event="DOMActivate" dialog="fb-add-language-dialog" neighbor="fb-resources-language-select"/>
+                                </xf:trigger>
+                                <xf:trigger appearance="minimal" id="fb-language-remove" ref=".[count($resources/resource) gt 1]">
+                                    <xf:label><xh:i class="icon-minus-sign icon-white" title="{$form-resources/dialog-add-language/remove-language/label}"/></xf:label>
+                                    <xf:action ev:event="DOMActivate">
+                                        <!-- Ask confirmation -->
+                                        <xxf:show dialog="fb-confirmation-dialog">
+                                            <xf:property name="fr:message"
+                                                             value="concat($form-resources/messages/delete-resources, ' ''',
+                                                                         xxf:instance('fr-languages-instance')/language[@code = $fb-lang]/(if (@native-name != @english-name) then concat(@native-name, ' (', @english-name, ')') else @native-name),
+                                                                         '''?')"/>
+                                            <xf:property name="fr:confirmation-target" value="'fb-language-remove'"/>
+                                        </xxf:show>
+                                    </xf:action>
+                                    <xf:action ev:event="fb-confirmation-yes">
+                                        <!-- Delete resources for this language -->
+                                        <xf:delete ref="$resources/resource[@xml:lang = $fb-lang]"/>
+                                        <xf:delete ref="$metadata-instance/title[@xml:lang = $fb-lang]"/>
+                                        <xf:delete ref="$metadata-instance/description[@xml:lang = $fb-lang]"/>
+                                        <xf:setvalue ref="$fb-lang" value="$resources/resource[1]/@xml:lang"/>
+
+                                        <!-- Force RRR when the value changes. The value change doesn't cause a rebuild, therefore the binds don't update. -->
+                                        <xf:rebuild/>
+                                        <xf:recalculate/>
+                                        <xf:revalidate/>
+                                    </xf:action>
+                                </xf:trigger>
+                            </xf:group>
+
+                            <!-- Language selector -->
+                            <xh:div class="fr-language-choice">
+                                <fr:link-select1 id="fb-resources-language-select" ref="$fb-lang">
+                                    <xf:itemset ref="$resources/resource">
+                                        <xf:label value="xxf:instance('fr-languages-instance')/language[@code = context()/@xml:lang]/@native-name"/>
+                                        <xf:value ref="@xml:lang"/>
+                                    </xf:itemset>
+
+                                    <!-- Force RRR when the value changes. The value change doesn't cause a rebuild, therefore the binds don't update. -->
+                                    <xf:action ev:event="xforms-value-changed" model="fr-form-model">
+                                        <xf:rebuild/>
+                                        <xf:recalculate/>
+                                        <xf:revalidate/>
+                                        <xf:refresh/>
+                                    </xf:action>
+
+                                </fr:link-select1>
+                            </xh:div>
+                        </xh:div>
+                    </xh:div>
+                </xh:div>
+
+                <xh:div class="container">
+
+                    <xh:div class="row">
+                        <xh:div class="span12">
+
+                        <!-- Form content. Set context on form instance and define this group as #fr-form-group as observers will refer to it. -->
+                        <xf:group id="fr-form-group" class="fr-body fr-border" model="fr-form-model" ref="instance('fr-form-instance')">
+                            <xh:a name="fr-form"/>
+
+                            <xf:var name="dialogs-closed" value="instance('fb-variables')/dialogs-open = 0"/>
+
+                            <!-- Disable keyboard shortcuts until we can polish them, see #387 and #233 -->
+
+                            <!-- Cut/copy/paste shortcuts -->
+                            <!--<xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="control" xxf:text="x" name="DOMActivate" targetid="cut-trigger"/>-->
+                            <!--<xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="control" xxf:text="c" name="DOMActivate" targetid="copy-trigger"/>-->
+                            <!--<xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="control" xxf:text="v" name="DOMActivate" targetid="paste-trigger"/>-->
+
+                            <!-- Buttons shortcuts -->
+                            <!--<xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="control" xxf:text="w" name="DOMActivate" targetid="fr-back-button"/>-->
+                            <!--<xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="control" xxf:text="t" name="DOMActivate" targetid="fb-test-button"/>-->
+                            <!--<xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="control" xxf:text="p" name="DOMActivate" targetid="fb-publish-button"/>-->
+                            <!--<xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="control" xxf:text="s" name="DOMActivate" targetid="fr-save-button"/>-->
+                            <!--<xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="control shift" xxf:text="s" name="DOMActivate" targetid="fr-save-as-button"/>-->
+
+                            <!-- Open dialogs shortcuts -->
+                            <!--<xxf:show if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="alt" xxf:text="e" dialog="fb-source-editor-dialog"/>-->
+                            <!--<xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="alt" xxf:text="i" name="DOMActivate" targetid="fb-edit-details-trigger"/>-->
+                            <!--<xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="alt" xxf:text="v" name="DOMActivate" targetid="fb-edit-validation-trigger"/>-->
+
+                            <!-- Move section -->
+                            <!--<xf:action ev:observer="#document" ev:event="keypress" xxf:modifiers="control alt" xxf:text="&#39;" type="xpath">-->
+                                <!--fbf:moveSectionRight($current-td/ancestor::*:section[1])-->
+                            <!--</xf:action>-->
+                            <!--<xf:action ev:observer="#document" ev:event="keypress" xxf:modifiers="control alt" xxf:text="&#37;" type="xpath">-->
+                                <!--fbf:moveSectionLeft($current-td/ancestor::*:section[1])-->
+                            <!--</xf:action>-->
+                            <!--<xf:action ev:observer="#document" ev:event="keypress" xxf:modifiers="control alt" xxf:text="&#38;" type="xpath">-->
+                                <!--fbf:moveSectionUp($current-td/ancestor::*:section[1])-->
+                            <!--</xf:action>-->
+                            <!--<xf:action ev:observer="#document" ev:event="keypress" xxf:modifiers="control alt" xxf:text="&#40;" type="xpath">-->
+                                <!--fbf:moveSectionDown($current-td/ancestor::*:section[1])-->
+                            <!--</xf:action>-->
+
+                            <!-- Insert controls shortcuts -->
+                            <!--<xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="Control" xxf:text="n" name="DOMActivate" targetid="insert-new-section-trigger"/>-->
+                            <!--<xf:dispatch if="$dialogs-closed" ev:observer="#document" ev:event="keypress" xxf:modifiers="Control" xxf:text="g" name="DOMActivate" targetid="insert-new-grid-trigger"/>-->
+
+                            <!-- Cursor right, left, up, down -->
+                            <!--<xf:message ev:observer="#document" ev:event="keypress" xxf:text="&#39;"/>-->
+                            <!--<xf:message ev:observer="#document" ev:event="keypress" xxf:text="&#37;"/>-->
+                            <!--<xf:message ev:observer="#document" ev:event="keypress" xxf:text="&#38;"/>-->
+                            <!--<xf:message ev:observer="#document" ev:event="keypress" xxf:text="&#40;"/>-->
+
+                            <!-- IE warning -->
+                            <xf:group ref=".[xxf:instance('fr-parameters-instance')/mode != 'new' and xxf:instance('fb-user-agent-instance')/is-supported-browser = 'false']">
+                                <xf:switch>
+                                    <xf:case id="fb-ie-warning-case-on">
+                                        <xf:var name="minimal-ie-version" value="xs:integer(xxf:instance('fb-user-agent-instance')/minimal-ie-version)"/>
+                                        <xh:div class="fb-ie-warning">
+                                            It appears that you are using Internet Explorer
+                                            <xf:output value="$minimal-ie-version - 1"/> or earlier. Form Builder is likely not working
+                                            properly with this browser. We recommend you upgrade to Internet Explorer
+                                            <xf:output value="$minimal-ie-version"/> or newer, or use
+                                            <a href="http://www.google.com/chrome">Google Chrome</a>,
+                                            <a href="http://www.mozilla.com/firefox/">Firefox</a>,
+                                            <a href="http://www.apple.com/safari/">Safari</a>, or
+                                            <a href="http://www.opera.com/">Opera</a>.
+                                            If we made a mistake and you are not using Internet Explorer
+                                            <xf:output value="$minimal-ie-version - 1"/>
+                                            or earlier, please
+                                            <a href="mailto:info@orbeon.com?subject=Form Builder Internet Explorer Version">let us know</a>.
+
+                                            <xf:trigger appearance="minimal">
+                                                <xf:label>[close]</xf:label>
+                                                <xf:toggle ev:event="DOMActivate" case="fb-ie-warning-case-off"/>
+                                            </xf:trigger>
+                                        </xh:div>
+                                    </xf:case>
+                                    <xf:case id="fb-ie-warning-case-off"/>
+                                </xf:switch>
+                            </xf:group>
+
+
+                            <!-- Some common form edition functions -->
+                            <xf:group ref="instance('fb-form-instance')" appearance="xxf:internal">
+
+                                <!-- Don't let any event go out from within this group -->
+                                <!-- Q: Do we still need this? -->
+                                <xf:action ev:event="#all" ev:propagate="stop"/>
+
+                                <!-- Form settings dialog -->
+                                <fb:dialog-form-settings id="dialog-form-settings" resources-ref="$form-resources" fr-resources-ref="$fr-resources" body-ref="$body">
+                                    <!-- Update title/description -->
+                                    <xf:action ev:event="fb-update-metadata">
+                                        <xf:setvalue ref="bind('title-bind')"       value="event('title')"/>
+                                        <xf:setvalue ref="bind('description-bind')" value="event('description')"/>
+                                    </xf:action>
+                                    <!-- Update app/form name if changed -->
+                                    <xf:action
+                                            ev:event="fb-update-metadata"
+                                            if="bind('application-name-bind') != event('app') or bind('form-name-bind') != event('form')">
+
+                                        <!-- Copy data to main instance -->
+                                        <xf:setvalue ref="bind('application-name-bind')" value="event('app')"/>
+                                        <xf:setvalue ref="bind('form-name-bind')"        value="event('form')"/>
+                                        <!-- Refresh components -->
+                                        <!-- De-annotate the form, as it will be re-annotated once the toolbox is loaded -->
+                                        <xf:dispatch targetid="fr-form-model" name="fr-data-save-prepare"/>
+                                        <xf:send submission="fb-load-toolbox">
+                                            <xf:property name="app"  value="event('app')"/>
+                                            <xf:property name="form" value="event('form')"/>
+                                        </xf:send>
+                                    </xf:action>
+                                    <!-- "Save as" -->
+                                    <xf:action
+                                            ev:event="fb-update-metadata"
+                                            if="event('mode') = 'save-as'">
+                                        <!-- Create new document id -->
+                                        <xf:setvalue ref="xxf:instance('fr-parameters-instance')/document" value="secure:randomHexId()"/>
+                                        <!-- Actually save -->
+                                        <xf:action type="xpath" xmlns:process="java:org.orbeon.oxf.fr.process.SimpleProcess">
+                                            process:runProcessByName('oxf.fr.detail.process', 'save')
+                                        </xf:action>
+                                        <!-- Change URL to have new document id -->
+                                        <xxf:script>
+                                            <!-- If browser supporting the HTML5 history API (http://goo.gl/Ootqu) -->
+                                            if (history &amp;&amp; history.replaceState)
+                                                history.replaceState(null, "", ORBEON.xforms.Document.getValue("fr-parameters-instance-document"));
+                                        </xxf:script>
+                                    </xf:action>
+                                </fb:dialog-form-settings>
+
+                                <!-- Other dialogs -->
+                                <xf:var name="form" value="."/>
+
+                                <fb:dialog-control-details     id="dialog-control-details" ref="$form"      resources-ref="$form-resources"/>
+                                <fb:dialog-grid-details        id="dialog-grid-details"    ref="$form"      resources-ref="$form-resources"/>
+                                <fb:dialog-section-details     id="dialog-section-details" ref="$form"      resources-ref="$form-resources"/>
+                                <fb:dialog-help                id="dialog-help"            form-ref="$form" resources-ref="$form-resources"/>
+                                <fb:dialog-itemsets            id="dialog-itemsets"                         resources-ref="$form-resources"/>
+
+                                <fr:alert-dialog id="dialog-confirmation">
+                                    <fr:label ref="$form-resources/dialog-confirmation/label"/>
+                                    <fr:negative-choice/>
+                                    <fr:positive-choice/>
+                                </fr:alert-dialog>
+
+                            </xf:group>
+
+                            <xf:group class="fb">
+                                <!-- Dynamically display the form being edited -->
+                                <xxf:dynamic id="fb" ref="instance('fb-form-instance')"/>
+                            </xf:group>
+
+                            <!-- Editors -->
+                            <!-- NOTE: This needs to be after the xxf:dynamic as the shared upload control use xxf:binding() to get the binding of the current node,
+                                       which only works if the control exists -->
+                            <xh:div class="fb-cell-editor">
+                                <xf:var name="td"            value="id($selected-cell, instance('fb-form-instance'))"/>
+                                <xf:var name="grid"          value="$td/ancestor::*:grid[1]"/>
+                                <xf:var name="control"       value="$td/*[1]"/><!-- may be empty! -->
+                                <xf:var name="control-id"    value="$control/@id"/>
+                                <xf:var name="has-control"   value="exists($control-id)"/>
+                                <xf:var name="fb-resources"  value="xxf:get-variable('fr-resources-model', 'fr-form-resources')"/>
+
+                                <xh:span class="fb-grid-cell-icons">
+                                    <!-- Expand cell down -->
+                                    <xf:trigger tabindex="-1" appearance="minimal" id="fb-expand-trigger">
+                                        <xf:label><xh:img src="/apps/fr/style/images/silk/arrow_down.png" alt="{$fb-resources/expand-icon/label}" title="{$fb-resources/expand-icon/label}"/></xf:label>
+
+                                        <!-- TODO: can we move these handlers up so that they are not duplicated? -->
+                                        <xf:action ev:event="DOMActivate">
+
+                                            <xf:var name="confirm" value="fbf:expandCellTouchesControl($td)"/>
+
+                                            <!-- Ask confirmation -->
+                                            <xf:dispatch if="$confirm" name="fr-show" targetid="dialog-confirmation">
+                                                <xf:property name="message" value="$fb-resources/messages/expand-cell"/>
+                                                <xf:property name="positive-targetid" value="xxf:absolute-id('fb-expand-trigger')"/>
+                                            </xf:dispatch>
+                                            <xf:action if="not($confirm)">
+                                                <!-- We are automatically confirmed as there is no control to delete -->
+                                                <xf:dispatch name="fr-positive" targetid="fb-expand-trigger"/>
+                                            </xf:action>
+                                        </xf:action>
+                                        <xf:action ev:event="fr-positive" type="xpath">
+                                            fbf:expandCell($td)
+                                        </xf:action>
+                                    </xf:trigger>
+                                    <!-- Shrink -->
+                                    <xf:trigger tabindex="-1" appearance="minimal" id="fb-shrink-trigger">
+                                        <xf:label><xh:img src="/apps/fr/style/images/silk/arrow_up.png" alt="{$fb-resources/shrink-icon/label}" title="{$fb-resources/shrink-icon/label}"/></xf:label>
+                                        <xf:action ev:event="DOMActivate" type="xpath">
+                                            fbf:shrinkCell($td)
+                                        </xf:action>
+                                    </xf:trigger>
+                                    <!-- Delete control -->
+                                    <xf:trigger tabindex="-1" appearance="minimal" id="fb-delete-trigger">
+                                        <xf:label><xh:img src="/apps/fr/style/images/silk/bin.png" alt="{$fb-resources/delete-control-icon/label}" title="{$fb-resources/delete-control-icon/label}"/></xf:label>
+                                        <xf:action ev:event="DOMActivate" type="xpath">
+                                            fbf:deleteCellContent($td, true())
+                                        </xf:action>
+                                    </xf:trigger>
+                                </xh:span>
+                                <xh:span class="fb-grid-control-icons">
+                                    <!-- Edit details for any control -->
+                                    <xf:trigger tabindex="-1" appearance="minimal" id="fb-edit-details-trigger">
+                                        <xf:label><xh:img alt="{$fb-resources/control-details-icon/label}" title="{$fb-resources/control-details-icon/label}" src="/apps/fr/style/images/silk/cog.png"/></xf:label>
+                                        <xf:dispatch ev:event="DOMActivate" name="fb-show-dialog" targetid="dialog-control-details">
+                                            <xf:property name="control-id" value="$control/@id"/>
+                                        </xf:dispatch>
+                                    </xf:trigger>
+                                    <!-- Itemset editor -->
+                                    <xf:trigger tabindex="-1" appearance="minimal" class="fb-edit-items" id="fb-edit-items-trigger">
+                                        <xf:label><xh:img src="/apps/fr/style/images/silk/text_list_bullets.png" title="{$fb-resources/edit-items/label}"/></xf:label>
+                                        <xf:dispatch ev:event="DOMActivate" name="fb-show-dialog" targetid="dialog-itemsets">
+                                            <xf:property name="control-element" value="$control"/>
+                                        </xf:dispatch>
+                                    </xf:trigger>
+                                </xh:span>
+
+                                <!-- Resources for control resources editors -->
+                                <xf:output class="fb-message-lhha-checkbox" ref="$form-resources/messages/lhha-checkbox"/>
+                                <xf:output class="fb-message-enter-label"   ref="$form-resources/enter-label/label"/>
+                                <xf:output class="fb-message-type-label"    ref="$form-resources/type-label/label"/>
+                                <xf:output class="fb-message-enter-hint"    ref="$form-resources/enter-hint/label"/>
+                                <xf:output class="fb-message-type-hint"     ref="$form-resources/type-hint/label"/>
+                                <xf:output class="fb-message-enter-text"    ref="$form-resources/enter-text/label"/>
+
+                                <!-- Used by the button/link editor, see the placeholders.coffee which uses a state machine -->
+                                <xf:group ref=".[exists($control/xf:label/@ref)]" appearance="xxf:internal">
+                                    <xf:input xxf:autocomplete="off" id="fb-edit-label" class="fb-edit-label" ref="$current-resources/*[name() = fbf:controlNameFromId($control-id)]/label">
+                                        <xf:label appearance="minimal" ref="$form-resources/type-label/label"/>
+                                    </xf:input>
+                                </xf:group>
+
+                                <!--
+                                    Upload control for static image
+                                        Binding
+                                            The upload is bound to the node bound to the current control. To find it, we use xxf:binding($id)
+                                            instead of building an XPath expression to the node, as this wouldn't work when using a custom
+                                            instance. When the control is in a repeat, the upload control needs to be bound to the node
+                                            corresponding to the current iteration, so we need the control effective id. The control effective
+                                            id is constructed from the effective id of the cell and the static id of the control by
+                                            xformsUtils:getRelatedEffectiveId().
+                                        Two upload controls
+                                            We have two upload controls: one is guaranteed not to be empty and other is guaranteed to be empty.
+                                            They are bound to the current node first, and if that node is not empty/non-empty, they are bound
+                                            instead to a dummy empty/non-empty node. This is because we want the upload to be bound to the
+                                            current node when user interact with it, but we also need to be able to show empty/non-empty
+                                            versions of the upload when user mouse over other cells.
+                                -->
+                                <xf:var name="control-absolute-id" value="fbf:buildFormBuilderControlAbsoluteIdOrEmpty(instance('fb-form-instance'), $control-id)"/>
+                                <xf:var name="bound-item" value="if ($control-absolute-id) then xxf:binding($control-absolute-id) else ()"/>
+                                <xf:upload class="fb-static-upload" id="fb-static-upload-empty" ref="$bound-item[string(.) = ''], instance('fb-static-upload')/empty"/>
+                                <xf:upload class="fb-static-upload" id="fb-static-upload-non-empty" ref="$bound-item[string(.) != ''], instance('fb-static-upload')/non-empty"/>
+
+                            </xh:div>
+                            <xh:div class="fb-section-editor">
+                                <!-- Resources -->
+                                <xf:output class="fb-enter-section-title-label" ref="$form-resources/enter-section-title/label" style="display: none"/>
+                                <xf:output class="fb-type-section-title-label" ref="$form-resources/type-section-title/label" style="display: none"/>
+                                <!-- Delete section -->
+                                <xf:trigger tabindex="-1" appearance="minimal" id="delete-section-trigger" class="delete-section-trigger">
+                                    <xf:label><xh:img width="16" height="16" src="/apps/fr/style/images/silk/bin.png" alt="{$fb-resources/delete-section-icon/label}" title="{$fb-resources/delete-section-icon/label}"/></xf:label>
+                                    <!-- Ask confirmation -->
+                                    <xf:dispatch ev:event="DOMActivate" name="fr-show" targetid="dialog-confirmation">
+                                        <xf:property name="message"
+                                             value="concat($fb-resources/messages/delete-section, ' ',
+                                                           xxf:format-message($fb-resources/messages/controls-will-be-deleted,
+                                                                              fbf:controlsInContainer(event('section-id'))))"/>
+                                        <xf:property name="positive-targetid" value="xxf:absolute-id('delete-section-trigger')"/>
+                                        <xf:property name="context" value="event('section-id')"/>
+                                    </xf:dispatch>
+                                    <xf:action ev:event="fr-positive" type="xpath">fbf:deleteSectionById(event('context'))</xf:action>
+                                </xf:trigger>
+                                <!-- Edit details -->
+                                <xf:trigger tabindex="-1" appearance="minimal">
+                                    <xf:label><xh:img width="16" height="16" src="/apps/fr/style/images/silk/cog.png" alt="{$fb-resources/section-details-icon/label}" title="{$fb-resources/section-details-icon/label}"/></xf:label>
+                                    <!-- Show section details dialog -->
+                                    <xf:dispatch ev:event="DOMActivate" name="fb-show-dialog" targetid="dialog-section-details">
+                                        <xf:property name="section" value="fbf:containerById(event('section-id'))"/>
+                                    </xf:dispatch>
+                                </xf:trigger>
+                                <!-- Edit help for section -->
+                                <xf:trigger tabindex="-1" appearance="minimal" class="fb-edit-section-help-trigger" id="fb-edit-section-help-trigger">
+                                    <xf:label><xh:img alt="{$fb-resources/help-icon/label}" title="{$fb-resources/help-icon/label}" src="/ops/images/xforms/help.png"/></xf:label>
+                                    <xf:dispatch ev:event="DOMActivate" name="fb-show-dialog" targetid="dialog-help">
+                                        <xf:property name="control-id" value="event('section-id')"/>
+                                    </xf:dispatch>
+                                </xf:trigger>
+                                <!-- Move up -->
+                                <xf:trigger tabindex="-1" appearance="minimal" class="fb-section-move-up">
+                                    <xf:label><xh:img width="16" height="16" src="/apps/fr/style/images/silk/arrow_up.png" alt="{$fb-resources/move-up-icon/label}" title="{$fb-resources/move-up-icon/label}"/></xf:label>
+                                    <!-- Move section up -->
+                                    <xf:action ev:event="DOMActivate" type="xpath">
+                                        fbf:moveSectionUp(fbf:containerById(event('section-id')))
+                                    </xf:action>
+                                </xf:trigger>
+                                <!-- Move down -->
+                                <xf:trigger tabindex="-1" appearance="minimal" class="fb-section-move-down">
+                                    <xf:label><xh:img width="16" height="16" src="/apps/fr/style/images/silk/arrow_down.png" alt="{$fb-resources/move-down-icon/label}" title="{$fb-resources/move-down-icon/label}"/></xf:label>
+                                    <!-- Move section down -->
+                                    <xf:action ev:event="DOMActivate" type="xpath">
+                                        fbf:moveSectionDown(fbf:containerById(event('section-id')))
+                                    </xf:action>
+                                </xf:trigger>
+                                <!-- Move right -->
+                                <xf:trigger tabindex="-1" appearance="minimal" class="fb-section-move-right">
+                                    <xf:label><xh:img width="16" height="16" src="/apps/fr/style/images/silk/arrow_right.png" alt="{$fb-resources/move-right-icon/label}" title="{$fb-resources/move-right-icon/label}"/></xf:label>
+                                    <!-- Move section right -->
+                                    <xf:action ev:event="DOMActivate" type="xpath">
+                                        fbf:moveSectionRight(fbf:containerById(event('section-id')))
+                                    </xf:action>
+                                </xf:trigger>
+                                <!-- Move left -->
+                                <xf:trigger tabindex="-1" appearance="minimal" class="fb-section-move-left">
+                                    <xf:label><xh:img width="16" height="16" src="/apps/fr/style/images/silk/arrow_left.png" alt="{$fb-resources/move-left-icon/label}" title="{$fb-resources/move-left-icon/label}"/></xf:label>
+                                    <!-- Move section left -->
+                                    <xf:action ev:event="DOMActivate" type="xpath">
+                                        fbf:moveSectionLeft(fbf:containerById(event('section-id')))
+                                    </xf:action>
+                                </xf:trigger>
+                            </xh:div>
+                            <xh:div class="fb-grid-repeat-editor">
+                                <!-- Delete grid -->
+                                <xf:trigger tabindex="-1" appearance="minimal" id="delete-grid-trigger" class="fb-delete-grid-trigger">
+                                    <xf:label><xh:img width="16" height="16" src="/apps/fr/style/images/silk/bin.png" alt="{$fb-resources/delete-grid-icon/label}" title="{$fb-resources/delete-grid-icon/label}"/></xf:label>
+                                    <!-- Ask confirmation -->
+                                    <xf:dispatch ev:event="DOMActivate" name="fr-show" targetid="dialog-confirmation">
+                                        <xf:property name="message"
+                                             value="concat($fb-resources/messages/delete-grid, ' ',
+                                                           xxf:format-message($fb-resources/messages/controls-will-be-deleted,
+                                                                              fbf:controlsInContainer(event('grid-id'))))"/>
+                                        <xf:property name="positive-targetid" value="xxf:absolute-id('delete-grid-trigger')"/>
+                                        <xf:property name="context" value="event('grid-id')"/>
+                                    </xf:dispatch>
+                                    <xf:action ev:event="fr-positive" type="xpath">fbf:deleteGridById(event('context'))</xf:action>
+                                </xf:trigger>
+                                <!-- Grid details -->
+                                <xf:trigger tabindex="-1" appearance="minimal" id="grid-details-trigger" class="fb-grid-details-trigger">
+                                    <xf:label><xh:img src="/apps/fr/style/images/silk/cog.png" alt="{$fb-resources/grid-details-icon/label}" title="{$fb-resources/grid-details-icon/label}"/></xf:label>
+                                    <xf:dispatch ev:event="DOMActivate" name="fb-show-dialog" targetid="dialog-grid-details">
+                                        <xf:property name="grid" value="fbf:containerById(event('grid-id'))"/>
+                                    </xf:dispatch>
+                                </xf:trigger>
+                                <!-- Insert column to the left -->
+                                <xf:trigger tabindex="-1" appearance="minimal" class="fb-insert-col-left">
+                                    <xf:label><xh:img src="/apps/fr/style/images/silk/bullet_arrow_left.png" alt="{$fb-resources/insert-column-left-icon/label}" title="{$fb-resources/insert-column-left-icon/label}"/></xf:label>
+                                    <xf:action ev:event="DOMActivate" type="xpath">fbf:insertColLeft(event('grid-id'), xs:integer(event('col-pos')))</xf:action>
+                                </xf:trigger>
+                                <!-- Delete column -->
+                                <xf:trigger tabindex="-1" appearance="minimal" id="delete-col-trigger" class="fb-delete-col">
+                                    <xf:label><xh:img src="/apps/fr/style/images/silk/bin.png" alt="{$fb-resources/delete-column-icon/label}" title="{$fb-resources/delete-column-icon/label}"/></xf:label>
+                                    <xf:action ev:event="DOMActivate">
+
+                                        <xf:var name="context" value="concat(event('grid-id'), ' ', event('col-pos'))"/>
+                                        <xf:var name="count" value="fbf:controlsInCol(event('grid-id'), xs:integer(event('col-pos')))"/>
+
+                                        <!-- Ask confirmation -->
+                                        <xf:dispatch if="$count > 0" name="fr-show" targetid="dialog-confirmation">
+                                            <xf:property name="message"
+                                                 value="concat($fb-resources/messages/delete-column, ' ',
+                                                                xxf:format-message($fb-resources/messages/controls-will-be-deleted, $count))"/>
+                                             <xf:property name="context" value="$context"/>
+                                             <xf:property name="positive-targetid" value="xxf:absolute-id('delete-col-trigger')"/>
+                                        </xf:dispatch>
+                                        <!-- We are automatically confirmed-->
+                                        <xf:dispatch if="$count = 0" name="fr-positive" targetid="delete-col-trigger">
+                                            <xf:property name="context" value="$context"/>
+                                        </xf:dispatch>
+                                    </xf:action>
+                                    <xf:action ev:event="fr-positive">
+                                        <xf:var name="grid-col" value="xxf:split(event('context'))"/>
+                                        <xf:action type="xpath">fbf:deleteCol($grid-col[1], xs:integer($grid-col[2]))</xf:action>
+                                    </xf:action>
+                                </xf:trigger>
+                                <!-- Insert column to the right -->
+                                <xf:trigger tabindex="-1" appearance="minimal" class="fb-insert-col-right">
+                                    <xf:label><xh:img src="/apps/fr/style/images/silk/bullet_arrow_right.png" alt="{$fb-resources/insert-column-right-icon/label}" title="{$fb-resources/insert-column-right-icon/label}"/></xf:label>
+                                    <xf:action ev:event="DOMActivate" type="xpath">fbf:insertColRight(event('grid-id'), xs:integer(event('col-pos')))</xf:action>
+                                </xf:trigger>
+                                <!-- Insert row above -->
+                                <xf:trigger tabindex="-1" appearance="minimal" class="fb-insert-row-above">
+                                    <xf:label><xh:img src="/apps/fr/style/images/silk/bullet_arrow_top.png" alt="{$fb-resources/insert-row-above-icon/label}" title="{$fb-resources/insert-row-above-icon/label}"/></xf:label>
+                                    <xf:action ev:event="DOMActivate" type="xpath">fbf:insertRowAbove(event('grid-id'), xs:integer(event('row-pos')))</xf:action>
+                                </xf:trigger>
+                                <!-- Delete row -->
+                                <xf:trigger tabindex="-1" appearance="minimal" id="delete-row-trigger" class="fb-delete-row">
+                                    <xf:label><xh:img src="/apps/fr/style/images/silk/bin.png" alt="{$fb-resources/delete-row-icon/label}" title="{$fb-resources/delete-row-icon/label}"/></xf:label>
+                                    <xf:action ev:event="DOMActivate">
+
+                                        <xf:var name="context" value="concat(event('grid-id'), ' ', event('row-pos'))"/>
+                                        <xf:var name="count" value="fbf:controlsInRow(event('grid-id'), xs:integer(event('row-pos')))"/>
+
+                                        <!-- Ask confirmation -->
+                                        <xf:dispatch if="$count > 0" name="fr-show" targetid="dialog-confirmation">
+                                            <xf:property name="message"
+                                                 value="concat($fb-resources/messages/delete-row, ' ',
+                                                                xxf:format-message($fb-resources/messages/controls-will-be-deleted, $count))"/>
+                                            <xf:property name="positive-targetid" value="xxf:absolute-id('delete-row-trigger')"/>
+                                            <xf:property name="context" value="$context"/>
+                                        </xf:dispatch>
+                                        <!-- We are automatically confirmed-->
+                                        <xf:dispatch if="$count = 0" name="fr-positive" targetid="delete-row-trigger">
+                                            <xf:property name="context" value="$context"/>
+                                        </xf:dispatch>
+                                    </xf:action>
+                                    <xf:action ev:event="fr-positive">
+                                        <xf:var name="grid-row" value="xxf:split(event('context'))"/>
+                                        <xf:action type="xpath">fbf:deleteRow($grid-row[1], xs:integer($grid-row[2]))</xf:action>
+                                    </xf:action>
+                                </xf:trigger>
+                                <!-- Insert row below -->
+                                <xf:trigger tabindex="-1" appearance="minimal" class="fb-insert-row-below">
+                                    <xf:label><xh:img src="/apps/fr/style/images/silk/bullet_arrow_bottom.png" alt="{$fb-resources/insert-row-below-icon/label}" title="{$fb-resources/insert-row-below-icon/label}"/></xf:label>
+                                    <xf:action ev:event="DOMActivate" type="xpath">fbf:insertRowBelow(event('grid-id'), xs:integer(event('row-pos')))</xf:action>
+                                </xf:trigger>
+                            </xh:div>
+                        </xf:group>
+                        </xh:div>
+                    </xh:div>
+                </xh:div>
+            </xh:div>
+        </xh:div>
+
         <fr:dialogs>
             <xi:include href="oxf:/forms/orbeon/builder/form/dialog-edit-source.xml" xxi:omit-xml-base="true"/>
             <xi:include href="oxf:/forms/orbeon/builder/form/dialog-language.xml" xxi:omit-xml-base="true"/>

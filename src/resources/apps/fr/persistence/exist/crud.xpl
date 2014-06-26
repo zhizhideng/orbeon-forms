@@ -13,18 +13,17 @@
   -->
 <p:config xmlns:p="http://www.orbeon.com/oxf/pipeline"
         xmlns:sql="http://orbeon.org/oxf/xml/sql"
-        xmlns:odt="http://orbeon.org/oxf/xml/datatypes"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
         xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
         xmlns:oxf="http://www.orbeon.com/oxf/processors"
         xmlns:xi="http://www.w3.org/2001/XInclude"
-        xmlns:xforms="http://www.w3.org/2002/xforms"
+        xmlns:xf="http://www.w3.org/2002/xforms"
         xmlns:ev="http://www.w3.org/2001/xml-events"
         xmlns:xpl="java:org.orbeon.oxf.pipeline.api.FunctionLibrary">
 
     <p:param type="input" name="instance"/>
 
-    <!-- NOTE: It's disappointing that we have to use oxf:request/oxf:perl5-matcher rather than using the page flow
+    <!-- NOTE: It's disappointing that we have to use oxf:request/oxf:regexp rather than using the page flow
          directly, but because we want to support the PUT and POST methods, this is currently the only solution. -->
     <p:processor name="oxf:request">
         <p:input name="config">
@@ -40,14 +39,14 @@
     </p:processor>
 
     <!-- Matches form definitions, form data and attachments -->
-    <p:processor name="oxf:perl5-matcher">
+    <p:processor name="oxf:regexp">
         <p:input name="config"><config>/fr/service/exist/crud/([^/]+/[^/]+/(form/[^/]+|data/[^/]+/[^/]+))</config></p:input>
         <p:input name="data" href="#request#xpointer(/request/request-path)"/>
         <p:output name="data" id="matcher-groups"/>
     </p:processor>
 
     <!-- Matches a form data collection (for DELETE) -->
-    <p:processor name="oxf:perl5-matcher">
+    <p:processor name="oxf:regexp">
         <p:input name="config"><config>/fr/service/exist/crud/([^/]+/[^/]+/data/)</config></p:input>
         <p:input name="data" href="#request#xpointer(/request/request-path)"/>
         <p:output name="data" id="delete-matcher-groups"/>
@@ -112,11 +111,11 @@
                     <p:processor name="oxf:xforms-submission">
                         <p:input name="submission">
                             <!-- NOTE: The <body> element contains the xs:anyURI type -->
-                            <xforms:submission ref="/*/body" method="put" replace="none"
+                            <xf:submission ref="/*/body" method="put" replace="none"
                                     serialization="application/octet-stream"
                                     resource="{/*/exist-uri}/{/*/group[1]}">
                                 <xi:include href="propagate-exist-error.xml" xpointer="xpath(/root/*)"/>
-                            </xforms:submission>
+                            </xf:submission>
                         </p:input>
                         <p:input name="request" href="#request-description"/>
                         <p:output name="response" id="response"/>
@@ -128,10 +127,10 @@
 
                     <p:processor name="oxf:xforms-submission">
                         <p:input name="submission">
-                            <xforms:submission method="delete" replace="none" serialization="none"
+                            <xf:submission method="delete" replace="none" serialization="none"
                                     resource="{/*/exist-uri}/{/*/group[1]}">
                                 <xi:include href="propagate-exist-error.xml" xpointer="xpath(/root/*)"/>
-                            </xforms:submission>
+                            </xf:submission>
                         </p:input>
                         <p:input name="request" href="#request-description"/>
                         <p:output name="response" id="response"/>
@@ -143,10 +142,10 @@
 
                     <p:processor name="oxf:xforms-submission">
                         <p:input name="submission">
-                            <xforms:submission ref="/*/*[1]" method="put" replace="none"
+                            <xf:submission ref="/*/*[1]" method="put" replace="none"
                                     resource="{/root/request-description/exist-uri}/{/root/request-description/group[1]}">
                                 <xi:include href="propagate-exist-error.xml" xpointer="xpath(/root/*)"/>
-                            </xforms:submission>
+                            </xf:submission>
                         </p:input>
                         <p:input name="request" href="aggregate('root', #instance, #request-description)"/>
                         <p:output name="response" id="response"/>

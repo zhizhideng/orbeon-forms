@@ -22,30 +22,40 @@
         <p:input name="data" href="#data"/>
         <p:input name="bindings" href="#bindings"/>
         <p:input name="config">
-            <xsl:stylesheet version="2.0"
-                            xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-                            xmlns:xhtml="http://www.w3.org/1999/xhtml"
-                            xmlns:xforms="http://www.w3.org/2002/xforms"
-                            xmlns:xs="http://www.w3.org/2001/XMLSchema"
-                            xmlns:xbl="http://www.w3.org/ns/xbl">
+            <xsl:stylesheet
+                    version="2.0"
+                    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                    xmlns:xh="http://www.w3.org/1999/xhtml"
+                    xmlns:xf="http://www.w3.org/2002/xforms"
+                    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                    xmlns:xbl="http://www.w3.org/ns/xbl">
 
                 <xsl:import href="oxf:/oxf/xslt/utils/copy.xsl"/>
 
                 <!-- Embed only XBL for section templates that are in use -->
-                <!-- NOTE: We used to embed all XBL components here. This is not desirable in most cases so we don't do it anymore. -->
-                <xsl:variable name="available-section-bindings" as="element(xbl:binding)*"
-                              select="doc('input:bindings')/*/xbl:xbl/xbl:binding[tokenize(@class, '\s+') = 'fr-section-component']"/>
+                <!-- NOTE: We used to embed all XBL components here. This is not desirable in most cases. -->
+                <xsl:variable
+                    name="available-section-bindings"
+                    as="element(xbl:binding)*"
+                    select="doc('input:bindings')/*/xbl:xbl/xbl:binding[p:has-class('fr-section-component')]"/>
 
-                <xsl:variable name="possible-section-element-qnames" as="xs:QName*"
-                              select="for $e in /*/xhtml:body//*:section/* return QName(namespace-uri($e), name($e))"/>
+                <xsl:variable
+                    name="possible-section-element-qnames"
+                    as="xs:QName*"
+                    select="for $e in /*/xh:body//*:section/*
+                            return QName(namespace-uri($e), name($e))"/>
 
-                <xsl:variable name="bindings-to-insert"
-                              select="$available-section-bindings[resolve-QName(translate(@element, '|', ':'), .) = $possible-section-element-qnames]"/>
+                <xsl:variable
+                    name="bindings-to-insert"
+                    select="$available-section-bindings[resolve-QName(translate(@element, '|', ':'), .) = $possible-section-element-qnames]"/>
 
-                <xsl:template match="/*/xhtml:head/xforms:model[last()]">
+                <xsl:template match="/*/xh:head/xf:model[last()]">
                     <xsl:next-match/>
-                    <xsl:copy-of select="$bindings-to-insert/parent::xbl:xbl"/>
+                    <xsl:apply-templates select="$bindings-to-insert/parent::xbl:xbl"/>
                 </xsl:template>
+
+                <!-- Don't include FB metadata as it's unneeded -->
+                <xsl:template match="xbl:xbl/fb:metadata | xbl:binding/fb:metadata" xmlns:fb="http://orbeon.org/oxf/xml/form-builder"/>
 
             </xsl:stylesheet>
         </p:input>

@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <!--
   Copyright (C) 2009 Orbeon, Inc.
 
@@ -12,40 +11,34 @@
 
   The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
   -->
-<xxforms:dialog xmlns:ev="http://www.w3.org/2001/xml-events"
-        xmlns:xs="http://www.w3.org/2001/XMLSchema"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml"
-        xmlns:xxforms="http://orbeon.org/oxf/xml/xforms"
-        xmlns:xforms="http://www.w3.org/2002/xforms"
-        xmlns:xi="http://www.w3.org/2001/XInclude"
-        xmlns:xxi="http://orbeon.org/oxf/xml/xinclude"
-        xmlns:saxon="http://saxon.sf.net/"
-        xmlns:fr="http://orbeon.org/oxf/xml/form-runner"
-        id="fr-clear-confirm-dialog" level="modal" close="false" draggable="false" class="fr-dialog">
-    <xforms:label ref="$fr-resources/detail/labels/confirm"/>
-    <xhtml:div>
-        <xhtml:img src="/apps/fr/style/images/pixelmixer/info_64.png" alt="Question" class="fr-dialog-icon"/>
-        <xhtml:div class="fr-dialog-message">
-            <xforms:output value="$fr-resources/detail/messages/clear-confirm-message"/>
-        </xhtml:div>
-    </xhtml:div>
-    <xhtml:div class="fr-dialog-buttons">
-        <xforms:group>
-            <xxforms:hide ev:event="DOMActivate" dialog="fr-clear-confirm-dialog"/>
-            <xforms:trigger>
-                <xforms:label>
-                    <xhtml:img src="/apps/fr/style/clear.gif" alt=""/>
-                    <xhtml:span><xforms:output value="$fr-resources/detail/labels/clear"/></xhtml:span>
-                </xforms:label>
-                <!-- Restore instance -->
-                <xforms:dispatch ev:event="DOMActivate" name="fr-clear" targetid="fr-persistence-model"/>
-            </xforms:trigger>
-            <xforms:trigger>
-                <xforms:label>
-                    <xhtml:img src="/apps/fr/style/close.gif" alt=""/>
-                    <xhtml:span><xforms:output value="$fr-resources/detail/labels/cancel"/></xhtml:span>
-                </xforms:label>
-            </xforms:trigger>
-        </xforms:group>
-    </xhtml:div>
-</xxforms:dialog>
+<xxf:dialog xmlns:ev="http://www.w3.org/2001/xml-events"
+        xmlns:xh="http://www.w3.org/1999/xhtml"
+        xmlns:xxf="http://orbeon.org/oxf/xml/xforms"
+        xmlns:xf="http://www.w3.org/2002/xforms"
+        id="fr-clear-confirm-dialog" level="modal" close="true" draggable="true" class="fr-dialog">
+
+    <xf:label ref="$fr-resources/detail/labels/confirm"/>
+
+    <xh:div>
+        <xh:img src="/apps/fr/style/images/pixelmixer/info_64.png" alt="" class="fr-dialog-icon"/>
+        <xh:div class="fr-dialog-message">
+            <xf:output value="$fr-resources/detail/messages/clear-confirm-message"/>
+        </xh:div>
+    </xh:div>
+    <xh:div class="fr-dialog-buttons">
+        <xf:group>
+            <xxf:hide ev:event="DOMActivate" dialog="fr-clear-confirm-dialog"/>
+            <xf:trigger appearance="xxf:danger">
+                <xf:label mediatype="text/html" value="$fr-resources/buttons/clear"/>
+                <xf:dispatch ev:event="DOMActivate" name="fr-clear" targetid="fr-persistence-model"/>
+            </xf:trigger>
+            <xf:trigger id="fr-clear-confirm-dialog-cancel" appearance="xxf:primary">
+                <xf:label mediatype="text/html" value="$fr-resources/buttons/cancel"/>
+            </xf:trigger>
+        </xf:group>
+    </xh:div>
+
+    <!-- Focus on Cancel button first as that is the least dangerous operation -->
+    <xf:setfocus ev:event="xxforms-dialog-open" control="fr-clear-confirm-dialog-cancel"/>
+
+</xxf:dialog>

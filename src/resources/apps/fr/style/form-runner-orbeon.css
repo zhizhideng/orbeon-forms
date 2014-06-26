@@ -1,274 +1,536 @@
-/**
- * Copyright (C) 2010 Orbeon, Inc.
- *
- * This program is free software; you can redistribute it and/or modify it under the terms of the
- * GNU Lesser General Public License as published by the Free Software Foundation; either version
- * 2.1 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU Lesser General Public License for more details.
- *
- * The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
- */
-
-/*
-    Alternate shades of blue:
-
-    #004B92
-    #2647A0
-    #146EB4
-*/
-
-/* ***** Colors, fonts, etc. **************************************************************************************** */
-
-/* TODO: repeats and dialogs still have colors and fonts settings in form-runner-base.css */
-
-/* ***** Headings (titles and sections) ***************************************************************************** */
-
-.xforms-form h1, .xforms-form h2, .xforms-form h3 {
-	margin: 1em 0;
-    color: #004B92;
+body.orbeon {
+  background-color: #f3f3f3;
 }
-
-.xforms-form h1, .xforms-form h2, .xforms-form h3, .xforms-form h4, .xforms-form h5, .xforms-form h6 {
-    text-align: left;
-    font-weight: normal;
-    clear: left;
-    padding: 0;
+.orbeon h2,
+.orbeon h3 {
+  background-color: #f8f8f8;
+  background-image: -moz-linear-gradient(top, #ffffff, #eeeeee);
+  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ffffff), to(#eeeeee));
+  background-image: -webkit-linear-gradient(top, #ffffff, #eeeeee);
+  background-image: -o-linear-gradient(top, #ffffff, #eeeeee);
+  background-image: linear-gradient(to bottom, #ffffff, #eeeeee);
+  background-repeat: repeat-x;
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffffff', endColorstr='#ffeeeeee', GradientType=0);
+  margin: 0;
 }
-
-.xforms-form h1 { font-size: 20pt }
-
-.xforms-form h2 {
-    font-size: 13pt;
-    margin: 1em 0 .5em 0;
+.orbeon h2,
+.orbeon h3,
+.orbeon h4,
+.orbeon h5,
+.orbeon h6 {
+  text-align: left;
+  font-weight: normal;
+  padding: 0;
+  color: #555555;
 }
-
-.xforms-form h3, .xforms-form h4 {
-    font-size: 110%;
-    line-height: 135%;
-    margin: 1em 0 1em 0;
+.orbeon h2 {
+  font-size: 18px;
+  line-height: 36px;
 }
-
-/* ***** Other ****************************************************************************************************** */
-
-.fr-top, .fr-footer { background-repeat: no-repeat; clear: both }
-.fr-shadow { height: 10px; _height: 5px; font-size: 0; clear: both; } /* Clear is necessary because the previous block contains floated elements */
-.fr-footer { min-height: 10px } /* help display background image */
-/* IE 6 HACK in all the lines below: don't use the PNG background image as it doesn't show properly */
-#doc .fr-shadow { background-image: url(top-750.png); _background-image: none }
-#doc4 .fr-shadow { background-image: url(top-974.png); _background-image: none }
-#doc-fb .fr-shadow { background-image: url(top-974.png); _background-image: none }
-
-#doc .fr-footer { background-image: url(bottom-750.png); _background-image: none }
-#doc4 .fr-footer { background-image: url(bottom-974.png); _background-image: none }
-#doc-fb .fr-footer { background-image: url(bottom-974.png); _background-image: none }
-
-/* Put margins here as they are not needed */
-#fr-form-group { margin: .5em 1em .5em }
-
-.fr-orbeon-version {
-    text-align: center;
-    font-size: smaller;
-    padding: 10px;
-    color: #6E6E6E;
+.orbeon h3,
+.orbeon h4 {
+  font-size: 110%;
+  line-height: 135%;
 }
-
-.fr-container {
-    background-color: white;
+.orbeon .fr-view .xbl-fr-box-select .xforms-select-appearance-full .xforms-items {
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  background-color: #ffffff;
+  border: 1px solid #cccccc;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  padding: 4px 6px;
 }
-
-.fr-separator {
-    background-color: #9999CC;
-    height: 4px;    /* size in em seems to cause issues in Firefox as not all separators appear the same height */
-    font-size: 0;   /* help IE */
+.orbeon .fr-view .xbl-fr-box-select .xforms-select-appearance-full .xforms-items:focus {
+  border-color: rgba(82, 168, 236, 0.8);
+  outline: 0;
+  outline: thin dotted  \9;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(82,168,236,.6);
+  -moz-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(82,168,236,.6);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(82,168,236,.6);
 }
-
-.fr-bottom {
-    background: #F8F8F8 url(logo-bg.gif) repeat-x top;
-    padding: 1em;
+.orbeon .xforms-noscript button.btn-link {
+  text-shadow: none;
+  margin-top: 0;
 }
-
-.yui-skin-sam .yui-button button {
-    *height: 2em;   /* IE doesn't honor the min-height provided by YUI */
+.orbeon .xforms-noscript button.btn-link button {
+  height: auto;
 }
-
-/* Apply YUI SAM skin style for <input> buttons under IE 6 (other browsers use <button>) */
-.yui-skin-sam .xforms-noscript .yui-button input {
-    color: #000000;
-    font-size: 93%;
-    line-height: 2;
-    min-height: 2em;
-    padding: 0 10px;
-
-    background-color: transparent;
-    cursor: pointer;
-    border: medium none;
-    display: block;
-    margin: 0;
+.orbeon .xforms-noscript .xforms-help-panel .xforms-help-group {
+  list-style-type: square;
 }
-
-.fr-explanation .xforms-output {
-    display: block;
-    font-style: italic;
-    padding: 1em;
-    background-color: #f8f8f8
+.orbeon .fr-orbeon-version {
+  text-align: center;
+  font-size: smaller;
+  padding: 10px;
+  color: #6E6E6E;
 }
-
-.xforms-alert-active {
-    font-weight: bold;
-    font-size: smaller;
-    color: #DF731B;
-    border-radius: 3px; -moz-border-radius: 2px; -webkit-border-radius: 3px; -ms-border-radius: 2px /* radius appears differently w/ Safari 3.1 vs. Firefox 3.0b4*/
+.orbeon .fr-explanation .xforms-output {
+  display: block;
+  font-style: italic;
+  padding: 1em;
+  background-color: #f8f8f8;
 }
-
-.xforms-hint {
-    display: block;
-    clear: both;
-    font-size: smaller;
-    margin-top: .2em;
-    margin-left: 0;/* used to have margin here but with new colors no margin seems better */
-    width: 100%;
-    color: #6E6E6E;
-    font-style: italic
+.orbeon .xforms-alert.xforms-active {
+  font-size: 13px;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
 }
-
-.xforms-label {
-    font-style: normal;
+.orbeon .xforms-invalid > .xforms-alert.xforms-active,
+.orbeon .xforms-alert.xforms-active.xforms-invalid {
+  color: #b94a48;
 }
-
-.xforms-noscript .xforms-help-panel .xforms-help-group { list-style-type: square }
-
-/* Metadata */
-.fr-header { margin-top: .5em }
-.fr-logo { display: block; float: left }
-.fr-language-choice, .fr-noscript-choice, .fr-goto-content, .fr-doc-links { color: gray; font-size: 85%; float: right; margin-top: .2em; text-align: right }
-.fr-language-choice a, .fr-noscript-choice a, .fr-goto-content a, .fr-doc-links a { color: #6E6E6E }
-.fr-goto-content { border: 2px solid #888888; padding: .5em; float: left; margin-left: 1em }
-
-/* Make button appear the same color as a link */
-.xforms-trigger-appearance-xxforms-minimal, .xforms-trigger-appearance-xxforms-minimal button, .xforms-trigger-appearance-xxforms-minimal input {
-    color: #6E6E6E;
+.orbeon .xforms-warning > .xforms-alert.xforms-active,
+.orbeon .xforms-alert.xforms-active.xforms-warning {
+  color: #fbb450;
 }
-
-/* But force minimal buttons color within heading */
-h1 .xforms-trigger-appearance-xxforms-minimal, h2 .xforms-trigger-appearance-xxforms-minimal, h3 .xforms-trigger-appearance-xxforms-minimal,
-h1 .xforms-trigger-appearance-xxforms-minimal button, h2 .xforms-trigger-appearance-xxforms-minimal button, h3 .xforms-trigger-appearance-xxforms-minimal button,
-h1 .xforms-trigger-appearance-xxforms-minimal input, h2 .xforms-trigger-appearance-xxforms-minimal input, h3 .xforms-trigger-appearance-xxforms-minimal input {
-    color: #004B92;
+.orbeon .xforms-info > .xforms-alert.xforms-active,
+.orbeon .xforms-alert.xforms-active.xforms-info {
+  color: #333333;
 }
-
-/* Set input/textarea controls background */
-.xforms-input input, textarea.xforms-textarea, input.xforms-secret, .xforms-textarea textarea, .xforms-secret input, .xbl-component .xbl-html-input {
-    background-image: url(field.png);
-    background-repeat: repeat-x;
-    border: 1px solid #ccc;
-    padding: 0
+.orbeon .xforms-hint-appearance-inline .xforms-hint {
+  display: block;
+  clear: both;
+  font-size: smaller;
+  margin-top: .2em;
+  margin-left: 0;
+  width: 100%;
+  color: #6E6E6E;
 }
-
-/* Add a star before the label of required fields, but only in new/edit modes */
-/* NOTE: This only works in span layout (the default in FR since 2011-07-28) */
-/* NOTE: Also cover Form Builder classes here instead of form-builder.css, so we don't miss changes done here */
-.fr-mode-new .xforms-required .xforms-label, .fr-mode-edit .xforms-required .xforms-label, .fr-mode-test .xforms-required .xforms-label,
-        .fr-mode-new .fb-required-true .xforms-label, .fr-mode-edit .fb-required-true .xforms-label {
-    background-image: url(asterisk.png);
-    background-position: 0 2px;             /* Lower the star, so it doesn't sit "too high" relative to the text of the label */
-    background-repeat: no-repeat;
-    padding-left: 12px;
+.orbeon .navbar .fr-language-choice,
+.orbeon .navbar .fr-noscript-choice,
+.orbeon .navbar .fr-goto-content {
+  color: #555555;
+  font-size: 85%;
+  text-align: right;
 }
-
-/* Colored border for invalid fields */
-/* NOTE: We don't use this style for required fields, as we are now using an asterisk next to the label */
-.xforms-invalid-visited .xforms-input-input, textarea.xforms-invalid-visited { border-color: #DF731B }
-
-/* Upload control information */
-.xforms-upload-info { background-color: transparent }
-
-/* Metadata */
-.fr-top {
-    background: url("../../../ops/yui/assets/skins/sam/sprite.png") repeat-x scroll left -1400px;
-    background-color: #004B92;
-    padding: .5em;
+.orbeon .navbar .fr-language-choice a,
+.orbeon .navbar .fr-noscript-choice a,
+.orbeon .navbar .fr-goto-content a,
+.orbeon .navbar .fr-language-choice button.btn-link,
+.orbeon .navbar .fr-noscript-choice button.btn-link,
+.orbeon .navbar .fr-goto-content button.btn-link {
+  color: #777777;
 }
-.fr-separator {
-    background-color: #004B92;
+.orbeon .navbar .fr-language-choice,
+.orbeon .navbar .fr-noscript-choice,
+.orbeon .navbar .fr-status-icons {
+  float: right;
 }
-.fr-top .fr-form-title, .fr-top .fr-form-description {
-    color: white;
+.orbeon .navbar .fr-goto-content {
+  float: left;
 }
-
-.fr-top .fr-form-title {
+.orbeon .navbar .fr-status-icons {
+  *margin-top: 13px;
 }
-
-.fr-top .fr-form-description {
-    font-size: 8pt;
+.orbeon .navbar.navbar-inverse .fr-language-choice,
+.orbeon .navbar.navbar-inverse .fr-noscript-choice,
+.orbeon .navbar.navbar-inverse .fr-goto-content {
+  color: #bbbbbb;
 }
-
-/* Table of contents */
-.fr-toc { color: #004B92; padding: 0 1em 0 1em }
-.fr-toc a { text-decoration: none }
-
-/* Error summary */
-.fr-view .xbl-fr-error-summary .fr-error-title {
-    font-size: smaller;
-    font-weight: bold;
-    background-color: #DF731B;
-    color: white;
-    border-radius: 3px; -moz-border-radius: 2px; -webkit-border-radius: 3px; -ms-border-radius: 2px /* radius appears differently w/ Safari 3.1 vs. Firefox 3.0b4*/
+.orbeon .navbar.navbar-inverse .fr-language-choice a,
+.orbeon .navbar.navbar-inverse .fr-noscript-choice a,
+.orbeon .navbar.navbar-inverse .fr-goto-content a,
+.orbeon .navbar.navbar-inverse .fr-language-choice button.btn-link,
+.orbeon .navbar.navbar-inverse .fr-noscript-choice button.btn-link,
+.orbeon .navbar.navbar-inverse .fr-goto-content button.btn-link {
+  color: #999999;
 }
-.fr-view .xbl-fr-error-summary .fr-error-label, .xbl-fr-error-summary .fr-error-row { font-weight: bold }
-.fr-view .xbl-fr-error-summary .fr-error-alert { color: #DF731B } /* override default of XBL component */
-
-/* Section */
-.fr-section-title { border-bottom: 1px solid #004B92 }
-.fr-section-title a { text-decoration: none }
-.fr-section-title .fr-section-open-close { border-bottom: white }
-.fr-section-title, .fr-section-title .xforms-label { font-weight: normal }
-.fr-section-title .fr-section-arrow { float: left; display: block; height: 1.5em; background-color: white }
-.fr-section-title .xforms-trigger-appearance-xxforms-minimal,
-    .fr-section-title .xforms-trigger-appearance-xxforms-minimal button,
-    .fr-section-title .xforms-trigger-appearance-xxforms-minimal input { text-decoration: none }
-
-/* Add background to static read-only fields and special output fields */
-.xforms-static, .fr-static { min-height: 1em }
-.fr-mode-view .fr-grid-content { margin-bottom: 1em; background-color: #E8F2FF }
-.fr-mode-view .fr-repeat .fr-grid-content { background-color: transparent; margin-bottom: 0 }
-.fr-mode-view #fr-form-group { margin-top: 1em }
-
-/* Messages area */
-.fr-messages {
-    display: block;
-    clear: both;
-    padding: 1em;
-    margin-bottom: 1em;
-    background-color: white;
-    border: 1px solid #DDDDDD;
+.orbeon .fr-mode-new .xforms-required .xforms-label,
+.orbeon .fr-mode-edit .xforms-required .xforms-label,
+.orbeon .fr-mode-test .xforms-required .xforms-label,
+.orbeon .xforms-dialog .xforms-required .xforms-label,
+.orbeon .fr-mode-new .fb-required-true .xforms-label,
+.orbeon .fr-mode-edit .fb-required-true .xforms-label,
+.orbeon .fr-mode-test .fb-required-true .xforms-label,
+.orbeon .xforms-dialog .fb-required-true .xforms-label {
+  background-position: 0 2px;
+  background-repeat: no-repeat;
+  padding-left: 12px;
 }
-
-.fr-messages p {
-    margin: 0;
+.orbeon .fr-mode-new .xforms-required .xforms-label,
+.orbeon .fr-mode-edit .xforms-required .xforms-label,
+.orbeon .fr-mode-test .xforms-required .xforms-label,
+.orbeon .xforms-dialog .xforms-required .xforms-label {
+  background-image: url(asterisk-bw.png);
 }
-
-.fr-messages .fr-message-fatal-error { text-align: center; color: red }
-.fr-messages .fr-message-validation-error { text-align: center; color: #DF731B }
-.fr-messages .fr-message-success { text-align: center; color: green }
-
-.fr-messages p a { color: white }
-
-/* ***** Print and PDF ********************************************************************************************** */
-
-/* This is also used for PDF generation */
+.orbeon .fr-mode-new .xforms-required.xforms-empty .xforms-label,
+.orbeon .fr-mode-edit .xforms-required.xforms-empty .xforms-label,
+.orbeon .fr-mode-test .xforms-required.xforms-empty .xforms-label,
+.orbeon .xforms-dialog .xforms-required.xforms-empty .xforms-label,
+.orbeon .fr-mode-new .fb-required-true .xforms-label,
+.orbeon .fr-mode-edit .fb-required-true .xforms-label,
+.orbeon .fr-mode-test .fb-required-true .xforms-label,
+.orbeon .xforms-dialog .fb-required-true .xforms-label {
+  background-image: url(asterisk.png);
+}
+.orbeon .xforms-invalid.xforms-visited .xforms-input-input,
+.orbeon .xforms-invalid.xforms-visited input[type='password'],
+.orbeon textarea.xforms-invalid.xforms-visited {
+  border-color: #b94a48;
+}
+.orbeon .xforms-upload-info {
+  background-color: transparent;
+}
+.orbeon .fr-toc a {
+  text-decoration: none;
+}
+.orbeon .fr-view .xbl-fr-error-summary .fr-error-title {
+  padding: 5px 10px;
+  color: white;
+  -webkit-border-top-left-radius: 4px;
+  -moz-border-radius-topleft: 4px;
+  border-top-left-radius: 4px;
+  -webkit-border-top-right-radius: 4px;
+  -moz-border-radius-topright: 4px;
+  border-top-right-radius: 4px;
+  *padding: 0 5px;
+  *margin: 0;
+}
+.orbeon .fr-view .xbl-fr-error-summary .fr-level-info .fr-error-title {
+  background-color: #333333;
+}
+.orbeon .fr-view .xbl-fr-error-summary .fr-level-warning .fr-error-title {
+  background-color: #fbb450;
+}
+.orbeon .fr-view .xbl-fr-error-summary .fr-level-error .fr-error-title {
+  background-color: #b94a48;
+}
+.orbeon .fr-view .xbl-fr-error-summary .fr-error-alert-error {
+  color: #b94a48;
+}
+.orbeon .fr-view .xbl-fr-error-summary .fr-error-alert-warning {
+  color: #fbb450;
+}
+.orbeon .fr-view .xbl-fr-error-summary .fr-error-alert-info {
+  color: #333333;
+}
+.orbeon .fr-view .xbl-fr-error-summary .fr-error-alert .xforms-output-output {
+  display: inline-block;
+  vertical-align: top;
+}
+.orbeon .fr-view .xbl-fr-error-summary .fr-error-alert .xforms-output-output ul {
+  list-style-type: square;
+}
+.orbeon .fr-view .xbl-fr-error-summary table {
+  margin: 2px;
+}
+.orbeon .fr-view .xbl-fr-error-summary table td {
+  padding: 2px 10px;
+  vertical-align: top;
+}
+.orbeon .fr-view .xbl-fr-error-summary table td ul {
+  margin-bottom: 0;
+}
+.orbeon .fr-view .xbl-fr-error-summary table .fr-error-number {
+  text-align: right;
+}
+.orbeon .fr-view .xbl-fr-error-summary table .fr-error-number .xforms-output-output:after {
+  content: ".";
+}
+.orbeon .fr-view .xbl-fr-error-summary .fr-error-summary-body {
+  padding: 0;
+  margin-bottom: 10px;
+  background-color: #f5f5f5;
+  border: 1px solid #e3e3e3;
+  -webkit-border-radius: 6px;
+  -moz-border-radius: 6px;
+  border-radius: 6px;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+  -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+}
+.orbeon .xbl-fr-section {
+  background-color: white;
+}
+.orbeon .xbl-fr-section .fr-section-title .fr-section-label {
+  display: block;
+  padding-left: 20px;
+  height: 100%;
+  overflow: hidden;
+  font-size: 18px;
+}
+.orbeon .xbl-fr-section .fr-section-title .fr-section-label a {
+  text-decoration: none;
+  color: #555555;
+  display: block;
+  min-height: 36px;
+  overflow: hidden;
+}
+.orbeon .xbl-fr-section .fr-section-title .fr-section-label label {
+  font-size: 18px;
+  line-height: 36px;
+  margin-bottom: 0;
+}
+.orbeon .xbl-fr-section .fr-section-title .fr-section-label.fr-section-open,
+.orbeon .xbl-fr-section .fr-section-title .fr-section-label.fr-section-closed {
+  background-repeat: no-repeat;
+  background-position: 5px 15px;
+  cursor: pointer;
+}
+.orbeon .xbl-fr-section .fr-section-title .fr-section-label.fr-section-open {
+  background-image: url(arrow-down.png);
+}
+.orbeon .xbl-fr-section .fr-section-title .fr-section-label.fr-section-closed {
+  background-image: url(arrow-right.png);
+}
+.orbeon .xforms-static,
+.orbeon .fr-static {
+  min-height: 1em;
+}
+.orbeon .fr-mode-view .fr-grid-content {
+  margin-bottom: 1em;
+}
+.orbeon .fr-mode-view .fr-repeat .fr-grid-content {
+  background-color: transparent;
+  margin-bottom: 0;
+}
+.orbeon .table th {
+  text-align: center;
+}
+.orbeon .fr-grid th legend.xforms-label {
+  border-bottom: none;
+  margin: 0;
+}
+.orbeon .fr-mode-view .xforms-static > label,
+.orbeon .fr-mode-pdf .xforms-static > label,
+.orbeon .fr-mode-email .xforms-static > label {
+  cursor: default;
+}
+.orbeon .fr-mode-view .xforms-textarea.xforms-static pre,
+.orbeon .fr-mode-pdf .xforms-textarea.xforms-static pre,
+.orbeon .fr-mode-email .xforms-textarea.xforms-static pre,
+.orbeon .fr-mode-view .xforms-mediatype-text-html.xforms-static,
+.orbeon .fr-mode-pdf .xforms-mediatype-text-html.xforms-static,
+.orbeon .fr-mode-email .xforms-mediatype-text-html.xforms-static {
+  cursor: not-allowed;
+}
+.orbeon .fr-mode-view .xforms-select-appearance-full.xforms-static .xforms-selected,
+.orbeon .fr-mode-pdf .xforms-select-appearance-full.xforms-static .xforms-selected,
+.orbeon .fr-mode-email .xforms-select-appearance-full.xforms-static .xforms-selected,
+.orbeon .fr-mode-view .xforms-select1-appearance-full.xforms-static .xforms-selected,
+.orbeon .fr-mode-pdf .xforms-select1-appearance-full.xforms-static .xforms-selected,
+.orbeon .fr-mode-email .xforms-select1-appearance-full.xforms-static .xforms-selected,
+.orbeon .fr-mode-view .xforms-input.xforms-type-boolean.xforms-static .xforms-selected,
+.orbeon .fr-mode-pdf .xforms-input.xforms-type-boolean.xforms-static .xforms-selected,
+.orbeon .fr-mode-email .xforms-input.xforms-type-boolean.xforms-static .xforms-selected,
+.orbeon .fr-mode-view .xforms-select-appearance-full.xforms-static .xforms-deselected,
+.orbeon .fr-mode-pdf .xforms-select-appearance-full.xforms-static .xforms-deselected,
+.orbeon .fr-mode-email .xforms-select-appearance-full.xforms-static .xforms-deselected,
+.orbeon .fr-mode-view .xforms-select1-appearance-full.xforms-static .xforms-deselected,
+.orbeon .fr-mode-pdf .xforms-select1-appearance-full.xforms-static .xforms-deselected,
+.orbeon .fr-mode-email .xforms-select1-appearance-full.xforms-static .xforms-deselected,
+.orbeon .fr-mode-view .xforms-input.xforms-type-boolean.xforms-static .xforms-deselected,
+.orbeon .fr-mode-pdf .xforms-input.xforms-type-boolean.xforms-static .xforms-deselected,
+.orbeon .fr-mode-email .xforms-input.xforms-type-boolean.xforms-static .xforms-deselected {
+  display: block;
+  min-height: 20px;
+  background-size: 14px;
+  background-repeat: no-repeat;
+  background-position: 0 3px;
+  cursor: not-allowed;
+}
+.orbeon .fr-mode-view .xforms-select-appearance-full.xforms-static .xforms-selected label,
+.orbeon .fr-mode-pdf .xforms-select-appearance-full.xforms-static .xforms-selected label,
+.orbeon .fr-mode-email .xforms-select-appearance-full.xforms-static .xforms-selected label,
+.orbeon .fr-mode-view .xforms-select1-appearance-full.xforms-static .xforms-selected label,
+.orbeon .fr-mode-pdf .xforms-select1-appearance-full.xforms-static .xforms-selected label,
+.orbeon .fr-mode-email .xforms-select1-appearance-full.xforms-static .xforms-selected label,
+.orbeon .fr-mode-view .xforms-input.xforms-type-boolean.xforms-static .xforms-selected label,
+.orbeon .fr-mode-pdf .xforms-input.xforms-type-boolean.xforms-static .xforms-selected label,
+.orbeon .fr-mode-email .xforms-input.xforms-type-boolean.xforms-static .xforms-selected label,
+.orbeon .fr-mode-view .xforms-select-appearance-full.xforms-static .xforms-deselected label,
+.orbeon .fr-mode-pdf .xforms-select-appearance-full.xforms-static .xforms-deselected label,
+.orbeon .fr-mode-email .xforms-select-appearance-full.xforms-static .xforms-deselected label,
+.orbeon .fr-mode-view .xforms-select1-appearance-full.xforms-static .xforms-deselected label,
+.orbeon .fr-mode-pdf .xforms-select1-appearance-full.xforms-static .xforms-deselected label,
+.orbeon .fr-mode-email .xforms-select1-appearance-full.xforms-static .xforms-deselected label,
+.orbeon .fr-mode-view .xforms-input.xforms-type-boolean.xforms-static .xforms-deselected label,
+.orbeon .fr-mode-pdf .xforms-input.xforms-type-boolean.xforms-static .xforms-deselected label,
+.orbeon .fr-mode-email .xforms-input.xforms-type-boolean.xforms-static .xforms-deselected label {
+  cursor: not-allowed;
+}
+.orbeon .fr-mode-view .xforms-select-appearance-full.xforms-static .xforms-selected,
+.orbeon .fr-mode-pdf .xforms-select-appearance-full.xforms-static .xforms-selected,
+.orbeon .fr-mode-email .xforms-select-appearance-full.xforms-static .xforms-selected,
+.orbeon .fr-mode-view .xforms-select1-appearance-full.xforms-static .xforms-selected,
+.orbeon .fr-mode-pdf .xforms-select1-appearance-full.xforms-static .xforms-selected,
+.orbeon .fr-mode-email .xforms-select1-appearance-full.xforms-static .xforms-selected,
+.orbeon .fr-mode-view .xforms-input.xforms-type-boolean.xforms-static .xforms-selected,
+.orbeon .fr-mode-pdf .xforms-input.xforms-type-boolean.xforms-static .xforms-selected,
+.orbeon .fr-mode-email .xforms-input.xforms-type-boolean.xforms-static .xforms-selected {
+  background-image: url("images/glyphicons/checkbox-selected.png");
+}
+.orbeon .fr-mode-view .xforms-select-appearance-full.xforms-static .xforms-deselected,
+.orbeon .fr-mode-pdf .xforms-select-appearance-full.xforms-static .xforms-deselected,
+.orbeon .fr-mode-email .xforms-select-appearance-full.xforms-static .xforms-deselected,
+.orbeon .fr-mode-view .xforms-select1-appearance-full.xforms-static .xforms-deselected,
+.orbeon .fr-mode-pdf .xforms-select1-appearance-full.xforms-static .xforms-deselected,
+.orbeon .fr-mode-email .xforms-select1-appearance-full.xforms-static .xforms-deselected,
+.orbeon .fr-mode-view .xforms-input.xforms-type-boolean.xforms-static .xforms-deselected,
+.orbeon .fr-mode-pdf .xforms-input.xforms-type-boolean.xforms-static .xforms-deselected,
+.orbeon .fr-mode-email .xforms-input.xforms-type-boolean.xforms-static .xforms-deselected {
+  background-image: url("images/glyphicons/checkbox-deselected.png");
+}
+.orbeon .fr-mode-view .xbl-fr-box-select .xforms-static.xforms-select-appearance-full .xforms-items,
+.orbeon .fr-mode-pdf .xbl-fr-box-select .xforms-static.xforms-select-appearance-full .xforms-items,
+.orbeon .fr-mode-email .xbl-fr-box-select .xforms-static.xforms-select-appearance-full .xforms-items {
+  border: none;
+  height: auto;
+  overflow-y: visible;
+  -webkit-box-shadow: none;
+  -moz-box-shadow: none;
+  box-shadow: none;
+  padding: 0;
+}
+@media only screen and (-webkit-min-device-pixel-ratio: 2), only screen and (min--moz-device-pixel-ratio: 2), only screen and (min-resolution: 2dppx), only screen and (min-resolution: 192dpi) {
+  .orbeon .fr-mode-view .xforms-select-appearance-full.xforms-static .xforms-selected,
+  .orbeon .fr-mode-pdf .xforms-select-appearance-full.xforms-static .xforms-selected,
+  .orbeon .fr-mode-email .xforms-select-appearance-full.xforms-static .xforms-selected,
+  .orbeon .fr-mode-view .xforms-select1-appearance-full.xforms-static .xforms-selected,
+  .orbeon .fr-mode-pdf .xforms-select1-appearance-full.xforms-static .xforms-selected,
+  .orbeon .fr-mode-email .xforms-select1-appearance-full.xforms-static .xforms-selected,
+  .orbeon .fr-mode-view .xforms-input.xforms-type-boolean.xforms-static .xforms-selected,
+  .orbeon .fr-mode-pdf .xforms-input.xforms-type-boolean.xforms-static .xforms-selected,
+  .orbeon .fr-mode-email .xforms-input.xforms-type-boolean.xforms-static .xforms-selected {
+    background-image: url("images/glyphicons/checkbox-selected-2x.png");
+  }
+  .orbeon .fr-mode-view .xforms-select-appearance-full.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-pdf .xforms-select-appearance-full.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-email .xforms-select-appearance-full.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-view .xforms-select1-appearance-full.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-pdf .xforms-select1-appearance-full.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-email .xforms-select1-appearance-full.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-view .xforms-input.xforms-type-boolean.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-pdf .xforms-input.xforms-type-boolean.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-email .xforms-input.xforms-type-boolean.xforms-static .xforms-deselected {
+    background-image: url("images/glyphicons/checkbox-deselected-2x.png");
+  }
+}
 @media print {
-    html, html body { background-color: white; background-image: none }
-    /*html body #fr-form-group h2 { font-family: "Arial Unicode MS" }*/
-    html { font-family: "Arial Unicode MS" }
-    .fr-separator { background-color: black; height: 2px }
-    h1, h2, h3 { color: black }
-    a, .xforms-trigger-appearance-xxforms-minimal { color: black; text-decoration: none }
-    .fr-top .fr-form-title, .fr-toc { color: black }
-    .fr-section-container div.fr-collapsible { color: black }
-    .fr-container { border: none }
-    .fr-top, .fr-bottom { background: none }
-    .xforms-required label { background-image: none; padding-left: 0 }
+  html {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  html,
+  html body.orbeon {
+    background-color: white;
+    background-image: none;
+  }
+  html body.orbeon {
+    padding-top: 0;
+  }
+  .orbeon .fr-mode-view .xforms-select-appearance-full.xforms-static .xforms-selected,
+  .orbeon .fr-mode-pdf .xforms-select-appearance-full.xforms-static .xforms-selected,
+  .orbeon .fr-mode-email .xforms-select-appearance-full.xforms-static .xforms-selected,
+  .orbeon .fr-mode-view .xforms-select1-appearance-full.xforms-static .xforms-selected,
+  .orbeon .fr-mode-pdf .xforms-select1-appearance-full.xforms-static .xforms-selected,
+  .orbeon .fr-mode-email .xforms-select1-appearance-full.xforms-static .xforms-selected,
+  .orbeon .fr-mode-view .xforms-input.xforms-type-boolean.xforms-static .xforms-selected,
+  .orbeon .fr-mode-pdf .xforms-input.xforms-type-boolean.xforms-static .xforms-selected,
+  .orbeon .fr-mode-email .xforms-input.xforms-type-boolean.xforms-static .xforms-selected,
+  .orbeon .fr-mode-view .xforms-select-appearance-full.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-pdf .xforms-select-appearance-full.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-email .xforms-select-appearance-full.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-view .xforms-select1-appearance-full.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-pdf .xforms-select1-appearance-full.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-email .xforms-select1-appearance-full.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-view .xforms-input.xforms-type-boolean.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-pdf .xforms-input.xforms-type-boolean.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-email .xforms-input.xforms-type-boolean.xforms-static .xforms-deselected {
+    background-size: 14px;
+    background-repeat: no-repeat !important;
+    background-position: 0 3px !important;
+  }
+  .orbeon .fr-mode-view .xforms-select-appearance-full.xforms-static .xforms-selected,
+  .orbeon .fr-mode-pdf .xforms-select-appearance-full.xforms-static .xforms-selected,
+  .orbeon .fr-mode-email .xforms-select-appearance-full.xforms-static .xforms-selected,
+  .orbeon .fr-mode-view .xforms-select1-appearance-full.xforms-static .xforms-selected,
+  .orbeon .fr-mode-pdf .xforms-select1-appearance-full.xforms-static .xforms-selected,
+  .orbeon .fr-mode-email .xforms-select1-appearance-full.xforms-static .xforms-selected,
+  .orbeon .fr-mode-view .xforms-input.xforms-type-boolean.xforms-static .xforms-selected,
+  .orbeon .fr-mode-pdf .xforms-input.xforms-type-boolean.xforms-static .xforms-selected,
+  .orbeon .fr-mode-email .xforms-input.xforms-type-boolean.xforms-static .xforms-selected {
+    background-image: url("images/glyphicons/checkbox-selected-hd.png") !important;
+  }
+  .orbeon .fr-mode-view .xforms-select-appearance-full.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-pdf .xforms-select-appearance-full.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-email .xforms-select-appearance-full.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-view .xforms-select1-appearance-full.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-pdf .xforms-select1-appearance-full.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-email .xforms-select1-appearance-full.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-view .xforms-input.xforms-type-boolean.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-pdf .xforms-input.xforms-type-boolean.xforms-static .xforms-deselected,
+  .orbeon .fr-mode-email .xforms-input.xforms-type-boolean.xforms-static .xforms-deselected {
+    background-image: url("images/glyphicons/checkbox-deselected-hd.png") !important;
+  }
+  .orbeon a[href] {
+    text-decoration: underline;
+  }
+  .orbeon a[href]:link,
+  .orbeon a[href]:visited {
+    color: #0088cc !important;
+  }
+  .orbeon a[href="#"] {
+    text-decoration: none;
+  }
+  .orbeon a[href="#"]:link,
+  .orbeon a[href="#"]:visited {
+    color: #333333 !important;
+  }
+  .orbeon a,
+  .orbeon button.btn-link {
+    color: black;
+    text-decoration: none;
+  }
+  .orbeon .container {
+    width: 100%;
+  }
+  .orbeon .fr-body {
+    border: none;
+    -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.055);
+    -moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.055);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.055);
+  }
+  .orbeon h2 {
+    border-bottom: 1px solid #e3e3e3;
+    color: black;
+  }
+  .orbeon .xbl-fr-section .fr-section-title {
+    background: none;
+  }
+  .orbeon .xbl-fr-section .fr-section-title .fr-section-label {
+    padding-left: 0;
+  }
+  .orbeon .xbl-fr-section .fr-section-title .fr-section-label.fr-section-open,
+  .orbeon .xbl-fr-section .fr-section-title .fr-section-label.fr-section-closed {
+    background-image: none;
+  }
+  .orbeon .xbl-fr-section .fr-section-title .fr-section-label a {
+    color: black;
+  }
+  .orbeon .navbar {
+    position: static;
+  }
+  .orbeon .navbar .navbar-inner {
+    background-color: white;
+    border-bottom: 1px solid #e3e3e3;
+    padding-left: 0;
+  }
+  .orbeon .navbar .navbar-inner .container h1 {
+    font-size: 24px;
+    color: black;
+  }
+  .orbeon .navbar .navbar-inner .fr-language-choice {
+    display: none;
+  }
+  .orbeon .navbar .navbar-inner .brand {
+    color: #555555;
+    font-size: 25px;
+  }
+  .orbeon .fr-form-description {
+    display: none;
+  }
 }

@@ -1,0 +1,84 @@
+// Copyright (C) 2013 Orbeon, Inc.
+//
+// This program is free software; you can redistribute it and/or modify it under the terms of the
+// GNU Lesser General Public License as published by the Free Software Foundation; either version
+// 2.1 of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+// without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU Lesser General Public License for more details.
+//
+// The full text of the license is available at http://www.gnu.org/copyleft/lesser.html
+
+@import (reference) "../../../../resources/apps/fr/style/form-runner-common";
+
+.orbeon .xbl-fr-wizard {
+
+    .fr-wizard-toc {
+        width: 199px;
+        float: left;
+        margin-bottom: 0;
+        overflow: hidden;   // so that content is contained
+
+        .nav {
+
+            a {
+                text-decoration: none;
+                .text-overflow();
+            }
+
+            .invalid > span > a {
+                color: #b94a48;
+            }
+
+            .invalid.active > span > a {
+                color: @white;
+            }
+
+            li {
+                // Make li the same height as section title
+                line-height: @frSectionTitleLineHeight - 2 * 3px; // 3px is the Bootstrap padding on .nav-list > li > [span >] a
+                *height:     100%;                                // seems to work for IE7, see #722
+            }
+
+            ul ul {
+                list-style-type: none;
+            }
+
+            margin-bottom: 15px;
+        }
+    }
+
+    .fr-wizard-body {
+        width: 738px;
+        float: right;
+        border-left: 1px solid darken(@wellBackground, 7%);
+        border-bottom: 1px solid darken(@wellBackground, 7%);
+    }
+
+    .fr-wizard-navigation {
+        .pagination {
+            margin: 10px 0;
+            .fr-page-number {
+                width: 60px;
+            }
+        }
+    }
+
+    .fr-buttons {
+
+        display: block;
+        float: right;
+        box-sizing: border-box;
+        width: 738px;
+        padding-top: 10px;
+        padding-bottom: 10-5px; // adjust for the 5px bottom margin of buttons (see below)
+        padding-right: 10-1px;  // align with bottom buttons
+        padding-left: 10-1px;   // same as right
+        text-align: right;
+
+        margin-bottom: 0 !important;
+
+        &> * { display: inline-block; margin-bottom: 5px }
+    }
+}

@@ -28,6 +28,35 @@
                 invalidYear: "Year needs to be a number"
             }
         },
+        "fi": {
+            properties: {
+                "MONTHS_LONG": [ "Tammikuu", "Helmikuu", "Maaliskuu", "Huhtikuu", "Toukokuu", "Kes\u00e4kuu", "Hein\u00e4kuu", "Elokuu", "Syyskuu", "Lokakuu", "Marraskuu", "Joulukuu" ],
+                "MONTHS_SHORT": ["Tammi", "Helmi", "Maalis", "Huhti", "Touko", "Kes\u00e4", "Hein\u00e4", "Elo", "Syys", "Loka", "Marras", "Joulu"],
+                "WEEKDAYS_SHORT": ["Ma", "Ti", "Ke", "To", "Pe", "La", "Su"],
+                "START_WEEKDAY": 0
+            },
+            navigator: {
+                month: "Kuukausi",
+                year: "Vuosi",
+                submit: "OK",
+                cancel: "Peruuttaa",
+                invalidYear: "Vuosi on oltava numero"
+            }
+        },
+        "it": {
+            properties: {
+                "MONTHS_LONG": [ "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto",  "Settembre",  "Ottobre",  "Novembre",  "Dicembre" ],
+                "WEEKDAYS_SHORT": ["Do", "Lu", "Ma", "Me", "Gi", "Ve", "Sa"],
+                "START_WEEKDAY": 0
+            },
+            navigator: {
+                month: "Mese",
+                year: "Anno",
+                submit: "OK",
+                cancel: "Cancella",
+                invalidYear: "Anno deve essere un numero"
+            }
+        },
         "fr": {
             properties: {
                 "MONTHS_LONG": [ "Janvier", "F\xe9vrier", "Mars", "Avril", "Mai", "Juin", "Juillet", "Ao\xfbt",  "Septembre",  "Octobre",  "Novembre",  "D\xe9cembre" ],
@@ -111,6 +140,34 @@
                submit: "\u041E\u043A",
                cancel: "\u041E\u0442\u043C\u0435\u043D\u0438\u0442\u044C",
                invalidYear: "\u0413\u043E\u0434 \u0434\u043E\u043B\u0436\u0435\u043D \u0431\u044B\u0442\u044C \u0447\u0438\u0441\u043B\u043E\u043C"
+            }
+        },
+        "pl": {
+            properties: {
+                "MONTHS_LONG": [ "Stycze\u0144", "Luty", "Marzec", "Kwiecie\u0144", "Maj", "Czerwiec", "Lipiec", "Sierpie\u0144",  "Wrzesie\u0144",  "Pa\u017Adziernik",  "Listopad",  "Grudzie\u0144" ],
+                "WEEKDAYS_SHORT": ["Nd", "Pn", "Wt", "\u015Ar", "Cz", "Pt", "Sb"],
+                "START_WEEKDAY": 0
+            },
+            navigator: {
+                month: "Miesi\u0105c",
+                year: "Rok",
+                submit: "OK",
+                cancel: "Anuluj",
+                invalidYear: "Rok powinien by\u0107 liczb\u0105"
+            }
+        },
+        "sv": {
+            properties: {
+                "MONTHS_LONG": [ "Januari", "Februari", "Mars", "April", "Maj", "Juni", "Juli", "Augusti", "September", "Oktober", "November", "December" ],
+                "WEEKDAYS_SHORT": ["M\u00e5n", "Tis", "Ons", "Tor", "Fre", "L\u00f6r", "S\u00f6n"],
+                "START_WEEKDAY": 0
+            },
+            navigator: {
+                month: "M\u00e5nad",
+                year: "\u00c5r",
+                submit: "Ok",
+                cancel: "Avbryt",
+                invalidYear: "\u00c5r m\u00e5ste vara ett heltal"
             }
         }
     };

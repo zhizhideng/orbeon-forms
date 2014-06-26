@@ -19,18 +19,18 @@
             xmlns:fb="http://orbeon.org/oxf/xml/form-builder"
             xmlns:p="http://www.orbeon.com/oxf/pipeline">
 
-    <xsl:variable name="app" as="xs:string" select="doc('input:parameters')/*/app"/>
-    <xsl:variable name="form" as="xs:string" select="doc('input:parameters')/*/form"/>
+    <xsl:variable name="app"  as="xs:string" select="doc('input:request')/*/parameters/parameter[name = 'application']/value"/>
+    <xsl:variable name="form" as="xs:string" select="doc('input:request')/*/parameters/parameter[name = 'form']/value"/>
 
     <!-- Find group names, e.g. "text", "selection", etc. -->
     <xsl:variable name="property-names" select="p:properties-start-with('oxf.fb.toolbox.group')" as="xs:string*" />
-    <xsl:variable name="unique-groups" select="distinct-values(for $v in $property-names return tokenize($v, '\.')[5])" as="xs:string*"/>
+    <xsl:variable name="unique-groups"  select="distinct-values(for $v in $property-names return tokenize($v, '\.')[5])" as="xs:string*"/>
 
     <!-- Iterate over groups -->
     <xsl:for-each select="$unique-groups">
 
         <xsl:variable name="resources-property" select="p:property(string-join(('oxf.fb.toolbox.group', ., 'uri', $app, $form), '.'))" as="xs:string"/>
-        <xsl:variable name="resources" select="for $uri in tokenize($resources-property, '\s+') return doc($uri)" as="document-node()*"/>
+        <xsl:variable name="resources"          select="for $uri in p:split($resources-property) return doc($uri)" as="document-node()*"/>
 
         <xsl:if test="$resources">
             <xbl:xbl>
@@ -49,10 +49,12 @@
 
     </xsl:for-each>
 
-    <!-- Global section templates -->
-    <xsl:copy-of select="/xbl:xbl"/>
-    <!-- Custom section templates (if different from "orbeon" as we don't want to copy components twice) -->
-    <xsl:if test="$app != 'orbeon'">
+    <!-- Global section templates (if not "orbeon/library") -->
+    <xsl:if test="not($app = 'orbeon' and $form = 'library')">
+        <xsl:copy-of select="doc('input:global-template-xbl')/xbl:xbl"/>
+    </xsl:if>
+    <!-- Custom section templates (if not "orbeon/*" as we don't want to copy components twice) -->
+    <xsl:if test="not($app = 'orbeon') and not($form = 'library')">
         <xsl:copy-of select="doc('input:custom-template-xbl')/xbl:xbl"/>
     </xsl:if>
 </components>

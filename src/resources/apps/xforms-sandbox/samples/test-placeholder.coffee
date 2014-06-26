@@ -39,7 +39,7 @@ YAHOO.tool.TestRunner.add new YAHOO.tool.TestCase
         Assert.areEqual content, input.value, "input must show content"
 
     assertBlockShows: (index, values) ->
-        prefixes = ["static-label·", "static-hint·", "dynamic-label·", "dynamic-hint·"]
+        prefixes = ["static-label" + XF_REPEAT_SEPARATOR, "static-hint" + XF_REPEAT_SEPARATOR, "dynamic-label" + XF_REPEAT_SEPARATOR, "dynamic-hint" + XF_REPEAT_SEPARATOR]
         for i in [0..3]
             value = values[i]
             control = YD.get (prefixes[i] + index)
@@ -59,11 +59,11 @@ YAHOO.tool.TestRunner.add new YAHOO.tool.TestCase
     testContentShown: ->
         content = [{content: "1"}, {content: "1"}, {content: "1"}, {content: "1"}]
         Test.runMayCauseXHR this,
-            -> Test.click "increment-content·1"
+            -> Test.click "increment-content" + XF_REPEAT_SEPARATOR + "1"
             -> @assertBlockShows 1, content
-            -> Test.click "reset-content·1"
+            -> Test.click "reset-content" + XF_REPEAT_SEPARATOR + "1"
             -> Test.click "add"
-            -> Test.click "increment-content·2"
+            -> Test.click "increment-content" + XF_REPEAT_SEPARATOR + "2"
             -> @assertBlockShows 2, content
             -> Test.click "remove"
 
@@ -71,10 +71,10 @@ YAHOO.tool.TestRunner.add new YAHOO.tool.TestCase
     testFocusNoPlaceholder: ->
         focusOnFirst = [{content: ""}, {placeholder: "First name"}, {placeholder: "1"}, {placeholder: "1"}]
         Test.runMayCauseXHR this,
-            -> (YD.get "static-label$xforms-input-1·1").focus()
+            -> (YD.get "static-label" + XF_COMPONENT_SEPARATOR + "xforms-input-1" + XF_REPEAT_SEPARATOR + "1").focus()
             -> @assertBlockShows 1, focusOnFirst
             -> Test.click "add"
-            -> (YD.get "static-label$xforms-input-1·2").focus()
+            -> (YD.get "static-label" + XF_COMPONENT_SEPARATOR + "xforms-input-1" + XF_REPEAT_SEPARATOR + "2").focus()
             -> @assertBlockShows 2, focusOnFirst
             -> Test.click "remove"
             -> (YD.get "add").focus()

@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!--
     Copyright (C) 2011 Orbeon, Inc.
 
@@ -15,7 +14,7 @@
 <p:config xmlns:p="http://www.orbeon.com/oxf/pipeline"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
         xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:xh="http://www.w3.org/1999/xhtml"
         xmlns:oxf="http://www.orbeon.com/oxf/processors"
         xmlns:xi="http://www.w3.org/2001/XInclude"
         xmlns:xxi="http://orbeon.org/oxf/xml/xinclude">
@@ -76,12 +75,13 @@
 
     <!-- Apply UI components -->
     <p:processor name="oxf:unsafe-xslt">
-        <p:input name="data" href="#themed-data"/>
-        <p:input name="instance" href="#instance"/>
-        <p:input name="config" href="components/components.xsl"/>
-        <p:input name="request" href="#request"/>
+        <p:input name="config"   href="components/components.xsl"/>
 
-        <p:output name="data" id="after-components"/>
+        <p:input name="data"     href="#themed-data"/>
+        <p:input name="instance" href="#instance"/>
+        <p:input name="request"  href="#request"/>
+
+        <p:output name="data"    id="after-components"/>
 
         <!-- This is here just so that we can reload the form when the properties or the resources change -->
         <p:input name="properties-xforms" href="oxf:/config/properties-xforms.xml"/>
